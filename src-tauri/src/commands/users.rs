@@ -8,7 +8,7 @@ pub async fn get_users(app_handle: AppHandle) -> Result<Vec<User>, String> {
     let db_instances: State<DbInstances> = app_handle.state();
     let db = db_instances
         .0
-        .lock()
+        .read()
         .await
         .get("sqlite:pos.db")
         .ok_or("Database connection failed")?;
@@ -43,7 +43,7 @@ pub async fn create_user(
     let db_instances: State<DbInstances> = app_handle.state();
     let db = db_instances
         .0
-        .lock()
+        .read()
         .await
         .get("sqlite:pos.db")
         .ok_or("Database connection failed")?;
@@ -64,7 +64,7 @@ pub async fn create_user(
     let password_hash = hash(request.password, DEFAULT_COST)
         .map_err(|e| format!("Password hashing error: {}", e))?;
 
-    db.execute(
+    let _result = db.execute(
         "INSERT INTO users (username, email, password_hash, first_name, last_name, role) 
          VALUES ($1, $2, $3, $4, $5, $6)"
     )
@@ -111,7 +111,7 @@ pub async fn update_user(
     let db_instances: State<DbInstances> = app_handle.state();
     let db = db_instances
         .0
-        .lock()
+        .read()
         .await
         .get("sqlite:pos.db")
         .ok_or("Database connection failed")?;
@@ -133,7 +133,7 @@ pub async fn update_user(
     let password_hash = hash(request.password, DEFAULT_COST)
         .map_err(|e| format!("Password hashing error: {}", e))?;
 
-    db.execute(
+    let _result = db.execute(
         "UPDATE users SET username = $1, email = $2, password_hash = $3, first_name = $4, last_name = $5, role = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7"
     )
     .bind(&request.username)
@@ -176,12 +176,12 @@ pub async fn delete_user(app_handle: AppHandle, user_id: i64) -> Result<bool, St
     let db_instances: State<DbInstances> = app_handle.state();
     let db = db_instances
         .0
-        .lock()
+        .read()
         .await
         .get("sqlite:pos.db")
         .ok_or("Database connection failed")?;
 
-    db.execute("UPDATE users SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = $1")
+    let _result = db.execute("UPDATE users SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = $1")
         .bind(&user_id)
         .fetch_all()
         .await

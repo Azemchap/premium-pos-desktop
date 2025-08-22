@@ -5,22 +5,19 @@ mod database;
 mod commands;
 mod models;
 
-use database::init_database;
+use database::get_migrations;
 
 #[tokio::main]
 async fn main() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_sql::Builder::default().build())
+        .plugin(
+            tauri_plugin_sql::Builder::default()
+                .add_migrations("sqlite:pos.db", get_migrations())
+                .build(),
+        )
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
-        .setup(|app| {
-            let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                init_database(&app_handle).await.expect("Failed to initialize database");
-            });
-            Ok(())
-        })
         .invoke_handler(tauri::generate_handler![
             commands::auth::login_user,
             commands::auth::register_user,

@@ -12,7 +12,7 @@ pub async fn login_user(
     let db_instances: State<DbInstances> = app_handle.state();
     let db = db_instances
         .0
-        .lock()
+        .read()
         .await
         .get("sqlite:pos.db")
         .ok_or("Database connection failed")?;
@@ -71,7 +71,7 @@ pub async fn register_user(
     let db_instances: State<DbInstances> = app_handle.state();
     let db = db_instances
         .0
-        .lock()
+        .read()
         .await
         .get("sqlite:pos.db")
         .ok_or("Database connection failed")?;
@@ -92,7 +92,7 @@ pub async fn register_user(
     let password_hash = hash(request.password, DEFAULT_COST)
         .map_err(|e| format!("Password hashing error: {}", e))?;
 
-    let result = db
+    let _result = db
         .execute(
             "INSERT INTO users (username, email, password_hash, first_name, last_name, role) 
              VALUES ($1, $2, $3, $4, $5, $6)"
@@ -132,8 +132,8 @@ pub async fn register_user(
 }
 
 #[command]
-pub async fn verify_session(session_token: String) -> Result<bool, String> {
+pub async fn verify_session(_session_token: String) -> Result<bool, String> {
     // In a real implementation, you'd validate against stored sessions
     // For now, just check if token is not empty
-    Ok(!session_token.is_empty())
+    Ok(!_session_token.is_empty())
 }

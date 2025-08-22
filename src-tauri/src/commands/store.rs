@@ -7,7 +7,7 @@ pub async fn get_store_config(app_handle: AppHandle) -> Result<StoreConfig, Stri
     let db_instances: State<DbInstances> = app_handle.state();
     let db = db_instances
         .0
-        .lock()
+        .read()
         .await
         .get("sqlite:pos.db")
         .ok_or("Database connection failed")?;
@@ -45,12 +45,12 @@ pub async fn update_store_config(
     let db_instances: State<DbInstances> = app_handle.state();
     let db = db_instances
         .0
-        .lock()
+        .read()
         .await
         .get("sqlite:pos.db")
         .ok_or("Database connection failed")?;
 
-    db.execute(
+    let _result = db.execute(
         "UPDATE locations SET name = $1, address = $2, phone = $3, email = $4, tax_rate = $5, currency = $6, timezone = $7, updated_at = CURRENT_TIMESTAMP WHERE id = 1"
     )
     .bind(&request.name)

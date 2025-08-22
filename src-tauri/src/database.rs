@@ -1,8 +1,14 @@
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::AppHandle;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
-pub async fn init_database(app_handle: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    let migrations = vec![
+pub async fn init_database(_app_handle: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    // Database initialization will be handled by the plugin setup in main.rs
+    // This function is kept for potential future custom initialization logic
+    Ok(())
+}
+
+pub fn get_migrations() -> Vec<Migration> {
+    vec![
         Migration {
             version: 1,
             description: "create_initial_tables",
@@ -173,13 +179,5 @@ pub async fn init_database(app_handle: &AppHandle) -> Result<(), Box<dyn std::er
             "#,
             kind: MigrationKind::Up,
         }
-    ];
-
-    tauri_plugin_sql::Builder::default()
-        .add_migrations("sqlite:pos.db", migrations)
-        .build::<tauri::Wry>()
-        .initialize(app_handle, "main".to_string(), None)
-        .await?;
-
-    Ok(())
+    ]
 }
