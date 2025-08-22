@@ -1,4 +1,4 @@
-use tauri::{command, AppHandle, State};
+use tauri::{command, AppHandle, Manager, State};
 use tauri_plugin_sql::DbInstances;
 use bcrypt::{hash, DEFAULT_COST};
 use crate::models::{User, CreateUserRequest};

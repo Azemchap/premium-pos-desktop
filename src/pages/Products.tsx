@@ -1,4 +1,6 @@
-/ src/pages/Products.tsx
+// src/pages/Products.tsx
+import { Package } from "lucide-react";
+
 export default function Products() {
   return (
     <div className="space-y-6">

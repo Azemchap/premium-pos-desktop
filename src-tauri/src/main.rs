@@ -5,7 +5,6 @@ mod database;
 mod commands;
 mod models;
 
-use tauri::Manager;
 use database::init_database;
 
 #[tokio::main]

@@ -1,4 +1,4 @@
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_sql::{Migration, MigrationKind};
 
 pub async fn init_database(app_handle: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
@@ -175,15 +175,10 @@ pub async fn init_database(app_handle: &AppHandle) -> Result<(), Box<dyn std::er
         }
     ];
 
-    let db = app_handle
-        .state::<tauri_plugin_sql::DbInstances>()
-        .0
-        .lock()
-        .await;
-        
-    db.get("sqlite:pos.db")
-        .expect("Failed to get database connection")
-        .migrate(migrations)
+    tauri_plugin_sql::Builder::default()
+        .add_migrations("sqlite:pos.db", migrations)
+        .build::<tauri::Wry>()
+        .initialize(app_handle, "main".to_string(), None)
         .await?;
 
     Ok(())
