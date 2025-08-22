@@ -1,6 +1,8 @@
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { defineConfig } from "vite";
+import tailwindcss from "tailwindcss";
+import autoprefixer from "autoprefixer";
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -38,10 +40,7 @@ export default defineConfig(async () => ({
 
     css: {
         postcss: {
-            plugins: [
-                require('tailwindcss'),
-                require('autoprefixer'),
-            ],
+            plugins: [tailwindcss, autoprefixer],
         },
     },
 }));

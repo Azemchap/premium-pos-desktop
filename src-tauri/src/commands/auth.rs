@@ -1,139 +1,169 @@
-use tauri::{command, AppHandle, Manager, State};
-use tauri_plugin_sql::DbInstances;
+use tauri::{command, State};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use uuid::Uuid;
 use crate::models::{LoginRequest, LoginResponse, User, CreateUserRequest};
+use sqlx::{SqlitePool, Row};
 
 #[command]
-pub async fn login_user(
-    app_handle: AppHandle,
-    request: LoginRequest,
-) -> Result<LoginResponse, String> {
-    let db_instances: State<DbInstances> = app_handle.state();
-    let db = db_instances
-        .0
-        .read()
-        .await
-        .get("sqlite:pos.db")
-        .ok_or("Database connection failed")?;
+pub async fn login_user(pool: State<'_, SqlitePool>, request: LoginRequest) -> Result<LoginResponse, String> {
+    println!("DEBUG(auth): login_user called username='{}'", request.username);
+    println!("DEBUG(auth): received password length = {}", request.password.len());
 
-    let user_rows = db
-        .select("SELECT id, username, email, password_hash, first_name, last_name, role, is_active, last_login, created_at, updated_at FROM users WHERE username = $1 AND is_active = 1")
-        .bind(&request.username)
-        .fetch_all()
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+    let pool_ref = pool.inner();
+    // fetch user
+    let row = sqlx::query(
+        "SELECT id, username, email, password_hash, first_name, last_name, role, is_active, last_login, created_at, updated_at
+         FROM users WHERE username = ?1 AND is_active = 1",
+    )
+    .bind(&request.username)
+    .fetch_optional(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(auth): query error: {}", e);
+        format!("Database error: {}", e)
+    })?;
 
-    if user_rows.is_empty() {
+    let row = match row {
+        Some(r) => r,
+        None => {
+            println!("DEBUG(auth): user not found/inactive: {}", request.username);
+            return Err("Invalid username or password".to_string());
+        }
+    };
+
+    let stored_hash: String = row.try_get("password_hash").map_err(|e| {
+        println!("DEBUG(auth): try_get password_hash error: {}", e);
+        e.to_string()
+    })?;
+
+    if !verify(&request.password, &stored_hash).map_err(|e| {
+        println!("DEBUG(auth): bcrypt verify error: {}", e);
+        format!("Password verification error: {}", e)
+    })? {
+        println!("DEBUG(auth): bad password for {}", request.username);
         return Err("Invalid username or password".to_string());
     }
 
-    let user_row = &user_rows[0];
-    let stored_hash: String = user_row.get("password_hash").ok_or("Password hash not found")?;
-    
-    if !verify(&request.password, &stored_hash).map_err(|e| format!("Password verification error: {}", e))? {
-        return Err("Invalid username or password".to_string());
-    }
-
-    // Update last login
-    db.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1")
-        .bind(user_row.get::<i64>("id").unwrap())
-        .fetch_all()
+    let id: i64 = row.try_get("id").map_err(|e| e.to_string())?;
+    // Update last_login (best-effort; non-fatal)
+    if let Err(e) = sqlx::query("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?1")
+        .bind(id)
+        .execute(pool_ref)
         .await
-        .map_err(|e| format!("Failed to update last login: {}", e))?;
+    {
+        println!("DEBUG(auth): failed to update last_login: {}", e);
+    }
 
     let user = User {
-        id: user_row.get("id").unwrap(),
-        username: user_row.get("username").unwrap(),
-        email: user_row.get("email").unwrap(),
-        first_name: user_row.get("first_name").unwrap(),
-        last_name: user_row.get("last_name").unwrap(),
-        role: user_row.get("role").unwrap(),
-        is_active: user_row.get("is_active").unwrap(),
-        last_login: user_row.get("last_login").unwrap(),
-        created_at: user_row.get("created_at").unwrap(),
-        updated_at: user_row.get("updated_at").unwrap(),
+        id,
+        username: row.try_get("username").map_err(|e| e.to_string())?,
+        email: row.try_get("email").map_err(|e| e.to_string())?,
+        first_name: row.try_get("first_name").map_err(|e| e.to_string())?,
+        last_name: row.try_get("last_name").map_err(|e| e.to_string())?,
+        role: row.try_get("role").map_err(|e| e.to_string())?,
+        is_active: {
+            match row.try_get::<bool, _>("is_active") {
+                Ok(b) => b,
+                Err(_) => {
+                    let v: i64 = row.try_get("is_active").map_err(|e| e.to_string())?;
+                    v != 0
+                }
+            }
+        },
+        last_login: row.try_get("last_login").ok().flatten(),
+        created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+        updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
     };
 
     let session_token = Uuid::new_v4().to_string();
+    println!("DEBUG(auth): login successful id={}", user.id);
 
-    Ok(LoginResponse {
-        user,
-        session_token,
-    })
+    Ok(LoginResponse { user, session_token })
 }
 
 #[command]
-pub async fn register_user(
-    app_handle: AppHandle,
-    request: CreateUserRequest,
-) -> Result<User, String> {
-    let db_instances: State<DbInstances> = app_handle.state();
-    let db = db_instances
-        .0
-        .read()
-        .await
-        .get("sqlite:pos.db")
-        .ok_or("Database connection failed")?;
+pub async fn register_user(pool: State<'_, SqlitePool>, request: CreateUserRequest) -> Result<User, String> {
+    println!("DEBUG(auth): register_user username='{}' email='{}'", request.username, request.email);
 
-    // Check if username or email already exists
-    let existing_user = db
-        .select("SELECT id FROM users WHERE username = $1 OR email = $2")
+    let pool_ref = pool.inner();
+
+    // check existing
+    let exists = sqlx::query("SELECT id FROM users WHERE username = ?1 OR email = ?2")
         .bind(&request.username)
         .bind(&request.email)
-        .fetch_all()
+        .fetch_optional(pool_ref)
         .await
-        .map_err(|e| format!("Database error: {}", e))?;
+        .map_err(|e| {
+            println!("DEBUG(auth): exists query error: {}", e);
+            format!("Database error: {}", e)
+        })?;
 
-    if !existing_user.is_empty() {
+    if exists.is_some() {
+        println!("DEBUG(auth): user exists");
         return Err("Username or email already exists".to_string());
     }
 
-    let password_hash = hash(request.password, DEFAULT_COST)
-        .map_err(|e| format!("Password hashing error: {}", e))?;
+    let password_hash = hash(request.password, DEFAULT_COST).map_err(|e| {
+        println!("DEBUG(auth): bcrypt hash error: {}", e);
+        format!("Password hashing error: {}", e)
+    })?;
 
-    let _result = db
-        .execute(
-            "INSERT INTO users (username, email, password_hash, first_name, last_name, role) 
-             VALUES ($1, $2, $3, $4, $5, $6)"
-        )
-        .bind(&request.username)
-        .bind(&request.email)
-        .bind(&password_hash)
-        .bind(&request.first_name)
-        .bind(&request.last_name)
-        .bind(&request.role)
-        .fetch_all()
-        .await
-        .map_err(|e| format!("Failed to create user: {}", e))?;
+    sqlx::query(
+        "INSERT INTO users (username, email, password_hash, first_name, last_name, role)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+    )
+    .bind(&request.username)
+    .bind(&request.email)
+    .bind(&password_hash)
+    .bind(&request.first_name)
+    .bind(&request.last_name)
+    .bind(&request.role)
+    .execute(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(auth): insert error: {}", e);
+        format!("Failed to create user: {}", e)
+    })?;
 
-    // Get the created user
-    let user_rows = db
-        .select("SELECT id, username, email, first_name, last_name, role, is_active, last_login, created_at, updated_at FROM users WHERE username = $1")
-        .bind(&request.username)
-        .fetch_all()
-        .await
-        .map_err(|e| format!("Failed to fetch created user: {}", e))?;
+    let row = sqlx::query(
+        "SELECT id, username, email, first_name, last_name, role, is_active, last_login, created_at, updated_at
+         FROM users WHERE username = ?1",
+    )
+    .bind(&request.username)
+    .fetch_one(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(auth): fetch created user error: {}", e);
+        format!("Failed to fetch created user: {}", e)
+    })?;
 
-    let user_row = &user_rows[0];
+    let user = User {
+        id: row.try_get("id").map_err(|e| e.to_string())?,
+        username: row.try_get("username").map_err(|e| e.to_string())?,
+        email: row.try_get("email").map_err(|e| e.to_string())?,
+        first_name: row.try_get("first_name").map_err(|e| e.to_string())?,
+        last_name: row.try_get("last_name").map_err(|e| e.to_string())?,
+        role: row.try_get("role").map_err(|e| e.to_string())?,
+        is_active: {
+            match row.try_get::<bool, _>("is_active") {
+                Ok(b) => b,
+                Err(_) => {
+                    let v: i64 = row.try_get("is_active").map_err(|e| e.to_string())?;
+                    v != 0
+                }
+            }
+        },
+        last_login: row.try_get("last_login").ok().flatten(),
+        created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+        updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
+    };
 
-    Ok(User {
-        id: user_row.get("id").unwrap(),
-        username: user_row.get("username").unwrap(),
-        email: user_row.get("email").unwrap(),
-        first_name: user_row.get("first_name").unwrap(),
-        last_name: user_row.get("last_name").unwrap(),
-        role: user_row.get("role").unwrap(),
-        is_active: user_row.get("is_active").unwrap(),
-        last_login: user_row.get("last_login"),
-        created_at: user_row.get("created_at").unwrap(),
-        updated_at: user_row.get("updated_at").unwrap(),
-    })
+    println!("DEBUG(auth): register_user succeeded id={}", user.id);
+    Ok(user)
 }
 
 #[command]
 pub async fn verify_session(_session_token: String) -> Result<bool, String> {
-    // In a real implementation, you'd validate against stored sessions
-    // For now, just check if token is not empty
+    println!("DEBUG(auth): verify_session token_len={}", _session_token.len());
     Ok(!_session_token.is_empty())
 }

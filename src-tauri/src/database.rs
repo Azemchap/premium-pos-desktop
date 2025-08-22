@@ -1,11 +1,5 @@
-use tauri::AppHandle;
-use tauri_plugin_sql::{Migration, MigrationKind};
 
-pub async fn init_database(_app_handle: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    // Database initialization will be handled by the plugin setup in main.rs
-    // This function is kept for potential future custom initialization logic
-    Ok(())
-}
+use tauri_plugin_sql::{Migration, MigrationKind};
 
 pub fn get_migrations() -> Vec<Migration> {
     vec![
