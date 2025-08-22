@@ -1,0 +1,72 @@
+{
+    "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+    "build": {
+        "beforeBuildCommand": "pnpm build",
+        "beforeDevCommand": "pnpm dev",
+        "devUrl": "http://localhost:1420",
+        "frontendDist": "../dist"
+    },
+    "package": {
+        "productName": "Premium POS",
+        "version": "0.1.0"
+    },
+    "bundle": {
+        "active": true,
+        "category": "BusinessApp",
+        "copyright": "",
+        "deb": {
+            "depends": []
+        },
+        "externalBin": [],
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ],
+        "identifier": "com.premiumpos.app",
+        "longDescription": "Premium Point of Sale and Inventory Management System for retail locations",
+        "macOS": {
+            "entitlements": null,
+            "exceptionDomain": "",
+            "frameworks": [],
+            "providerShortName": null,
+            "signingIdentity": null
+        },
+        "resources": [],
+        "shortDescription": "Premium POS System",
+        "targets": "all",
+        "windows": {
+            "certificateThumbprint": null,
+            "digestAlgorithm": "sha256",
+            "timestampUrl": ""
+        }
+    },
+    "security": {
+        "csp": null
+    },
+    "app": {
+        "windows": [
+            {
+                "fullscreen": false,
+                "resizable": true,
+                "title": "Premium POS",
+                "width": 1200,
+                "height": 800,
+                "minWidth": 1000,
+                "minHeight": 700
+            }
+        ],
+        "security": {
+            "csp": null
+        }
+    },
+    "plugins": {
+        "sql": {
+            "preload": [
+                "sqlite:pos.db"
+            ]
+        }
+    }
+}
