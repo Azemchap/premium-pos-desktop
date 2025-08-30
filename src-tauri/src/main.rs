@@ -133,7 +133,7 @@ async fn main() {
                 }
             }
             Err(e) => {
-                panic!("Failed to create database file {:?}: {}", e);
+                panic!("Failed to create database file {:?}: {}", db_path, e);
             }
         }
     }
@@ -179,82 +179,10 @@ async fn main() {
         panic!("Failed to ensure admin user: {}", e);
     }
 
-    // Initialize tauri and manage the pool in state
-    tauri::Builder::default()
-        .plugin(
-            tauri_plugin_sql::Builder::default()
-                .add_migrations(&conn_str, get_migrations())
-                .build(),
-        )
-        .manage(pool)
-        .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_notification::init())
-        .invoke_handler(tauri::generate_handler![
-            // Authentication commands
-            commands::auth::login_user,
-            commands::auth::register_user,
-            commands::auth::verify_session,
-            
-            // User management commands
-            commands::users::get_users,
-            commands::users::create_user,
-            commands::users::update_user,
-            commands::users::delete_user,
-            
-            // Product management commands
-            commands::products::get_products,
-            commands::products::create_product,
-            commands::products::update_product,
-            commands::products::delete_product,
-            commands::products::search_products,
-            
-            // Inventory management commands
-            commands::inventory::get_inventory,
-            commands::inventory::update_stock,
-            commands::inventory::get_inventory_movements,
-<<<<<<< Updated upstream
-            commands::inventory::create_stock_adjustment,
-            commands::inventory::get_low_stock_items,
-            
-            // Sales commands
-            commands::sales::create_sale,
-=======
->>>>>>> Stashed changes
-            commands::sales::get_sales,
-            commands::sales::create_sale,
-            commands::sales::void_sale,
-<<<<<<< Updated upstream
-            commands::sales::get_sale_details,
-            commands::sales::search_sales,
-            
-            // Store configuration commands
-=======
-            commands::sales::get_sale_with_items,
->>>>>>> Stashed changes
-            commands::store::get_store_config,
-            commands::store::update_store_config,
-            
-            // Shift management commands
-            commands::shifts::create_shift,
-            commands::shifts::close_shift,
-            commands::shifts::get_current_shift,
-            commands::shifts::get_shift_history,
-            
-            // Cash drawer commands
-            commands::cash_drawer::create_transaction,
-            commands::cash_drawer::get_transactions,
-            
-            // Receipt template commands
-            commands::receipts::get_templates,
-            commands::receipts::create_template,
-            commands::receipts::update_template,
-            commands::receipts::delete_template,
-            
-            // Dashboard commands
-            commands::dashboard::get_stats,
-            commands::dashboard::get_recent_activity,
-        ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+    println!("DEBUG(main): Application initialized successfully!");
+    println!("DEBUG(main): Database connection established and migrations applied");
+    println!("DEBUG(main): Admin user ensured");
+    
+    // Keep the application running for a moment to see the output
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 }

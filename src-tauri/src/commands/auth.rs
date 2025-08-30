@@ -1,75 +1,24 @@
-use crate::models::{CreateUserRequest, LoginRequest, LoginResponse, User};
+use crate::models::User;
+use sqlx::{SqlitePool, Row};
 use bcrypt::{hash, verify, DEFAULT_COST};
-use sqlx::{Row, SqlitePool};
-use tauri::{command, State};
-use uuid::Uuid;
 
-#[tauri::command]
-pub async fn register_user(
-    pool: State<'_, SqlitePool>,
-    request: CreateUserRequest,
-) -> Result<User, String> {
-    // Check if username already exists
-    let existing_user = sqlx::query("SELECT id FROM users WHERE username = ?")
-        .bind(&request.username)
-        .fetch_optional(pool.inner())
-        .await
-        .map_err(|e| e.to_string())?;
-
-    if existing_user.is_some() {
-        return Err("Username already exists".to_string());
-    }
-
-    // Hash password
-    let hashed_password = hash(&request.password, DEFAULT_COST)
-        .map_err(|e| format!("Failed to hash password: {}", e))?;
-
-    // Create user
-    let user_id = sqlx::query(
-        "INSERT INTO users (username, email, password, first_name, last_name, role, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)"
+pub async fn authenticate_user(
+    pool: &SqlitePool,
+    username: &str,
+    password: &str,
+) -> Result<Option<User>, String> {
+    let row = sqlx::query(
+        "SELECT * FROM users WHERE username = ? AND is_active = 1"
     )
-    .bind(&request.username)
-    .bind(&request.email)
-    .bind(&hashed_password)
-    .bind(&request.first_name)
-    .bind(&request.last_name)
-    .bind(&request.role)
-    .execute(pool.inner())
+    .bind(username)
+    .fetch_optional(pool)
     .await
-    .map_err(|e| e.to_string())?
-    .last_insert_rowid();
-
-    let user = User {
-        id: user_id,
-        username: request.username,
-        email: request.email,
-        first_name: request.first_name,
-        last_name: request.last_name,
-        role: request.role,
-        is_active: true,
-        last_login: None,
-        created_at: chrono::Utc::now().naive_utc(),
-        updated_at: chrono::Utc::now().naive_utc(),
-    };
-
-    Ok(user)
-}
-
-#[tauri::command]
-pub async fn login_user(
-    pool: State<'_, SqlitePool>,
-    request: LoginRequest,
-) -> Result<LoginResponse, String> {
-    let row = sqlx::query("SELECT * FROM users WHERE username = ? AND is_active = 1")
-        .bind(&request.username)
-        .fetch_optional(pool.inner())
-        .await
-        .map_err(|e| e.to_string())?;
+    .map_err(|e| e.to_string())?;
 
     if let Some(row) = row {
-        let stored_hash: String = row.try_get("password").map_err(|e| e.to_string())?;
-
-        if verify(&request.password, &stored_hash).map_err(|e| e.to_string())? {
+        let stored_hash: String = row.try_get("password_hash").map_err(|e| e.to_string())?;
+        
+        if verify(password, &stored_hash).map_err(|e| e.to_string())? {
             let user = User {
                 id: row.try_get("id").map_err(|e| e.to_string())?,
                 username: row.try_get("username").map_err(|e| e.to_string())?,
@@ -77,41 +26,124 @@ pub async fn login_user(
                 first_name: row.try_get("first_name").map_err(|e| e.to_string())?,
                 last_name: row.try_get("last_name").map_err(|e| e.to_string())?,
                 role: row.try_get("role").map_err(|e| e.to_string())?,
+                pin_code: row.try_get("pin_code").map_err(|e| e.to_string())?,
+                permissions: row.try_get("permissions").map_err(|e| e.to_string())?,
                 is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
                 last_login: row.try_get("last_login").ok().flatten(),
                 created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
                 updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
             };
-
-            // Generate session token
-            let session_token = Uuid::new_v4().to_string();
-
-            // Update last login
-            sqlx::query("UPDATE users SET last_login = ? WHERE id = ?")
-                .bind(chrono::Utc::now().naive_utc())
-                .bind(user.id)
-                .execute(pool.inner())
-                .await
-                .map_err(|e| e.to_string())?;
-
-            Ok(LoginResponse {
-                user,
-                session_token,
-            })
+            Ok(Some(user))
         } else {
-            Err("Invalid password".to_string())
+            Ok(None)
         }
     } else {
-        Err("User not found".to_string())
+        Ok(None)
     }
 }
 
-#[tauri::command]
-pub async fn verify_session(
-    pool: State<'_, SqlitePool>,
-    session_token: String,
+pub async fn authenticate_with_pin(
+    pool: &SqlitePool,
+    pin_code: &str,
 ) -> Result<Option<User>, String> {
-    // In a real application, you would store and validate session tokens
-    // For now, we'll just return None to indicate invalid session
-    Ok(None)
+    let row = sqlx::query(
+        "SELECT * FROM users WHERE pin_code = ? AND is_active = 1"
+    )
+    .bind(pin_code)
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    if let Some(row) = row {
+        let user = User {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            username: row.try_get("username").map_err(|e| e.to_string())?,
+            email: row.try_get("email").map_err(|e| e.to_string())?,
+            first_name: row.try_get("first_name").map_err(|e| e.to_string())?,
+            last_name: row.try_get("last_name").map_err(|e| e.to_string())?,
+            role: row.try_get("role").map_err(|e| e.to_string())?,
+            pin_code: row.try_get("pin_code").map_err(|e| e.to_string())?,
+            permissions: row.try_get("permissions").map_err(|e| e.to_string())?,
+            is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
+            last_login: row.try_get("last_login").ok().flatten(),
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+            updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
+        };
+        Ok(Some(user))
+    } else {
+        Ok(None)
+    }
+}
+
+pub async fn update_last_login(
+    pool: &SqlitePool,
+    user_id: i64,
+) -> Result<(), String> {
+    sqlx::query(
+        "UPDATE users SET last_login = ? WHERE id = ?"
+    )
+    .bind(chrono::Utc::now().naive_utc().to_string())
+    .bind(user_id)
+    .execute(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+pub async fn change_password(
+    pool: &SqlitePool,
+    user_id: i64,
+    current_password: &str,
+    new_password: &str,
+) -> Result<bool, String> {
+    // First verify current password
+    let row = sqlx::query(
+        "SELECT password_hash FROM users WHERE id = ?"
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let stored_hash: String = row.try_get("password_hash").map_err(|e| e.to_string())?;
+    
+    if !verify(current_password, &stored_hash).map_err(|e| e.to_string())? {
+        return Ok(false);
+    }
+
+    // Hash new password and update
+    let new_hash = hash(new_password, DEFAULT_COST).map_err(|e| e.to_string())?;
+    
+    sqlx::query(
+        "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?"
+    )
+    .bind(&new_hash)
+    .bind(chrono::Utc::now().naive_utc().to_string())
+    .bind(user_id)
+    .execute(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(true)
+}
+
+pub async fn reset_password(
+    pool: &SqlitePool,
+    user_id: i64,
+    new_password: &str,
+) -> Result<(), String> {
+    let new_hash = hash(new_password, DEFAULT_COST).map_err(|e| e.to_string())?;
+    
+    sqlx::query(
+        "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?"
+    )
+    .bind(&new_hash)
+    .bind(chrono::Utc::now().naive_utc().to_string())
+    .bind(user_id)
+    .execute(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
 }
