@@ -1,242 +1,278 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  LayoutDashboard,
-  ShoppingCart,
-  Package,
-  Warehouse,
-  Users,
-  FileText,
-  Settings,
-  LogOut,
-  Moon,
-  Sun,
-  Menu,
-  X,
-  Store,
-  Bell,
-  Search,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Sheet,
+    SheetContent,
+} from "@/components/ui/sheet";
+import { useAuthStore } from "@/store/authStore";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+    Menu,
+    Search,
+    Bell,
+    Settings,
+    LogOut,
+    User,
+    Sun,
+    Moon,
+    ChevronDown,
+    Home,
+    ShoppingCart,
+    Package,
+    BarChart3,
+    Users,
+    Database
 } from "lucide-react";
 
-const navigation = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    roles: ["Admin", "Manager", "Cashier", "StockKeeper"],
-  },
-  {
-    name: "Sales (POS)",
-    href: "/sales",
-    icon: ShoppingCart,
-    roles: ["Admin", "Manager", "Cashier"],
-  },
-  {
-    name: "Products",
-    href: "/products",
-    icon: Package,
-    roles: ["Admin", "Manager", "StockKeeper"],
-  },
-  {
-    name: "Inventory",
-    href: "/inventory",
-    icon: Warehouse,
-    roles: ["Admin", "Manager", "StockKeeper"],
-  },
-  {
-    name: "Users",
-    href: "/users",
-    icon: Users,
-    roles: ["Admin"],
-  },
-  {
-    name: "Reports",
-    href: "/reports",
-    icon: FileText,
-    roles: ["Admin", "Manager"],
-  },
-  {
-    name: "Settings",
-    href: "/settings",
-    icon: Settings,
-    roles: ["Admin", "Manager"],
-  },
-];
-
-interface DashboardLayoutProps {
-  children: React.ReactNode;
+interface NavigationItem {
+    name: string;
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    roles?: string[];
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout, theme, toggleTheme, hasPermission } = useAuthStore();
-  const location = useLocation();
-  const navigate = useNavigate();
+const navigation: NavigationItem[] = [
+    { name: "Dashboard", href: "/", icon: Home },
+    { name: "Sales", href: "/sales", icon: ShoppingCart },
+    { name: "Products", href: "/products", icon: Package },
+    { name: "Inventory", href: "/inventory", icon: Database },
+    { name: "Reports", href: "/reports", icon: BarChart3 },
+    { name: "Users", href: "/users", icon: Users, roles: ["Admin", "Manager"] },
+    { name: "Settings", href: "/settings", icon: Settings, roles: ["Admin", "Manager"] },
+];
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const { user, logout, theme, setTheme } = useAuthStore();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-  const filteredNavigation = navigation.filter((item) =>
-    hasPermission(item.roles)
-  );
+    const hasPermission = (allowedRoles?: string[]) => {
+        if (!allowedRoles || allowedRoles.length === 0) return true;
+        if (!user) return false;
+        return allowedRoles.includes(user.role);
+    };
 
-  return (
-    <div className="h-screen flex overflow-hidden bg-background">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    const filteredNavigation = navigation.filter(item => hasPermission(item.roles));
 
-      {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo and close button */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-border">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Store className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Premium POS
-              </span>
+    const toggleTheme = () => {
+        setTheme(theme === 'light' ? 'dark' : 'light');
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login");
+    };
+
+    const getInitials = (firstName: string, lastName: string) => {
+        return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    };
+
+    const isActive = (href: string) => {
+        if (href === "/") {
+            return location.pathname === "/";
+        }
+        return location.pathname.startsWith(href);
+    };
+
+    return (
+        <div className="min-h-screen bg-background">
+            {/* Mobile sidebar */}
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                <SheetContent side="left" className="w-80">
+                    <div className="space-y-6">
+                        <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                                <span className="text-primary-foreground font-bold text-lg">P</span>
+                            </div>
+                            <span className="font-bold text-xl">Premium POS</span>
+                        </div>
+                        
+                        <nav className="space-y-2">
+                            {filteredNavigation.map((item) => (
+                                <Button
+                                    key={item.name}
+                                    variant={isActive(item.href) ? "default" : "ghost"}
+                                    className="w-full justify-start"
+                                    onClick={() => {
+                                        navigate(item.href);
+                                        setSidebarOpen(false);
+                                    }}
+                                >
+                                    <item.icon className="w-4 h-4 mr-2" />
+                                    {item.name}
+                                </Button>
+                            ))}
+                        </nav>
+                    </div>
+                </SheetContent>
+            </Sheet>
+
+            {/* Desktop sidebar */}
+            <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-80 lg:flex-col">
+                <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-border bg-card px-6 pb-4">
+                    <div className="flex h-16 shrink-0 items-center">
+                        <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                                <span className="text-primary-foreground font-bold text-lg">P</span>
+                            </div>
+                            <span className="font-bold text-xl">Premium POS</span>
+                        </div>
+                    </div>
+                    
+                    <nav className="flex flex-1 flex-col">
+                        <ul role="list" className="flex flex-1 flex-col gap-y-7">
+                            <li>
+                                <ul role="list" className="-mx-2 space-y-1">
+                                    {filteredNavigation.map((item) => (
+                                        <li key={item.name}>
+                                            <Button
+                                                variant={isActive(item.href) ? "default" : "ghost"}
+                                                className="w-full justify-start"
+                                                onClick={() => navigate(item.href)}
+                                            >
+                                                <item.icon className="w-4 h-4 mr-2" />
+                                                <span>{item.name}</span>
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </li>
+                            
+                            <li className="mt-auto">
+                                <div className="space-y-2">
+                                    <div className="p-3 bg-muted rounded-lg">
+                                        <div className="flex items-center space-x-3">
+                                            <Avatar className="w-8 h-8">
+                                                <AvatarFallback>
+                                                    {user ? getInitials(user.first_name, user.last_name) : "U"}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate">
+                                                    {user?.first_name} {user?.last_name}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground truncate">
+                                                    {user?.role}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center space-x-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={toggleTheme}
+                                            className="flex-1"
+                                        >
+                                            {theme === 'light' ? (
+                                                <Moon className="w-4 h-4" />
+                                            ) : (
+                                                <Sun className="w-4 h-4" />
+                                            )}
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleLogout}
+                                            className="flex-1"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
 
-          {/* User info */}
-          <div className="px-6 py-4 border-b border-border bg-muted/30">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                {user?.first_name.charAt(0)}{user?.last_name.charAt(0)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">
-                  {user?.first_name} {user?.last_name}
-                </p>
-                <p className="text-xs text-muted-foreground">{user?.role}</p>
-              </div>
+            {/* Main content */}
+            <div className="lg:pl-80">
+                {/* Top bar */}
+                <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-background px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+                    <Button
+                        variant="ghost"
+                        className="-m-2.5 p-2.5 lg:hidden"
+                        onClick={() => setSidebarOpen(true)}
+                    >
+                        <Menu className="w-6 h-6" />
+                    </Button>
+
+                    {/* Separator */}
+                    <div className="h-6 w-px bg-border lg:hidden" />
+
+                    <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+                        <div className="relative flex flex-1">
+                            <Search className="pointer-events-none absolute inset-y-0 left-0 flex w-5 h-5 items-center pl-3 text-muted-foreground" />
+                            <Input
+                                className="block h-full w-full border-0 py-0 pl-10 pr-0 text-sm placeholder:text-muted-foreground focus:ring-0"
+                                placeholder="Search..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        
+                        <div className="flex items-center gap-x-4 lg:gap-x-6">
+                            <Button variant="ghost" size="sm">
+                                <Bell className="w-5 h-5" />
+                            </Button>
+                            
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="flex items-center space-x-2">
+                                        <Avatar className="w-8 h-8">
+                                            <AvatarFallback>
+                                                {user ? getInitials(user.first_name, user.last_name) : "U"}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span className="hidden lg:block text-sm font-medium">
+                                            {user?.first_name} {user?.last_name}
+                                        </span>
+                                        <ChevronDown className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => navigate("/profile")}>
+                                        <User className="w-4 h-4 mr-2" />
+                                        Profile
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => navigate("/settings")}>
+                                        <Settings className="w-4 h-4 mr-2" />
+                                        Settings
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={handleLogout}>
+                                        <LogOut className="w-4 h-4 mr-2" />
+                                        Log out
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Page content */}
+                <main className="py-6">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        {children}
+                    </div>
+                </main>
             </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            {filteredNavigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center space-x-3 px-4 py-3 text-sm rounded-lg transition-all duration-200 group ${
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  <item.icon
-                    className={`w-5 h-5 transition-transform duration-200 ${
-                      isActive ? "scale-110" : "group-hover:scale-105"
-                    }`}
-                  />
-                  <span className="font-medium">{item.name}</span>
-                  {isActive && (
-                    <div className="ml-auto w-2 h-2 bg-primary-foreground rounded-full" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Bottom actions */}
-          <div className="p-4 border-t border-border space-y-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className="w-full justify-start"
-            >
-              {theme === "light" ? (
-                <Moon className="w-4 h-4 mr-3" />
-              ) : (
-                <Sun className="w-4 h-4 mr-3" />
-              )}
-              {theme === "light" ? "Dark Mode" : "Light Mode"}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="w-4 h-4 mr-3" />
-              Logout
-            </Button>
-          </div>
         </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 lg:px-8">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-
-            <div className="hidden md:flex items-center space-x-2 bg-muted rounded-lg px-3 py-2 min-w-80">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search products, sales, customers..."
-                className="bg-transparent border-0 outline-none text-sm flex-1 placeholder:text-muted-foreground"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
-            </Button>
-            
-            <div className="hidden sm:flex items-center space-x-2 text-sm">
-              <span className="text-muted-foreground">Store:</span>
-              <span className="font-medium">My Store</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-muted/30">
-          <div className="p-6 lg:p-8">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
-  );
+    );
 }

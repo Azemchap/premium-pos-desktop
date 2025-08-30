@@ -4,3 +4,7 @@ pub mod products;
 pub mod inventory;
 pub mod sales;
 pub mod store;
+pub mod shifts;
+pub mod cash_drawer;
+pub mod receipts;
+pub mod dashboard;
