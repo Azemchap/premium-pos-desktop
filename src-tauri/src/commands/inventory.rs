@@ -20,17 +20,10 @@ pub async fn get_inventory(pool: State<'_, SqlitePool>) -> Result<Vec<InventoryI
         let item = InventoryItem {
             id: row.try_get("id").map_err(|e| e.to_string())?,
             product_id: row.try_get("product_id").map_err(|e| e.to_string())?,
-            product_name: row.try_get("product_name").map_err(|e| e.to_string())?,
-            sku: row.try_get("sku").map_err(|e| e.to_string())?,
-            category: row.try_get("category").map_err(|e| e.to_string())?,
-            current_stock: row.try_get("current_stock").map_err(|e| e.to_string())?,
-            reserved_stock: row.try_get("reserved_stock").map_err(|e| e.to_string())?,
-            available_stock: row.try_get("available_stock").map_err(|e| e.to_string())?,
-            reorder_point: row.try_get("reorder_point").map_err(|e| e.to_string())?,
-            last_stock_take: row.try_get("last_stock_take").ok().flatten(),
-            stock_take_count: row.try_get("stock_take_count").map_err(|e| e.to_string())?,
-            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
-            updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
+            product: row.try_get("product_name").map_err(|e| e.to_string())?,
+            minimum_stock: row.try_get("minimum_stock").map_err(|e| e.to_string())?,
+            maximum_stock: row.try_get("maximum_stock").map_err(|e| e.to_string())?,
+            last_updated: row.try_get("last_updated").map_err(|e| e.to_string())?,
         };
         inventory.push(item);
     }
@@ -58,17 +51,10 @@ pub async fn get_inventory_by_product_id(
         let item = InventoryItem {
             id: row.try_get("id").map_err(|e| e.to_string())?,
             product_id: row.try_get("product_id").map_err(|e| e.to_string())?,
-            product_name: row.try_get("product_name").map_err(|e| e.to_string())?,
-            sku: row.try_get("sku").map_err(|e| e.to_string())?,
-            category: row.try_get("category").map_err(|e| e.to_string())?,
-            current_stock: row.try_get("current_stock").map_err(|e| e.to_string())?,
-            reserved_stock: row.try_get("reserved_stock").map_err(|e| e.to_string())?,
-            available_stock: row.try_get("available_stock").map_err(|e| e.to_string())?,
-            reorder_point: row.try_get("reorder_point").map_err(|e| e.to_string())?,
-            last_stock_take: row.try_get("last_stock_take").ok().flatten(),
-            stock_take_count: row.try_get("stock_take_count").map_err(|e| e.to_string())?,
-            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
-            updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
+            product: row.try_get("product_name").map_err(|e| e.to_string())?,
+            minimum_stock: row.try_get("minimum_stock").map_err(|e| e.to_string())?,
+            maximum_stock: row.try_get("maximum_stock").map_err(|e| e.to_string())?,
+            last_updated: row.try_get("last_updated").map_err(|e| e.to_string())?,
         };
         Ok(Some(item))
     } else {
@@ -86,12 +72,10 @@ pub async fn update_stock(
     // Update inventory
     let result = sqlx::query(
         "UPDATE inventory 
-         SET current_stock = current_stock + ?, 
-             available_stock = available_stock + ?, 
-             updated_at = ? 
+         SET minimum_stock = minimum_stock + ?, 
+             last_updated = ? 
          WHERE product_id = ?"
     )
-    .bind(request.quantity_change)
     .bind(request.quantity_change)
     .bind(chrono::Utc::now().naive_utc())
     .bind(request.product_id)
@@ -105,8 +89,8 @@ pub async fn update_stock(
 
     // Record inventory movement
     let _movement_id = sqlx::query(
-        "INSERT INTO inventory_movements (product_id, quantity_change, movement_type, notes, reference_id, reference_type, user_id, created_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO inventory_movements (product_id, quantity_change, movement_type, notes, reference_id, reference_type, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?)"
     )
     .bind(request.product_id)
     .bind(request.quantity_change)
@@ -114,8 +98,6 @@ pub async fn update_stock(
     .bind(&request.notes)
     .bind(&request.reference_id)
     .bind(&request.reference_type)
-    .bind(&request.user_id)
-    .bind(chrono::Utc::now().naive_utc())
     .execute(&mut *transaction)
     .await
     .map_err(|e| e.to_string())?
@@ -135,8 +117,6 @@ pub async fn create_stock_adjustment(
     pool: State<'_, SqlitePool>,
     request: StockUpdateRequest,
 ) -> Result<InventoryItem, String> {
-    let _pool_ref = pool.inner();
-    
     // This would typically create a stock adjustment record
     // For now, we'll just update the stock
     update_stock(pool, request).await
@@ -149,10 +129,9 @@ pub async fn get_stock_movements(
     limit: Option<i64>,
 ) -> Result<Vec<InventoryMovement>, String> {
     let mut query = String::from(
-        "SELECT im.*, p.name as product_name, p.sku, u.username as user_name 
+        "SELECT im.*, p.name as product_name, p.sku 
          FROM inventory_movements im 
-         JOIN products p ON im.product_id = p.id 
-         LEFT JOIN users u ON im.user_id = u.id"
+         JOIN products p ON im.product_id = p.id"
     );
 
     let mut params: Vec<String> = Vec::new();

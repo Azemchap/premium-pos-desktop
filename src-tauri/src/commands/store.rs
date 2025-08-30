@@ -1,6 +1,6 @@
-use tauri::{command, State};
 use crate::models::{StoreConfig, UpdateStoreConfigRequest};
-use sqlx::{SqlitePool, Row};
+use sqlx::{Row, SqlitePool};
+use tauri::{command, State};
 
 #[tauri::command]
 pub async fn get_store_config(pool: State<'_, SqlitePool>) -> Result<StoreConfig, String> {

@@ -1,6 +1,6 @@
+use crate::models::{CreateProductRequest, Product, ProductSearchRequest};
+use sqlx::{Row, SqlitePool};
 use tauri::{command, State};
-use crate::models::{Product, CreateProductRequest, ProductSearchRequest};
-use sqlx::{SqlitePool, Row};
 
 #[tauri::command]
 pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, String> {
@@ -14,21 +14,15 @@ pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, S
         let product = Product {
             id: row.try_get("id").map_err(|e| e.to_string())?,
             sku: row.try_get("sku").map_err(|e| e.to_string())?,
+            barcode: row.try_get("barcode").ok().flatten(),
             name: row.try_get("name").map_err(|e| e.to_string())?,
             description: row.try_get("description").ok().flatten(),
             category: row.try_get("category").map_err(|e| e.to_string())?,
             subcategory: row.try_get("subcategory").ok().flatten(),
             brand: row.try_get("brand").ok().flatten(),
-            price: row.try_get("price").map_err(|e| e.to_string())?,
-            wholesale_price: row.try_get("wholesale_price").ok().flatten(),
+            unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
+            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
             cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
-            tax_rate: row.try_get("tax_rate").ok().flatten(),
-            is_taxable: row.try_get("is_taxable").map_err(|e| e.to_string())?,
-            weight: row.try_get("weight").ok().flatten(),
-            dimensions: row.try_get("dimensions").ok().flatten(),
-            supplier_info: row.try_get("supplier_info").ok().flatten(),
-            reorder_point: row.try_get("reorder_point").ok().flatten(),
-            barcode: row.try_get("barcode").ok().flatten(),
             is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
             updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
@@ -54,21 +48,15 @@ pub async fn get_product_by_id(
         let product = Product {
             id: row.try_get("id").map_err(|e| e.to_string())?,
             sku: row.try_get("sku").map_err(|e| e.to_string())?,
+            barcode: row.try_get("barcode").ok().flatten(),
             name: row.try_get("name").map_err(|e| e.to_string())?,
             description: row.try_get("description").ok().flatten(),
             category: row.try_get("category").map_err(|e| e.to_string())?,
             subcategory: row.try_get("subcategory").ok().flatten(),
             brand: row.try_get("brand").ok().flatten(),
-            price: row.try_get("price").map_err(|e| e.to_string())?,
-            wholesale_price: row.try_get("wholesale_price").ok().flatten(),
+            unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
+            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
             cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
-            tax_rate: row.try_get("tax_rate").ok().flatten(),
-            is_taxable: row.try_get("is_taxable").map_err(|e| e.to_string())?,
-            weight: row.try_get("weight").ok().flatten(),
-            dimensions: row.try_get("dimensions").ok().flatten(),
-            supplier_info: row.try_get("supplier_info").ok().flatten(),
-            reorder_point: row.try_get("reorder_point").ok().flatten(),
-            barcode: row.try_get("barcode").ok().flatten(),
             is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
             updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
@@ -85,24 +73,18 @@ pub async fn create_product(
     request: CreateProductRequest,
 ) -> Result<Product, String> {
     let product_id = sqlx::query(
-        "INSERT INTO products (sku, name, description, category, subcategory, brand, price, wholesale_price, cost_price, tax_rate, is_taxable, weight, dimensions, supplier_info, reorder_point, barcode, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
+        "INSERT INTO products (sku, barcode, name, description, category, subcategory, brand, unit_of_measure, selling_price, cost_price, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
     )
     .bind(&request.sku)
+    .bind(&request.barcode)
     .bind(&request.name)
     .bind(&request.description)
     .bind(&request.category)
     .bind(&request.subcategory)
     .bind(&request.brand)
-    .bind(request.price)
-    .bind(&request.wholesale_price)
+    .bind(&request.unit_of_measure)
+    .bind(request.selling_price)
     .bind(request.cost_price)
-    .bind(&request.tax_rate)
-    .bind(request.is_taxable)
-    .bind(&request.weight)
-    .bind(&request.dimensions)
-    .bind(&request.supplier_info)
-    .bind(&request.reorder_point)
-    .bind(&request.barcode)
     .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?
@@ -111,21 +93,15 @@ pub async fn create_product(
     let product = Product {
         id: product_id,
         sku: request.sku,
+        barcode: request.barcode,
         name: request.name,
         description: request.description,
         category: request.category,
         subcategory: request.subcategory,
         brand: request.brand,
-        price: request.price,
-        wholesale_price: request.wholesale_price,
+        unit_of_measure: request.unit_of_measure,
+        selling_price: request.selling_price,
         cost_price: request.cost_price,
-        tax_rate: request.tax_rate,
-        is_taxable: request.is_taxable,
-        weight: request.weight,
-        dimensions: request.dimensions,
-        supplier_info: request.supplier_info,
-        reorder_point: request.reorder_point,
-        barcode: request.barcode,
         is_active: true,
         created_at: chrono::Utc::now().naive_utc(),
         updated_at: chrono::Utc::now().naive_utc(),
@@ -141,24 +117,18 @@ pub async fn update_product(
     request: CreateProductRequest,
 ) -> Result<Product, String> {
     sqlx::query(
-        "UPDATE products SET sku = ?, name = ?, description = ?, category = ?, subcategory = ?, brand = ?, price = ?, wholesale_price = ?, cost_price = ?, tax_rate = ?, is_taxable = ?, weight = ?, dimensions = ?, supplier_info = ?, reorder_point = ?, barcode = ?, updated_at = ? WHERE id = ?"
+        "UPDATE products SET sku = ?, barcode = ?, name = ?, description = ?, category = ?, subcategory = ?, brand = ?, unit_of_measure = ?, selling_price = ?, cost_price = ?, updated_at = ? WHERE id = ?"
     )
     .bind(&request.sku)
+    .bind(&request.barcode)
     .bind(&request.name)
     .bind(&request.description)
     .bind(&request.category)
     .bind(&request.subcategory)
     .bind(&request.brand)
-    .bind(request.price)
-    .bind(&request.wholesale_price)
+    .bind(&request.unit_of_measure)
+    .bind(request.selling_price)
     .bind(request.cost_price)
-    .bind(&request.tax_rate)
-    .bind(request.is_taxable)
-    .bind(&request.weight)
-    .bind(&request.dimensions)
-    .bind(&request.supplier_info)
-    .bind(&request.reorder_point)
-    .bind(&request.barcode)
     .bind(chrono::Utc::now().naive_utc())
     .bind(product_id)
     .execute(pool.inner())
@@ -168,21 +138,15 @@ pub async fn update_product(
     let product = Product {
         id: product_id,
         sku: request.sku,
+        barcode: request.barcode,
         name: request.name,
         description: request.description,
         category: request.category,
         subcategory: request.subcategory,
         brand: request.brand,
-        price: request.price,
-        wholesale_price: request.wholesale_price,
+        unit_of_measure: request.unit_of_measure,
+        selling_price: request.selling_price,
         cost_price: request.cost_price,
-        tax_rate: request.tax_rate,
-        is_taxable: request.is_taxable,
-        weight: request.weight,
-        dimensions: request.dimensions,
-        supplier_info: request.supplier_info,
-        reorder_point: request.reorder_point,
-        barcode: request.barcode,
         is_active: true,
         created_at: chrono::Utc::now().naive_utc(),
         updated_at: chrono::Utc::now().naive_utc(),
@@ -192,10 +156,7 @@ pub async fn update_product(
 }
 
 #[tauri::command]
-pub async fn delete_product(
-    pool: State<'_, SqlitePool>,
-    product_id: i64,
-) -> Result<bool, String> {
+pub async fn delete_product(pool: State<'_, SqlitePool>, product_id: i64) -> Result<bool, String> {
     let result = sqlx::query("UPDATE products SET is_active = 0 WHERE id = ?")
         .bind(product_id)
         .execute(pool.inner())
@@ -213,11 +174,18 @@ pub async fn search_products(
     let mut query = String::from("SELECT * FROM products WHERE is_active = 1");
     let mut params: Vec<String> = Vec::new();
 
-    if let Some(search_term) = &request.search_term {
-        if !search_term.is_empty() {
-            query.push_str(" AND (name LIKE ? OR sku LIKE ? OR description LIKE ? OR category LIKE ?)");
-            let like_term = format!("%{}%", search_term);
-            params.extend(vec![like_term.clone(), like_term.clone(), like_term.clone(), like_term]);
+    if let Some(query_term) = &request.query {
+        if !query_term.is_empty() {
+            query.push_str(
+                " AND (name LIKE ? OR sku LIKE ? OR description LIKE ? OR category LIKE ?)",
+            );
+            let like_term = format!("%{}%", query_term);
+            params.extend(vec![
+                like_term.clone(),
+                like_term.clone(),
+                like_term.clone(),
+                like_term,
+            ]);
         }
     }
 
@@ -233,16 +201,6 @@ pub async fn search_products(
             query.push_str(" AND brand = ?");
             params.push(brand.clone());
         }
-    }
-
-    if let Some(min_price) = request.min_price {
-        query.push_str(" AND price >= ?");
-        params.push(min_price.to_string());
-    }
-
-    if let Some(max_price) = request.max_price {
-        query.push_str(" AND price <= ?");
-        params.push(max_price.to_string());
     }
 
     query.push_str(" ORDER BY name");
@@ -262,21 +220,15 @@ pub async fn search_products(
         let product = Product {
             id: row.try_get("id").map_err(|e| e.to_string())?,
             sku: row.try_get("sku").map_err(|e| e.to_string())?,
+            barcode: row.try_get("barcode").ok().flatten(),
             name: row.try_get("name").map_err(|e| e.to_string())?,
             description: row.try_get("description").ok().flatten(),
             category: row.try_get("category").map_err(|e| e.to_string())?,
             subcategory: row.try_get("subcategory").ok().flatten(),
             brand: row.try_get("brand").ok().flatten(),
-            price: row.try_get("price").map_err(|e| e.to_string())?,
-            wholesale_price: row.try_get("wholesale_price").ok().flatten(),
+            unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
+            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
             cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
-            tax_rate: row.try_get("tax_rate").ok().flatten(),
-            is_taxable: row.try_get("is_taxable").map_err(|e| e.to_string())?,
-            weight: row.try_get("weight").ok().flatten(),
-            dimensions: row.try_get("dimensions").ok().flatten(),
-            supplier_info: row.try_get("supplier_info").ok().flatten(),
-            reorder_point: row.try_get("reorder_point").ok().flatten(),
-            barcode: row.try_get("barcode").ok().flatten(),
             is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
             updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,

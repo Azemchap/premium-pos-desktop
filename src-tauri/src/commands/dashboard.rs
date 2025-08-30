@@ -53,7 +53,7 @@ pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, St
 
     // Low stock items
     let low_stock_result = sqlx::query(
-        "SELECT COUNT(*) as count FROM inventory i JOIN products p ON i.product_id = p.id WHERE i.current_stock <= i.reorder_point AND p.is_active = 1"
+        "SELECT COUNT(*) as count FROM inventory i JOIN products p ON i.product_id = p.id WHERE i.minimum_stock <= i.current_stock AND p.is_active = 1"
     )
     .fetch_one(pool.inner())
     .await
@@ -63,11 +63,12 @@ pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, St
 
     let stats = DashboardStats {
         today_sales,
-        today_transactions,
+        today_transactions: today_transactions.try_into().unwrap(),
         week_sales,
         month_sales,
-        total_products,
-        low_stock_items,
+        total_products: total_products.try_into().unwrap(),
+        low_stock_items: low_stock_items.try_into().unwrap(),
+        average_transaction_value: if today_transactions > 0 { today_sales / today_transactions as f64 } else { 0.0 },
     };
 
     Ok(stats)
