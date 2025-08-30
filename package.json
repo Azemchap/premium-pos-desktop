@@ -6,10 +6,16 @@
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
+        "build:web": "tsc && vite build --mode web",
         "preview": "vite preview",
+        "preview:web": "vite preview --mode web",
         "tauri": "tauri",
         "tauri:dev": "tauri dev",
-        "tauri:build": "tauri build"
+        "tauri:build": "tauri build",
+        "build:all": "pnpm build && pnpm tauri build",
+        "build:windows": "pnpm build && pnpm tauri build --target x86_64-pc-windows-msvc",
+        "build:linux": "pnpm build && pnpm tauri build --target x86_64-unknown-linux-gnu",
+        "build:macos": "pnpm build && pnpm tauri build --target x86_64-apple-darwin"
     },
     "dependencies": {
         "@hookform/resolvers": "^3.10.0",
