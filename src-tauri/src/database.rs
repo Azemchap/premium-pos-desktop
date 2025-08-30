@@ -1,5 +1,9 @@
 
-use tauri_plugin_sql::{Migration, MigrationKind};
+pub struct Migration {
+    pub version: u32,
+    pub description: &'static str,
+    pub sql: &'static str,
+}
 
 pub fn get_migrations() -> Vec<Migration> {
     vec![
@@ -250,7 +254,6 @@ pub fn get_migrations() -> Vec<Migration> {
                 ('Default Sale Receipt', 'sale', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nSALE #{{sale_number}}\nDate: {{sale_date}}\nCashier: {{cashier_name}}\n\n{{items}}\n\nSubtotal: {{subtotal}}\nTax: {{tax_amount}}\nTotal: {{total_amount}}\n\n{{receipt_footer}}', 1, 80, 12),
                 ('Default Return Receipt', 'return', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nRETURN #{{return_number}}\nDate: {{return_date}}\nProcessed by: {{user_name}}\n\n{{items}}\n\nTotal Refund: {{total_amount}}\n\n{{receipt_footer}}', 1, 80, 12);
             "#,
-            kind: MigrationKind::Up,
         }
     ]
 }

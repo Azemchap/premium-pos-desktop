@@ -1,11 +1,9 @@
 use crate::models::{CreateProductRequest, Product, ProductSearchRequest};
 use sqlx::{Row, SqlitePool};
-use tauri::{command, State};
 
-#[tauri::command]
-pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, String> {
+pub async fn get_products(pool: &SqlitePool) -> Result<Vec<Product>, String> {
     let rows = sqlx::query("SELECT * FROM products WHERE is_active = 1 ORDER BY name")
-        .fetch_all(pool.inner())
+        .fetch_all(pool)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -17,13 +15,20 @@ pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, S
             barcode: row.try_get("barcode").ok().flatten(),
             name: row.try_get("name").map_err(|e| e.to_string())?,
             description: row.try_get("description").ok().flatten(),
-            category: row.try_get("category").map_err(|e| e.to_string())?,
+            category: row.try_get("category").ok().flatten(),
             subcategory: row.try_get("subcategory").ok().flatten(),
             brand: row.try_get("brand").ok().flatten(),
             unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
-            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
             cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
+            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
+            wholesale_price: row.try_get("wholesale_price").map_err(|e| e.to_string())?,
+            tax_rate: row.try_get("tax_rate").map_err(|e| e.to_string())?,
             is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
+            is_taxable: row.try_get("is_taxable").map_err(|e| e.to_string())?,
+            weight: row.try_get("weight").map_err(|e| e.to_string())?,
+            dimensions: row.try_get("dimensions").ok().flatten(),
+            supplier_info: row.try_get("supplier_info").ok().flatten(),
+            reorder_point: row.try_get("reorder_point").map_err(|e| e.to_string())?,
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
             updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
         };
@@ -33,14 +38,13 @@ pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, S
     Ok(products)
 }
 
-#[tauri::command]
 pub async fn get_product_by_id(
-    pool: State<'_, SqlitePool>,
+    pool: &SqlitePool,
     product_id: i64,
 ) -> Result<Option<Product>, String> {
     let row = sqlx::query("SELECT * FROM products WHERE id = ? AND is_active = 1")
         .bind(product_id)
-        .fetch_optional(pool.inner())
+        .fetch_optional(pool)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -51,13 +55,20 @@ pub async fn get_product_by_id(
             barcode: row.try_get("barcode").ok().flatten(),
             name: row.try_get("name").map_err(|e| e.to_string())?,
             description: row.try_get("description").ok().flatten(),
-            category: row.try_get("category").map_err(|e| e.to_string())?,
+            category: row.try_get("category").ok().flatten(),
             subcategory: row.try_get("subcategory").ok().flatten(),
             brand: row.try_get("brand").ok().flatten(),
             unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
-            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
             cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
+            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
+            wholesale_price: row.try_get("wholesale_price").map_err(|e| e.to_string())?,
+            tax_rate: row.try_get("tax_rate").map_err(|e| e.to_string())?,
             is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
+            is_taxable: row.try_get("is_taxable").map_err(|e| e.to_string())?,
+            weight: row.try_get("weight").map_err(|e| e.to_string())?,
+            dimensions: row.try_get("dimensions").ok().flatten(),
+            supplier_info: row.try_get("supplier_info").ok().flatten(),
+            reorder_point: row.try_get("reorder_point").map_err(|e| e.to_string())?,
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
             updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
         };
@@ -67,13 +78,12 @@ pub async fn get_product_by_id(
     }
 }
 
-#[tauri::command]
 pub async fn create_product(
-    pool: State<'_, SqlitePool>,
+    pool: &SqlitePool,
     request: CreateProductRequest,
 ) -> Result<Product, String> {
     let product_id = sqlx::query(
-        "INSERT INTO products (sku, barcode, name, description, category, subcategory, brand, unit_of_measure, selling_price, cost_price, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
+        "INSERT INTO products (sku, barcode, name, description, category, subcategory, brand, unit_of_measure, cost_price, selling_price, wholesale_price, tax_rate, is_active, is_taxable, weight, dimensions, supplier_info, reorder_point, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&request.sku)
     .bind(&request.barcode)
@@ -83,9 +93,18 @@ pub async fn create_product(
     .bind(&request.subcategory)
     .bind(&request.brand)
     .bind(&request.unit_of_measure)
-    .bind(request.selling_price)
     .bind(request.cost_price)
-    .execute(pool.inner())
+    .bind(request.selling_price)
+    .bind(request.wholesale_price)
+    .bind(request.tax_rate)
+    .bind(request.is_taxable)
+    .bind(request.weight)
+    .bind(&request.dimensions)
+    .bind(&request.supplier_info)
+    .bind(request.reorder_point)
+    .bind(chrono::Utc::now().naive_utc().to_string())
+    .bind(chrono::Utc::now().naive_utc().to_string())
+    .execute(pool)
     .await
     .map_err(|e| e.to_string())?
     .last_insert_rowid();
@@ -100,24 +119,30 @@ pub async fn create_product(
         subcategory: request.subcategory,
         brand: request.brand,
         unit_of_measure: request.unit_of_measure,
-        selling_price: request.selling_price,
         cost_price: request.cost_price,
+        selling_price: request.selling_price,
+        wholesale_price: request.wholesale_price,
+        tax_rate: request.tax_rate,
         is_active: true,
-        created_at: chrono::Utc::now().naive_utc(),
-        updated_at: chrono::Utc::now().naive_utc(),
+        is_taxable: request.is_taxable,
+        weight: request.weight,
+        dimensions: request.dimensions,
+        supplier_info: request.supplier_info,
+        reorder_point: request.reorder_point,
+        created_at: chrono::Utc::now().naive_utc().to_string(),
+        updated_at: chrono::Utc::now().naive_utc().to_string(),
     };
 
     Ok(product)
 }
 
-#[tauri::command]
 pub async fn update_product(
-    pool: State<'_, SqlitePool>,
+    pool: &SqlitePool,
     product_id: i64,
     request: CreateProductRequest,
 ) -> Result<Product, String> {
     sqlx::query(
-        "UPDATE products SET sku = ?, barcode = ?, name = ?, description = ?, category = ?, subcategory = ?, brand = ?, unit_of_measure = ?, selling_price = ?, cost_price = ?, updated_at = ? WHERE id = ?"
+        "UPDATE products SET sku = ?, barcode = ?, name = ?, description = ?, category = ?, subcategory = ?, brand = ?, unit_of_measure = ?, cost_price = ?, selling_price = ?, wholesale_price = ?, tax_rate = ?, is_taxable = ?, weight = ?, dimensions = ?, supplier_info = ?, reorder_point = ?, updated_at = ? WHERE id = ?"
     )
     .bind(&request.sku)
     .bind(&request.barcode)
@@ -127,11 +152,18 @@ pub async fn update_product(
     .bind(&request.subcategory)
     .bind(&request.brand)
     .bind(&request.unit_of_measure)
-    .bind(request.selling_price)
     .bind(request.cost_price)
-    .bind(chrono::Utc::now().naive_utc())
+    .bind(request.selling_price)
+    .bind(request.wholesale_price)
+    .bind(request.tax_rate)
+    .bind(request.is_taxable)
+    .bind(request.weight)
+    .bind(&request.dimensions)
+    .bind(&request.supplier_info)
+    .bind(request.reorder_point)
+    .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(product_id)
-    .execute(pool.inner())
+    .execute(pool)
     .await
     .map_err(|e| e.to_string())?;
 
@@ -145,30 +177,35 @@ pub async fn update_product(
         subcategory: request.subcategory,
         brand: request.brand,
         unit_of_measure: request.unit_of_measure,
-        selling_price: request.selling_price,
         cost_price: request.cost_price,
+        selling_price: request.selling_price,
+        wholesale_price: request.wholesale_price,
+        tax_rate: request.tax_rate,
         is_active: true,
-        created_at: chrono::Utc::now().naive_utc(),
-        updated_at: chrono::Utc::now().naive_utc(),
+        is_taxable: request.is_taxable,
+        weight: request.weight,
+        dimensions: request.dimensions,
+        supplier_info: request.supplier_info,
+        reorder_point: request.reorder_point,
+        created_at: chrono::Utc::now().naive_utc().to_string(),
+        updated_at: chrono::Utc::now().naive_utc().to_string(),
     };
 
     Ok(product)
 }
 
-#[tauri::command]
-pub async fn delete_product(pool: State<'_, SqlitePool>, product_id: i64) -> Result<bool, String> {
+pub async fn delete_product(pool: &SqlitePool, product_id: i64) -> Result<bool, String> {
     let result = sqlx::query("UPDATE products SET is_active = 0 WHERE id = ?")
         .bind(product_id)
-        .execute(pool.inner())
+        .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
 
     Ok(result.rows_affected() > 0)
 }
 
-#[tauri::command]
 pub async fn search_products(
-    pool: State<'_, SqlitePool>,
+    pool: &SqlitePool,
     request: ProductSearchRequest,
 ) -> Result<Vec<Product>, String> {
     let mut query = String::from("SELECT * FROM products WHERE is_active = 1");
@@ -211,7 +248,7 @@ pub async fn search_products(
     }
 
     let rows = sql_query
-        .fetch_all(pool.inner())
+        .fetch_all(pool)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -223,13 +260,20 @@ pub async fn search_products(
             barcode: row.try_get("barcode").ok().flatten(),
             name: row.try_get("name").map_err(|e| e.to_string())?,
             description: row.try_get("description").ok().flatten(),
-            category: row.try_get("category").map_err(|e| e.to_string())?,
+            category: row.try_get("category").ok().flatten(),
             subcategory: row.try_get("subcategory").ok().flatten(),
             brand: row.try_get("brand").ok().flatten(),
             unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
-            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
             cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
+            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
+            wholesale_price: row.try_get("wholesale_price").map_err(|e| e.to_string())?,
+            tax_rate: row.try_get("tax_rate").map_err(|e| e.to_string())?,
             is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
+            is_taxable: row.try_get("is_taxable").map_err(|e| e.to_string())?,
+            weight: row.try_get("weight").map_err(|e| e.to_string())?,
+            dimensions: row.try_get("dimensions").ok().flatten(),
+            supplier_info: row.try_get("supplier_info").ok().flatten(),
+            reorder_point: row.try_get("reorder_point").map_err(|e| e.to_string())?,
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
             updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
         };

@@ -1,21 +1,20 @@
-use tauri::{command, State};
 use crate::models::{CashDrawerTransaction, CreateCashDrawerTransactionRequest};
 use sqlx::{SqlitePool, Row};
 
-#[tauri::command]
 pub async fn add_cash_transaction(
-    pool: State<'_, SqlitePool>,
+    pool: &SqlitePool,
     request: CreateCashDrawerTransactionRequest,
 ) -> Result<CashDrawerTransaction, String> {
     let transaction_id = sqlx::query(
-        "INSERT INTO cash_drawer_transactions (shift_id, transaction_type, amount, reason, created_at) VALUES (?, ?, ?, ?, ?)"
+        "INSERT INTO cash_drawer_transactions (shift_id, transaction_type, amount, reason, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)"
     )
     .bind(&request.shift_id)
     .bind(&request.transaction_type)
     .bind(request.amount)
     .bind(&request.reason)
-    .bind(chrono::Utc::now().naive_utc())
-    .execute(pool.inner())
+    .bind(1) // Default user_id, should be passed from request
+    .bind(chrono::Utc::now().naive_utc().to_string())
+    .execute(pool)
     .await
     .map_err(|e| e.to_string())?
     .last_insert_rowid();
@@ -26,19 +25,20 @@ pub async fn add_cash_transaction(
         transaction_type: request.transaction_type,
         amount: request.amount,
         reason: request.reason,
+        user_id: 1, // Default user_id
+        created_at: chrono::Utc::now().naive_utc().to_string(),
     };
 
     Ok(transaction)
 }
 
-#[tauri::command]
 pub async fn get_cash_drawer_balance(
-    pool: State<'_, SqlitePool>,
+    pool: &SqlitePool,
     shift_id: i64,
 ) -> Result<f64, String> {
     let shift_row = sqlx::query("SELECT opening_amount FROM shifts WHERE id = ?")
         .bind(shift_id)
-        .fetch_one(pool.inner())
+        .fetch_one(pool)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -48,7 +48,7 @@ pub async fn get_cash_drawer_balance(
         "SELECT SUM(CASE WHEN transaction_type = 'add' THEN amount ELSE -amount END) as net_change FROM cash_drawer_transactions WHERE shift_id = ?"
     )
     .bind(shift_id)
-    .fetch_one(pool.inner())
+    .fetch_one(pool)
     .await
     .map_err(|e| e.to_string())?;
 
@@ -57,9 +57,8 @@ pub async fn get_cash_drawer_balance(
     Ok(opening_amount + net_change)
 }
 
-#[tauri::command]
 pub async fn get_transaction_history(
-    pool: State<'_, SqlitePool>,
+    pool: &SqlitePool,
     shift_id: Option<i64>,
     limit: Option<i64>,
 ) -> Result<Vec<CashDrawerTransaction>, String> {
@@ -83,7 +82,7 @@ pub async fn get_transaction_history(
     }
 
     let rows = sql_query
-        .fetch_all(pool.inner())
+        .fetch_all(pool)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -94,7 +93,9 @@ pub async fn get_transaction_history(
             shift_id: row.try_get("shift_id").map_err(|e| e.to_string())?,
             transaction_type: row.try_get("transaction_type").map_err(|e| e.to_string())?,
             amount: row.try_get("amount").map_err(|e| e.to_string())?,
-            reason: row.try_get("reason").map_err(|e| e.to_string())?,
+            reason: row.try_get("reason").ok().flatten(),
+            user_id: row.try_get("user_id").map_err(|e| e.to_string())?,
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
         };
         transactions.push(transaction);
     }
