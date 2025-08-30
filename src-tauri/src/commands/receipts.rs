@@ -1,11 +1,13 @@
+use tauri::{command, State};
 use crate::models::{ReceiptTemplate, CreateReceiptTemplateRequest};
 use sqlx::{SqlitePool, Row};
 
+#[tauri::command]
 pub async fn get_receipt_templates(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
 ) -> Result<Vec<ReceiptTemplate>, String> {
     let rows = sqlx::query("SELECT * FROM receipt_templates ORDER BY name")
-        .fetch_all(pool)
+        .fetch_all(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 
@@ -29,8 +31,9 @@ pub async fn get_receipt_templates(
     Ok(templates)
 }
 
+#[tauri::command]
 pub async fn create_receipt_template(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     request: CreateReceiptTemplateRequest,
 ) -> Result<ReceiptTemplate, String> {
     let template_id = sqlx::query(
@@ -45,7 +48,7 @@ pub async fn create_receipt_template(
     .bind(request.font_size)
     .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(chrono::Utc::now().naive_utc().to_string())
-    .execute(pool)
+    .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?
     .last_insert_rowid();
@@ -66,8 +69,9 @@ pub async fn create_receipt_template(
     Ok(template)
 }
 
+#[tauri::command]
 pub async fn update_receipt_template(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     template_id: i64,
     request: CreateReceiptTemplateRequest,
 ) -> Result<ReceiptTemplate, String> {
@@ -83,7 +87,7 @@ pub async fn update_receipt_template(
     .bind(request.font_size)
     .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(template_id)
-    .execute(pool)
+    .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -103,24 +107,26 @@ pub async fn update_receipt_template(
     Ok(template)
 }
 
+#[tauri::command]
 pub async fn delete_receipt_template(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     template_id: i64,
 ) -> Result<bool, String> {
     let result = sqlx::query("DELETE FROM receipt_templates WHERE id = ?")
         .bind(template_id)
-        .execute(pool)
+        .execute(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 
     Ok(result.rows_affected() > 0)
 }
 
+#[tauri::command]
 pub async fn get_default_template(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
 ) -> Result<Option<ReceiptTemplate>, String> {
     let row = sqlx::query("SELECT * FROM receipt_templates WHERE is_default = 1 LIMIT 1")
-        .fetch_optional(pool)
+        .fetch_optional(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 

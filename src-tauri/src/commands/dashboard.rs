@@ -1,8 +1,10 @@
+use tauri::{command, State};
 use sqlx::{SqlitePool, Row};
 use chrono::Datelike;
 
+#[tauri::command]
 pub async fn get_dashboard_stats(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
 ) -> Result<serde_json::Value, String> {
     let today = chrono::Utc::now().date_naive();
     let start_of_month = chrono::NaiveDate::from_ymd_opt(today.year(), today.month(), 1)
@@ -17,7 +19,7 @@ pub async fn get_dashboard_stats(
         "SELECT COALESCE(SUM(total_amount), 0.0) FROM sales WHERE DATE(created_at) = ?"
     )
     .bind(today.to_string())
-    .fetch_one(pool)
+    .fetch_one(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -26,7 +28,7 @@ pub async fn get_dashboard_stats(
         "SELECT COUNT(*) FROM sales WHERE DATE(created_at) = ?"
     )
     .bind(today.to_string())
-    .fetch_one(pool)
+    .fetch_one(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -36,7 +38,7 @@ pub async fn get_dashboard_stats(
     )
     .bind(start_of_month.to_string())
     .bind(end_of_month.to_string())
-    .fetch_one(pool)
+    .fetch_one(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -46,7 +48,7 @@ pub async fn get_dashboard_stats(
     )
     .bind(start_of_month.to_string())
     .bind(end_of_month.to_string())
-    .fetch_one(pool)
+    .fetch_one(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -54,13 +56,13 @@ pub async fn get_dashboard_stats(
     let low_stock_products: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM inventory WHERE current_stock <= reorder_point"
     )
-    .fetch_one(pool)
+    .fetch_one(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
     // Total products
     let total_products: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM products")
-        .fetch_one(pool)
+        .fetch_one(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 
@@ -77,8 +79,9 @@ pub async fn get_dashboard_stats(
     Ok(stats)
 }
 
+#[tauri::command]
 pub async fn get_recent_sales(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     limit: i64,
 ) -> Result<serde_json::Value, String> {
     let rows = sqlx::query(
@@ -87,7 +90,7 @@ pub async fn get_recent_sales(
          ORDER BY s.created_at DESC LIMIT ?"
     )
     .bind(limit)
-    .fetch_all(pool)
+    .fetch_all(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -107,8 +110,9 @@ pub async fn get_recent_sales(
     Ok(serde_json::json!({ "sales": sales }))
 }
 
+#[tauri::command]
 pub async fn get_top_products(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     limit: i64,
 ) -> Result<serde_json::Value, String> {
     let rows = sqlx::query(
@@ -120,7 +124,7 @@ pub async fn get_top_products(
          LIMIT ?"
     )
     .bind(limit)
-    .fetch_all(pool)
+    .fetch_all(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 

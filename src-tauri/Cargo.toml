@@ -1,20 +1,28 @@
 [package]
 name = "premium-pos"
 version = "0.1.0"
-description = "Premium POS and Inventory Management System"
-authors = ["you"]
-license = ""
-repository = ""
-default-run = "premium-pos"
 edition = "2021"
-rust-version = "1.60"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde_json = "1.0"
+tauri = "2.0"
+tauri-plugin-sql = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 tokio = { version = "1.0", features = ["full"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid"] }
+chrono = { version = "0.4", features = ["serde"] }
 bcrypt = "0.15"
 uuid = { version = "1.0", features = ["v4"] }
-sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls"] }
-directories = "4"
-chrono = { version = "0.4.31", features = ["serde"] }
+directories = "5.0"
+log = "0.4"
+env_logger = "0.10"
+
+[build-dependencies]
+tauri-build = "2.0"
+
+[features]
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]

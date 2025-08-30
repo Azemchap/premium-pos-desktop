@@ -1,15 +1,17 @@
+use tauri::{command, State};
 use crate::models::{InventoryItem, StockUpdateRequest, InventoryMovement};
 use sqlx::{SqlitePool, Row};
 
-pub async fn get_inventory(pool: &SqlitePool) -> Result<Vec<InventoryItem>, String> {
+#[tauri::command]
+pub async fn get_inventory(
+    pool: State<'_, SqlitePool>,
+) -> Result<Vec<InventoryItem>, String> {
     let rows = sqlx::query(
-        "SELECT i.*, p.name as product_name, p.sku, p.category 
-         FROM inventory i 
+        "SELECT i.*, p.name as product_name, p.sku FROM inventory i 
          JOIN products p ON i.product_id = p.id 
-         WHERE p.is_active = 1 
          ORDER BY p.name"
     )
-    .fetch_all(pool)
+    .fetch_all(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -26,7 +28,7 @@ pub async fn get_inventory(pool: &SqlitePool) -> Result<Vec<InventoryItem>, Stri
             last_updated: row.try_get("last_updated").map_err(|e| e.to_string())?,
             last_stock_take: row.try_get("last_stock_take").ok().flatten(),
             stock_take_count: row.try_get("stock_take_count").map_err(|e| e.to_string())?,
-            product: None, // We'll need to fetch this separately if needed
+            product: None, // We'll set this separately if needed
         };
         inventory.push(item);
     }
@@ -34,18 +36,18 @@ pub async fn get_inventory(pool: &SqlitePool) -> Result<Vec<InventoryItem>, Stri
     Ok(inventory)
 }
 
+#[tauri::command]
 pub async fn get_inventory_by_product_id(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     product_id: i64,
 ) -> Result<Option<InventoryItem>, String> {
     let row = sqlx::query(
-        "SELECT i.*, p.name as product_name, p.sku, p.category 
-         FROM inventory i 
+        "SELECT i.*, p.name as product_name, p.sku FROM inventory i 
          JOIN products p ON i.product_id = p.id 
-         WHERE i.product_id = ? AND p.is_active = 1"
+         WHERE i.product_id = ?"
     )
     .bind(product_id)
-    .fetch_optional(pool)
+    .fetch_optional(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -61,7 +63,7 @@ pub async fn get_inventory_by_product_id(
             last_updated: row.try_get("last_updated").map_err(|e| e.to_string())?,
             last_stock_take: row.try_get("last_stock_take").ok().flatten(),
             stock_take_count: row.try_get("stock_take_count").map_err(|e| e.to_string())?,
-            product: None, // We'll need to fetch this separately if needed
+            product: None, // We'll set this separately if needed
         };
         Ok(Some(item))
     } else {
@@ -69,83 +71,134 @@ pub async fn get_inventory_by_product_id(
     }
 }
 
+#[tauri::command]
 pub async fn update_stock(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
+    product_id: i64,
     request: StockUpdateRequest,
 ) -> Result<InventoryItem, String> {
-    let mut transaction = pool.begin().await.map_err(|e| e.to_string())?;
+    // Start a transaction
+    let mut tx = pool.inner().begin().await.map_err(|e| e.to_string())?;
 
     // Update inventory
-    let result = sqlx::query(
-        "UPDATE inventory 
-         SET minimum_stock = minimum_stock + ?, 
-             last_updated = ? 
-         WHERE product_id = ?"
+    sqlx::query(
+        "UPDATE inventory SET current_stock = ?, available_stock = ?, updated_at = ? WHERE product_id = ?"
     )
-    .bind(request.quantity_change)
+    .bind(request.new_stock)
+    .bind(request.new_stock - request.reserved_stock)
     .bind(chrono::Utc::now().naive_utc().to_string())
-    .bind(request.product_id)
-    .execute(&mut *transaction)
+    .bind(product_id)
+    .execute(&mut *tx)
     .await
     .map_err(|e| e.to_string())?;
 
-    if result.rows_affected() == 0 {
-        return Err("Product not found in inventory".to_string());
-    }
-
-    // Record inventory movement
-    let _movement_id = sqlx::query(
-        "INSERT INTO inventory_movements (product_id, quantity_change, movement_type, notes, reference_id, reference_type, created_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)"
+    // Create inventory movement record
+    sqlx::query(
+        "INSERT INTO inventory_movements (product_id, product_name, sku, quantity_change, movement_type, notes, reference_id, reference_type, user_id, user_name, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
-    .bind(request.product_id)
+    .bind(product_id)
+    .bind(&request.product_name)
+    .bind(&request.sku)
     .bind(request.quantity_change)
     .bind(&request.movement_type)
     .bind(&request.notes)
-    .bind(&request.reference_id)
+    .bind(request.reference_id)
     .bind(&request.reference_type)
+    .bind(request.user_id)
+    .bind(&request.user_name)
     .bind(chrono::Utc::now().naive_utc().to_string())
-    .execute(&mut *transaction)
+    .execute(&mut *tx)
     .await
-    .map_err(|e| e.to_string())?
-    .last_insert_rowid();
+    .map_err(|e| e.to_string())?;
 
     // Commit transaction
-    transaction.commit().await.map_err(|e| e.to_string())?;
+    tx.commit().await.map_err(|e| e.to_string())?;
 
     // Return updated inventory item
-    get_inventory_by_product_id(pool, request.product_id)
-        .await?
-        .ok_or("Failed to retrieve updated inventory item".to_string())
+    let row = sqlx::query(
+        "SELECT * FROM inventory WHERE product_id = ?"
+    )
+    .bind(product_id)
+    .fetch_one(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let item = InventoryItem {
+        id: row.try_get("id").map_err(|e| e.to_string())?,
+        product_id: row.try_get("product_id").map_err(|e| e.to_string())?,
+        current_stock: row.try_get("current_stock").map_err(|e| e.to_string())?,
+        minimum_stock: row.try_get("minimum_stock").map_err(|e| e.to_string())?,
+        maximum_stock: row.try_get("maximum_stock").map_err(|e| e.to_string())?,
+        reserved_stock: row.try_get("reserved_stock").map_err(|e| e.to_string())?,
+        available_stock: row.try_get("available_stock").map_err(|e| e.to_string())?,
+        last_updated: row.try_get("last_updated").map_err(|e| e.to_string())?,
+        last_stock_take: row.try_get("last_stock_take").ok().flatten(),
+        stock_take_count: row.try_get("stock_take_count").map_err(|e| e.to_string())?,
+        product: None,
+    };
+
+    Ok(item)
 }
 
+#[tauri::command]
 pub async fn create_stock_adjustment(
-    pool: &SqlitePool,
-    request: StockUpdateRequest,
+    pool: State<'_, SqlitePool>,
+    product_id: i64,
+    adjustment_type: String,
+    quantity: i32,
+    notes: Option<String>,
+    user_id: i64,
+    user_name: String,
 ) -> Result<InventoryItem, String> {
-    // This would typically create a stock adjustment record
-    // For now, we'll just update the stock
-    update_stock(pool, request).await
+    // Get current inventory
+    let current_inventory = get_inventory_by_product_id(pool.clone(), product_id).await?;
+    let current_stock = current_inventory
+        .as_ref()
+        .map(|inv| inv.current_stock)
+        .unwrap_or(0);
+
+    // Calculate new stock
+    let new_stock = match adjustment_type.as_str() {
+        "add" => current_stock + quantity,
+        "subtract" => current_stock - quantity,
+        "set" => quantity,
+        _ => return Err("Invalid adjustment type".to_string()),
+    };
+
+    // Create stock update request
+    let request = StockUpdateRequest {
+        product_id,
+        quantity_change: new_stock - current_stock,
+        movement_type: adjustment_type,
+        notes,
+        reference_id: None,
+        reference_type: None,
+        new_stock,
+        reserved_stock: 0, // This will be updated from inventory
+        product_name: "".to_string(), // Will be fetched
+        sku: "".to_string(), // Will be fetched
+        user_id: Some(user_id),
+        user_name: Some(user_name),
+    };
+
+    update_stock(pool, product_id, request).await
 }
 
+#[tauri::command]
 pub async fn get_stock_movements(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     product_id: Option<i64>,
     limit: Option<i64>,
 ) -> Result<Vec<InventoryMovement>, String> {
-    let mut query = String::from(
-        "SELECT im.*, p.name as product_name, p.sku 
-         FROM inventory_movements im 
-         JOIN products p ON im.product_id = p.id"
-    );
-
+    let mut query = String::from("SELECT * FROM inventory_movements");
     let mut params: Vec<String> = Vec::new();
+
     if let Some(pid) = product_id {
-        query.push_str(" WHERE im.product_id = ?");
+        query.push_str(" WHERE product_id = ?");
         params.push(pid.to_string());
     }
 
-    query.push_str(" ORDER BY im.created_at DESC");
+    query.push_str(" ORDER BY created_at DESC");
 
     if let Some(lim) = limit {
         query.push_str(&format!(" LIMIT {}", lim));
@@ -157,7 +210,7 @@ pub async fn get_stock_movements(
     }
 
     let rows = sql_query
-        .fetch_all(pool)
+        .fetch_all(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 

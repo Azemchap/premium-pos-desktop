@@ -1,11 +1,13 @@
+use tauri::{command, State};
 use crate::models::StoreConfig;
 use sqlx::{SqlitePool, Row};
 
+#[tauri::command]
 pub async fn get_store_config(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
 ) -> Result<StoreConfig, String> {
     let row = sqlx::query("SELECT * FROM store_config LIMIT 1")
-        .fetch_optional(pool)
+        .fetch_optional(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 
@@ -46,8 +48,9 @@ pub async fn get_store_config(
     }
 }
 
+#[tauri::command]
 pub async fn update_store_config(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     config: StoreConfig,
 ) -> Result<StoreConfig, String> {
     sqlx::query(
@@ -65,7 +68,7 @@ pub async fn update_store_config(
     .bind(&config.receipt_footer)
     .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(config.id)
-    .execute(pool)
+    .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 

@@ -1,9 +1,11 @@
+use tauri::{command, State};
 use crate::models::User;
 use sqlx::{SqlitePool, Row};
 use bcrypt::{hash, verify, DEFAULT_COST};
 
+#[tauri::command]
 pub async fn authenticate_user(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     username: &str,
     password: &str,
 ) -> Result<Option<User>, String> {
@@ -11,7 +13,7 @@ pub async fn authenticate_user(
         "SELECT * FROM users WHERE username = ? AND is_active = 1"
     )
     .bind(username)
-    .fetch_optional(pool)
+    .fetch_optional(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -42,15 +44,16 @@ pub async fn authenticate_user(
     }
 }
 
+#[tauri::command]
 pub async fn authenticate_with_pin(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     pin_code: &str,
 ) -> Result<Option<User>, String> {
     let row = sqlx::query(
         "SELECT * FROM users WHERE pin_code = ? AND is_active = 1"
     )
     .bind(pin_code)
-    .fetch_optional(pool)
+    .fetch_optional(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -75,8 +78,9 @@ pub async fn authenticate_with_pin(
     }
 }
 
+#[tauri::command]
 pub async fn update_last_login(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     user_id: i64,
 ) -> Result<(), String> {
     sqlx::query(
@@ -84,15 +88,16 @@ pub async fn update_last_login(
     )
     .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(user_id)
-    .execute(pool)
+    .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
     Ok(())
 }
 
+#[tauri::command]
 pub async fn change_password(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     user_id: i64,
     current_password: &str,
     new_password: &str,
@@ -102,7 +107,7 @@ pub async fn change_password(
         "SELECT password_hash FROM users WHERE id = ?"
     )
     .bind(user_id)
-    .fetch_one(pool)
+    .fetch_one(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -121,15 +126,16 @@ pub async fn change_password(
     .bind(&new_hash)
     .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(user_id)
-    .execute(pool)
+    .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
     Ok(true)
 }
 
+#[tauri::command]
 pub async fn reset_password(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     user_id: i64,
     new_password: &str,
 ) -> Result<(), String> {
@@ -141,7 +147,7 @@ pub async fn reset_password(
     .bind(&new_hash)
     .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(user_id)
-    .execute(pool)
+    .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 

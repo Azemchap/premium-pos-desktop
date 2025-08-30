@@ -113,6 +113,12 @@ pub struct StockUpdateRequest {
     pub notes: Option<String>,
     pub reference_id: Option<i64>,
     pub reference_type: Option<String>,
+    pub new_stock: i32,
+    pub reserved_stock: i32,
+    pub product_name: String,
+    pub sku: String,
+    pub user_id: Option<i64>,
+    pub user_name: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
@@ -157,7 +163,8 @@ pub struct Sale {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateSaleRequest {
-    pub cashier_id: i64, // Add this
+    pub sale_number: String,
+    pub cashier_id: i64,
     pub items: Vec<SaleItemRequest>,
     pub subtotal: f64,
     pub tax_amount: f64,
@@ -168,15 +175,19 @@ pub struct CreateSaleRequest {
     pub customer_phone: Option<String>,
     pub customer_email: Option<String>,
     pub notes: Option<String>,
+    pub shift_id: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SaleItemRequest {
     pub product_id: i64,
+    pub product_name: String,
+    pub sku: String,
     pub quantity: i32,
     pub unit_price: f64,
     pub discount_amount: f64,
     pub line_total: f64,
+    pub total_price: f64,
     pub tax_amount: f64,
     pub cost_price: f64,
 }

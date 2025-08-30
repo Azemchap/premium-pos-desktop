@@ -1,188 +1,157 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod database;
+use log::debug;
+use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
+use std::path::PathBuf;
+
 mod commands;
+mod database;
 mod models;
 
-use database::get_migrations;
-use sqlx::{sqlite::SqlitePoolOptions, SqlitePool, Executor, Row};
-use std::fs::OpenOptions;
-use std::io::Write;
-use directories::ProjectDirs;
-use bcrypt::{hash, verify, DEFAULT_COST};
-
-/// Apply migrations (simple runner splitting statements by ';')
-async fn apply_migrations(pool: &SqlitePool) -> Result<(), String> {
-    let migrations = get_migrations();
-    println!("DEBUG(main): applying {} migration(s)", migrations.len());
-    for mig in migrations {
-        println!(
-            "DEBUG(main): applying migration version {}: {}",
-            mig.version, mig.description
-        );
-
-        for stmt in mig.sql.split(';') {
-            let s = stmt.trim();
-            if s.is_empty() {
-                continue;
-            }
-            println!(
-                "DEBUG(main): executing statement (preview): {}",
-                &s.chars().take(80).collect::<String>()
-            );
-            pool.execute(s)
-                .await
-                .map_err(|e| format!("Migration failed (v{}): {} -- stmt: {}", mig.version, e, s))?;
-        }
-    }
-    println!("DEBUG(main): migrations applied successfully");
-    Ok(())
-}
-
-async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
-    // default admin credentials (development only)
-    let admin_username = "admin";
-    let admin_email = "admin@premiumpos.com";
-    let admin_password = "admin123";
-    let admin_first = "Store";
-    let admin_last = "Admin";
-    let admin_role = "Admin";
-
-    // Check if admin exists
-    match sqlx::query("SELECT id, password_hash FROM users WHERE username = ?1")
-        .bind(admin_username)
-        .fetch_optional(pool)
-        .await
-        .map_err(|e| format!("Failed to query admin user: {}", e))?
-    {
-        None => {
-            // Insert admin with bcrypt hash
-            let pwd_hash = hash(admin_password, DEFAULT_COST)
-                .map_err(|e| format!("bcrypt hash error: {}", e))?;
-            sqlx::query(
-                "INSERT INTO users (username, email, password_hash, first_name, last_name, role, pin_code) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            )
-            .bind(admin_username)
-            .bind(admin_email)
-            .bind(&pwd_hash)
-            .bind(admin_first)
-            .bind(admin_last)
-            .bind(admin_role)
-            .bind("1234") // Default PIN code
-            .execute(pool)
-            .await
-            .map_err(|e| format!("Failed to insert admin user: {}", e))?;
-            println!("DEBUG(main): inserted default admin user");
-        }
-        Some(row) => {
-            // Admin exists; verify password and update if it doesn't match
-            let stored_hash: String = row.try_get("password_hash").map_err(|e| format!("{}", e))?;
-            match verify(admin_password, &stored_hash) {
-                Ok(true) => {
-                    println!("DEBUG(main): admin password already matches desired default");
-                }
-                _ => {
-                    let new_hash = hash(admin_password, DEFAULT_COST)
-                        .map_err(|e| format!("bcrypt hash error: {}", e))?;
-                    sqlx::query("UPDATE users SET password_hash = ?1, updated_at = CURRENT_TIMESTAMP WHERE username = ?2")
-                        .bind(&new_hash)
-                        .bind(admin_username)
-                        .execute(pool)
-                        .await
-                        .map_err(|e| format!("Failed to update admin password: {}", e))?;
-                    println!("DEBUG(main): updated admin password to default");
-                }
-            }
-        }
-    }
-
-    Ok(())
-}
-
 #[tokio::main]
-async fn main() {
-    // Prefer OS app data directory for app data (not the watched src-tauri folder).
-    // Use directories::ProjectDirs to compute a suitable per-user folder.
-    let app_dir = ProjectDirs::from("com", "premiumpos", "Premium POS")
-        .map(|pd| pd.data_dir().to_path_buf())
-        .or_else(|| {
-            // fallback: use current working directory
-            println!("DEBUG(main): ProjectDirs not available; falling back to cwd");
-            std::env::current_dir().ok()
-        })
-        .expect("Failed to determine an application directory");
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+    debug!("Starting Premium POS application...");
 
-    println!("DEBUG(main): resolved app_dir = {:?}", app_dir);
+    // Initialize database
+    let db_path = initialize_database().await?;
+    debug!("Database initialized at: {:?}", db_path);
 
-    // Ensure directory exists
-    if let Err(e) = std::fs::create_dir_all(&app_dir) {
-        panic!("Failed to ensure app dir exists {:?}: {}", app_dir, e);
-    }
+    // Create SQLite connection pool
+    let pool = SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect(&format!("sqlite://{}", db_path.display()))
+        .await?;
+    debug!("Database connection pool created");
 
-    // DB file path: <app_dir>/pos.db
-    let mut db_path = app_dir.clone();
-    db_path.push("pos.db");
+    // Run migrations
+    run_migrations(&pool).await?;
+    debug!("Database migrations completed");
 
-    // Create the file if it does not exist (so SQLite can open it).
+    // Ensure admin user exists
+    ensure_admin_user(&pool).await?;
+    debug!("Admin user ensured");
+
+    // Build Tauri application
+    tauri::Builder::default()
+        .manage(pool)
+        .invoke_handler(tauri::generate_handler![
+            commands::users::get_users,
+            commands::users::create_user,
+            commands::users::update_user,
+            commands::users::delete_user,
+            commands::products::get_products,
+            commands::products::get_product_by_id,
+            commands::products::create_product,
+            commands::products::update_product,
+            commands::products::delete_product,
+            commands::products::search_products,
+            commands::inventory::get_inventory,
+            commands::inventory::get_inventory_by_product_id,
+            commands::inventory::update_stock,
+            commands::inventory::create_stock_adjustment,
+            commands::inventory::get_stock_movements,
+            commands::sales::create_sale,
+            commands::sales::get_sales,
+            commands::sales::get_sale_by_id,
+            commands::sales::process_return,
+            commands::shifts::open_shift,
+            commands::shifts::close_shift,
+            commands::shifts::get_current_shift,
+            commands::shifts::get_shift_history,
+            commands::cash_drawer::add_cash_transaction,
+            commands::cash_drawer::get_cash_drawer_balance,
+            commands::cash_drawer::get_transaction_history,
+            commands::receipts::get_receipt_templates,
+            commands::receipts::create_receipt_template,
+            commands::receipts::update_receipt_template,
+            commands::receipts::delete_receipt_template,
+            commands::receipts::get_default_template,
+            commands::store::get_store_config,
+            commands::store::update_store_config,
+            commands::dashboard::get_dashboard_stats,
+            commands::dashboard::get_recent_sales,
+            commands::dashboard::get_top_products,
+            commands::auth::authenticate_user,
+            commands::auth::authenticate_with_pin,
+            commands::auth::update_last_login,
+            commands::auth::change_password,
+            commands::auth::reset_password,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+
+    Ok(())
+}
+
+async fn initialize_database() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    let app_dir = directories::ProjectDirs::from("com", "premiumpos", "premiumpos")
+        .ok_or("Failed to determine app directory")?
+        .data_local_dir()
+        .to_path_buf();
+
+    std::fs::create_dir_all(&app_dir)?;
+    debug!("resolved app_dir = {:?}", app_dir);
+
+    let db_path = app_dir.join("pos.db");
+    let db_path_absolute = db_path.canonicalize().unwrap_or(db_path.clone());
+    debug!("final db absolute path = {:?}", db_path_absolute);
+
+    // Create database file if it doesn't exist
     if !db_path.exists() {
-        match OpenOptions::new().create(true).write(true).open(&db_path) {
-            Ok(mut f) => {
-                if let Err(e) = f.write_all(b"") {
-                    eprintln!("WARN: failed to write to newly created db file {:?}: {}", db_path, e);
-                }
-            }
-            Err(e) => {
-                panic!("Failed to create database file {:?}: {}", db_path, e);
-            }
-        }
+        std::fs::File::create(&db_path)?;
+        debug!("Created new database file at {:?}", db_path);
     }
 
-    // canonicalize and normalize path (strip Windows verbatim prefix if present)
-    let abs_db = db_path.canonicalize().unwrap_or_else(|_| db_path.clone());
-    let mut conn_path = abs_db.to_string_lossy().to_string();
+    debug!("sqlx connection string = sqlite://{}", db_path_absolute.display());
+    Ok(db_path_absolute)
+}
 
-    if cfg!(windows) {
-        const VERBATIM_PREFIX: &str = r"\\?\";
-        if conn_path.starts_with(VERBATIM_PREFIX) {
-            conn_path = conn_path.trim_start_matches(VERBATIM_PREFIX).to_string();
-        }
-    }
-    conn_path = conn_path.replace('\\', "/");
-
-    // triple-slash required for absolute Windows paths: sqlite:///C:/...
-    let conn_str = format!("sqlite:///{}", conn_path);
-
-    println!("DEBUG(main): final db absolute path = {:?}", abs_db);
-    println!("DEBUG(main): sqlx connection string = {}", conn_str);
-
-    // Create pool with optimized settings for POS operations
-    let pool: SqlitePool = SqlitePoolOptions::new()
-        .max_connections(10)
-        .min_connections(2)
-        .acquire_timeout(std::time::Duration::from_secs(30))
-        .idle_timeout(std::time::Duration::from_secs(300))
-        .max_lifetime(std::time::Duration::from_secs(1800))
-        .connect(&conn_str)
-        .await
-        .unwrap_or_else(|e| {
-            panic!("Failed to create SqlitePool for '{}': {}", conn_str, e);
-        });
-
-    // Apply migrations so tables exist
-    if let Err(e) = apply_migrations(&pool).await {
-        panic!("Migration error: {}", e);
-    }
-
-    // Ensure admin user exists and has a correct default password (dev only)
-    if let Err(e) = ensure_admin(&pool).await {
-        panic!("Failed to ensure admin user: {}", e);
-    }
-
-    println!("DEBUG(main): Application initialized successfully!");
-    println!("DEBUG(main): Database connection established and migrations applied");
-    println!("DEBUG(main): Admin user ensured");
+async fn run_migrations(pool: &SqlitePool) -> Result<(), Box<dyn std::error::Error>> {
+    debug!("applying 1 migration(s)");
     
-    // Keep the application running for a moment to see the output
-    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+    // Create tables
+    sqlx::query(database::INITIAL_MIGRATION)
+        .execute(pool)
+        .await?;
+    
+    debug!("migrations applied successfully");
+    Ok(())
+}
+
+async fn ensure_admin_user(pool: &SqlitePool) -> Result<(), Box<dyn std::error::Error>> {
+    // Check if admin user exists
+    let admin_exists = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM users WHERE username = 'admin'"
+    )
+    .fetch_one(pool)
+    .await?;
+
+    if admin_exists == 0 {
+        // Create default admin user
+        let hashed_password = bcrypt::hash("admin123", bcrypt::DEFAULT_COST)?;
+        
+        sqlx::query(
+            "INSERT INTO users (username, email, password_hash, first_name, last_name, role, pin_code, permissions, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind("admin")
+        .bind("admin@premiumpos.com")
+        .bind(hashed_password)
+        .bind("Admin")
+        .bind("User")
+        .bind("admin")
+        .bind("1234")
+        .bind("all")
+        .bind(true)
+        .bind(chrono::Utc::now().naive_utc().to_string())
+        .bind(chrono::Utc::now().naive_utc().to_string())
+        .execute(pool)
+        .await?;
+        
+        debug!("inserted default admin user");
+    }
+    
+    debug!("Admin user ensured");
+    Ok(())
 }

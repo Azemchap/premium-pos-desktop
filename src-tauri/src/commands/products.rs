@@ -1,9 +1,13 @@
-use crate::models::{CreateProductRequest, Product, ProductSearchRequest};
-use sqlx::{Row, SqlitePool};
+use tauri::{command, State};
+use crate::models::{Product, CreateProductRequest};
+use sqlx::{SqlitePool, Row};
 
-pub async fn get_products(pool: &SqlitePool) -> Result<Vec<Product>, String> {
-    let rows = sqlx::query("SELECT * FROM products WHERE is_active = 1 ORDER BY name")
-        .fetch_all(pool)
+#[tauri::command]
+pub async fn get_products(
+    pool: State<'_, SqlitePool>,
+) -> Result<Vec<Product>, String> {
+    let rows = sqlx::query("SELECT * FROM products ORDER BY name")
+        .fetch_all(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 
@@ -38,13 +42,14 @@ pub async fn get_products(pool: &SqlitePool) -> Result<Vec<Product>, String> {
     Ok(products)
 }
 
+#[tauri::command]
 pub async fn get_product_by_id(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     product_id: i64,
 ) -> Result<Option<Product>, String> {
-    let row = sqlx::query("SELECT * FROM products WHERE id = ? AND is_active = 1")
+    let row = sqlx::query("SELECT * FROM products WHERE id = ?")
         .bind(product_id)
-        .fetch_optional(pool)
+        .fetch_optional(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 
@@ -78,8 +83,9 @@ pub async fn get_product_by_id(
     }
 }
 
+#[tauri::command]
 pub async fn create_product(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     request: CreateProductRequest,
 ) -> Result<Product, String> {
     let product_id = sqlx::query(
@@ -104,7 +110,7 @@ pub async fn create_product(
     .bind(request.reorder_point)
     .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(chrono::Utc::now().naive_utc().to_string())
-    .execute(pool)
+    .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?
     .last_insert_rowid();
@@ -136,8 +142,9 @@ pub async fn create_product(
     Ok(product)
 }
 
+#[tauri::command]
 pub async fn update_product(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     product_id: i64,
     request: CreateProductRequest,
 ) -> Result<Product, String> {
@@ -163,7 +170,7 @@ pub async fn update_product(
     .bind(request.reorder_point)
     .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(product_id)
-    .execute(pool)
+    .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -194,63 +201,35 @@ pub async fn update_product(
     Ok(product)
 }
 
-pub async fn delete_product(pool: &SqlitePool, product_id: i64) -> Result<bool, String> {
-    let result = sqlx::query("UPDATE products SET is_active = 0 WHERE id = ?")
+#[tauri::command]
+pub async fn delete_product(
+    pool: State<'_, SqlitePool>,
+    product_id: i64,
+) -> Result<bool, String> {
+    let result = sqlx::query("DELETE FROM products WHERE id = ?")
         .bind(product_id)
-        .execute(pool)
+        .execute(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 
     Ok(result.rows_affected() > 0)
 }
 
+#[tauri::command]
 pub async fn search_products(
-    pool: &SqlitePool,
-    request: ProductSearchRequest,
+    pool: State<'_, SqlitePool>,
+    query: String,
 ) -> Result<Vec<Product>, String> {
-    let mut query = String::from("SELECT * FROM products WHERE is_active = 1");
-    let mut params: Vec<String> = Vec::new();
-
-    if let Some(query_term) = &request.query {
-        if !query_term.is_empty() {
-            query.push_str(
-                " AND (name LIKE ? OR sku LIKE ? OR description LIKE ? OR category LIKE ?)",
-            );
-            let like_term = format!("%{}%", query_term);
-            params.extend(vec![
-                like_term.clone(),
-                like_term.clone(),
-                like_term.clone(),
-                like_term,
-            ]);
-        }
-    }
-
-    if let Some(category) = &request.category {
-        if !category.is_empty() {
-            query.push_str(" AND category = ?");
-            params.push(category.clone());
-        }
-    }
-
-    if let Some(brand) = &request.brand {
-        if !brand.is_empty() {
-            query.push_str(" AND brand = ?");
-            params.push(brand.clone());
-        }
-    }
-
-    query.push_str(" ORDER BY name");
-
-    let mut sql_query = sqlx::query(&query);
-    for param in &params {
-        sql_query = sql_query.bind(param);
-    }
-
-    let rows = sql_query
-        .fetch_all(pool)
-        .await
-        .map_err(|e| e.to_string())?;
+    let search_pattern = format!("%{}%", query);
+    let rows = sqlx::query(
+        "SELECT * FROM products WHERE name LIKE ? OR sku LIKE ? OR barcode LIKE ? ORDER BY name"
+    )
+    .bind(&search_pattern)
+    .bind(&search_pattern)
+    .bind(&search_pattern)
+    .fetch_all(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
 
     let mut products = Vec::new();
     for row in rows {

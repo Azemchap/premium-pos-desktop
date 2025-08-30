@@ -1,8 +1,10 @@
+use tauri::{command, State};
 use crate::models::{CashDrawerTransaction, CreateCashDrawerTransactionRequest};
 use sqlx::{SqlitePool, Row};
 
+#[tauri::command]
 pub async fn add_cash_transaction(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     request: CreateCashDrawerTransactionRequest,
 ) -> Result<CashDrawerTransaction, String> {
     let transaction_id = sqlx::query(
@@ -14,7 +16,7 @@ pub async fn add_cash_transaction(
     .bind(&request.reason)
     .bind(1) // Default user_id, should be passed from request
     .bind(chrono::Utc::now().naive_utc().to_string())
-    .execute(pool)
+    .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?
     .last_insert_rowid();
@@ -32,13 +34,14 @@ pub async fn add_cash_transaction(
     Ok(transaction)
 }
 
+#[tauri::command]
 pub async fn get_cash_drawer_balance(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     shift_id: i64,
 ) -> Result<f64, String> {
     let shift_row = sqlx::query("SELECT opening_amount FROM shifts WHERE id = ?")
         .bind(shift_id)
-        .fetch_one(pool)
+        .fetch_one(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 
@@ -48,7 +51,7 @@ pub async fn get_cash_drawer_balance(
         "SELECT SUM(CASE WHEN transaction_type = 'add' THEN amount ELSE -amount END) as net_change FROM cash_drawer_transactions WHERE shift_id = ?"
     )
     .bind(shift_id)
-    .fetch_one(pool)
+    .fetch_one(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
@@ -57,8 +60,9 @@ pub async fn get_cash_drawer_balance(
     Ok(opening_amount + net_change)
 }
 
+#[tauri::command]
 pub async fn get_transaction_history(
-    pool: &SqlitePool,
+    pool: State<'_, SqlitePool>,
     shift_id: Option<i64>,
     limit: Option<i64>,
 ) -> Result<Vec<CashDrawerTransaction>, String> {
@@ -82,7 +86,7 @@ pub async fn get_transaction_history(
     }
 
     let rows = sql_query
-        .fetch_all(pool)
+        .fetch_all(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 
