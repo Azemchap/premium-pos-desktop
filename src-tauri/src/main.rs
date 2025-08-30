@@ -43,7 +43,7 @@ async fn apply_migrations(pool: &SqlitePool) -> Result<(), String> {
 async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
     // default admin credentials (development only)
     let admin_username = "admin";
-    let admin_email = "admin@store.com";
+    let admin_email = "admin@premiumpos.com";
     let admin_password = "admin123";
     let admin_first = "Store";
     let admin_last = "Admin";
@@ -61,7 +61,7 @@ async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
             let pwd_hash = hash(admin_password, DEFAULT_COST)
                 .map_err(|e| format!("bcrypt hash error: {}", e))?;
             sqlx::query(
-                "INSERT INTO users (username, email, password_hash, first_name, last_name, role) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                "INSERT INTO users (username, email, password_hash, first_name, last_name, role, pin_code) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             )
             .bind(admin_username)
             .bind(admin_email)
@@ -69,6 +69,7 @@ async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
             .bind(admin_first)
             .bind(admin_last)
             .bind(admin_role)
+            .bind("1234") // Default PIN code
             .execute(pool)
             .await
             .map_err(|e| format!("Failed to insert admin user: {}", e))?;
@@ -132,7 +133,7 @@ async fn main() {
                 }
             }
             Err(e) => {
-                panic!("Failed to create database file {:?}: {}", db_path, e);
+                panic!("Failed to create database file {:?}: {}", e);
             }
         }
     }
@@ -155,9 +156,13 @@ async fn main() {
     println!("DEBUG(main): final db absolute path = {:?}", abs_db);
     println!("DEBUG(main): sqlx connection string = {}", conn_str);
 
-    // Create pool
+    // Create pool with optimized settings for POS operations
     let pool: SqlitePool = SqlitePoolOptions::new()
-        .max_connections(5)
+        .max_connections(10)
+        .min_connections(2)
+        .acquire_timeout(std::time::Duration::from_secs(30))
+        .idle_timeout(std::time::Duration::from_secs(300))
+        .max_lifetime(std::time::Duration::from_secs(1800))
         .connect(&conn_str)
         .await
         .unwrap_or_else(|e| {
@@ -186,25 +191,61 @@ async fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
+            // Authentication commands
             commands::auth::login_user,
             commands::auth::register_user,
             commands::auth::verify_session,
+            
+            // User management commands
             commands::users::get_users,
             commands::users::create_user,
             commands::users::update_user,
             commands::users::delete_user,
+            
+            // Product management commands
             commands::products::get_products,
             commands::products::create_product,
             commands::products::update_product,
             commands::products::delete_product,
+            commands::products::search_products,
+            
+            // Inventory management commands
             commands::inventory::get_inventory,
             commands::inventory::update_stock,
             commands::inventory::get_inventory_movements,
+            commands::inventory::create_stock_adjustment,
+            commands::inventory::get_low_stock_items,
+            
+            // Sales commands
             commands::sales::create_sale,
             commands::sales::get_sales,
             commands::sales::void_sale,
+            commands::sales::get_sale_details,
+            commands::sales::search_sales,
+            
+            // Store configuration commands
             commands::store::get_store_config,
-            commands::store::update_store_config
+            commands::store::update_store_config,
+            
+            // Shift management commands
+            commands::shifts::create_shift,
+            commands::shifts::close_shift,
+            commands::shifts::get_current_shift,
+            commands::shifts::get_shift_history,
+            
+            // Cash drawer commands
+            commands::cash_drawer::create_transaction,
+            commands::cash_drawer::get_transactions,
+            
+            // Receipt template commands
+            commands::receipts::get_templates,
+            commands::receipts::create_template,
+            commands::receipts::update_template,
+            commands::receipts::delete_template,
+            
+            // Dashboard commands
+            commands::dashboard::get_stats,
+            commands::dashboard::get_recent_activity,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

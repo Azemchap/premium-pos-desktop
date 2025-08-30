@@ -15,10 +15,16 @@
                 "fullscreen": false,
                 "resizable": true,
                 "title": "Premium POS",
-                "width": 1200,
-                "height": 800,
-                "minWidth": 1000,
-                "minHeight": 700
+                "width": 1400,
+                "height": 900,
+                "minWidth": 1200,
+                "minHeight": 800,
+                "center": true,
+                "decorations": true,
+                "transparent": false,
+                "alwaysOnTop": false,
+                "skipTaskbar": false,
+                "visible": true
             }
         ],
         "security": {
@@ -28,7 +34,7 @@
     "bundle": {
         "active": true,
         "category": "Business",
-        "copyright": "",
+        "copyright": "© 2024 Premium POS",
         "shortDescription": "Premium POS System",
         "longDescription": "Premium Point of Sale and Inventory Management System for retail locations",
         "targets": "all",
@@ -36,5 +42,30 @@
         "resources": []
     },
     "plugins": {
+        "sql": {
+            "enabled": true
+        },
+        "fs": {
+            "enabled": true,
+            "scope": {
+                "allow": [
+                    "$APPDATA/**",
+                    "$APPDATA/../Local/**",
+                    "$APPDATA/../Roaming/**"
+                ]
+            }
+        },
+        "shell": {
+            "enabled": true,
+            "scope": {
+                "allow": [
+                    "print",
+                    "printui"
+                ]
+            }
+        },
+        "notification": {
+            "enabled": true
+        }
     }
 }
