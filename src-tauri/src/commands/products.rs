@@ -1,5 +1,6 @@
 use tauri::{command, State};
 use sqlx::{SqlitePool, Row};
+<<<<<<< Updated upstream
 use crate::models::{Product, CreateProductRequest, ProductSearchRequest};
 
 #[command]
@@ -22,12 +23,40 @@ pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, S
     let mut products = Vec::new();
     for row in rows {
         let product = Product {
+=======
+use crate::models::{Product, CreateProductRequest};
+
+#[command]
+pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, String> {
+    println!("DEBUG(products): get_products called");
+    let pool_ref = pool.inner();
+
+    let rows = sqlx::query(
+        r#"
+        SELECT id, sku, barcode, name, description, category, unit_of_measure,
+               cost_price, selling_price, is_active, created_at, updated_at
+        FROM products
+        ORDER BY name COLLATE NOCASE
+        "#,
+    )
+    .fetch_all(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(products): query failed: {}", e);
+        format!("Database error: {}", e)
+    })?;
+
+    let mut products = Vec::with_capacity(rows.len());
+    for row in rows {
+        products.push(Product {
+>>>>>>> Stashed changes
             id: row.try_get("id").map_err(|e| e.to_string())?,
             sku: row.try_get("sku").map_err(|e| e.to_string())?,
             barcode: row.try_get("barcode").ok().flatten(),
             name: row.try_get("name").map_err(|e| e.to_string())?,
             description: row.try_get("description").ok().flatten(),
             category: row.try_get("category").ok().flatten(),
+<<<<<<< Updated upstream
             subcategory: row.try_get("subcategory").ok().flatten(),
             brand: row.try_get("brand").ok().flatten(),
             unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
@@ -47,10 +76,31 @@ pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, S
         products.push(product);
     }
 
+=======
+            unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
+            cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
+            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
+            is_active: {
+                match row.try_get::<bool, _>("is_active") {
+                    Ok(b) => b,
+                    Err(_) => {
+                        let v: i64 = row.try_get("is_active").map_err(|e| e.to_string())?;
+                        v != 0
+                    }
+                }
+            },
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+            updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
+        });
+    }
+
+    println!("DEBUG(products): returning {} products", products.len());
+>>>>>>> Stashed changes
     Ok(products)
 }
 
 #[command]
+<<<<<<< Updated upstream
 pub async fn search_products(
     pool: State<'_, SqlitePool>,
     request: ProductSearchRequest,
@@ -242,6 +292,55 @@ pub async fn create_product(
     .fetch_one(pool_ref)
     .await
     .map_err(|e| format!("Failed to fetch created product: {}", e))?;
+=======
+pub async fn create_product(pool: State<'_, SqlitePool>, req: CreateProductRequest) -> Result<Product, String> {
+    println!("DEBUG(products): create_product sku='{}' name='{}'", req.sku, req.name);
+    let pool_ref = pool.inner();
+
+    // Insert product
+    let res = sqlx::query(
+        r#"
+        INSERT INTO products (sku, barcode, name, description, category, unit_of_measure, cost_price, selling_price, is_active, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        "#,
+    )
+    .bind(&req.sku)
+    .bind(&req.barcode)
+    .bind(&req.name)
+    .bind(&req.description)
+    .bind(&req.category)
+    .bind(&req.unit_of_measure)
+    .bind(req.cost_price)
+    .bind(req.selling_price)
+    .execute(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(products): insert failed: {}", e);
+        // Unique constraint on sku/barcode -> provide clearer message
+        if e.to_string().contains("UNIQUE") {
+            "SKU or barcode already exists".to_string()
+        } else {
+            format!("Failed to create product: {}", e)
+        }
+    })?;
+
+    let id = res.last_insert_rowid();
+
+    // Fetch created product
+    let row = sqlx::query(
+        r#"
+        SELECT id, sku, barcode, name, description, category, unit_of_measure,
+               cost_price, selling_price, is_active, created_at, updated_at
+        FROM products WHERE id = ?1
+        "#,
+    )
+    .bind(id)
+    .fetch_one(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(products): fetch after insert failed: {}", e);
+        format!("Failed to fetch created product: {}", e)
+    })?;
 
     let product = Product {
         id: row.try_get("id").map_err(|e| e.to_string())?,
@@ -250,6 +349,84 @@ pub async fn create_product(
         name: row.try_get("name").map_err(|e| e.to_string())?,
         description: row.try_get("description").ok().flatten(),
         category: row.try_get("category").ok().flatten(),
+        unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
+        cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
+        selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
+        is_active: {
+            match row.try_get::<bool, _>("is_active") {
+                Ok(b) => b,
+                Err(_) => {
+                    let v: i64 = row.try_get("is_active").map_err(|e| e.to_string())?;
+                    v != 0
+                }
+            }
+        },
+        created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+        updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
+    };
+
+    println!("DEBUG(products): created product id={}", product.id);
+    Ok(product)
+}
+
+#[command]
+pub async fn update_product(pool: State<'_, SqlitePool>, id: i64, req: CreateProductRequest) -> Result<Product, String> {
+    println!("DEBUG(products): update_product id={} sku='{}'", id, req.sku);
+    let pool_ref = pool.inner();
+
+    sqlx::query(
+        r#"
+        UPDATE products
+        SET sku = ?1, barcode = ?2, name = ?3, description = ?4, category = ?5,
+            unit_of_measure = ?6, cost_price = ?7, selling_price = ?8, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?9
+        "#,
+    )
+    .bind(&req.sku)
+    .bind(&req.barcode)
+    .bind(&req.name)
+    .bind(&req.description)
+    .bind(&req.category)
+    .bind(&req.unit_of_measure)
+    .bind(req.cost_price)
+    .bind(req.selling_price)
+    .bind(id)
+    .execute(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(products): update failed: {}", e);
+        if e.to_string().contains("UNIQUE") {
+            "SKU or barcode already exists".to_string()
+        } else {
+            format!("Failed to update product: {}", e)
+        }
+    })?;
+
+    // Fetch updated product
+    let row = sqlx::query(
+        r#"
+        SELECT id, sku, barcode, name, description, category, unit_of_measure,
+               cost_price, selling_price, is_active, created_at, updated_at
+        FROM products WHERE id = ?1
+        "#,
+    )
+    .bind(id)
+    .fetch_one(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(products): fetch after update failed: {}", e);
+        format!("Failed to fetch updated product: {}", e)
+    })?;
+>>>>>>> Stashed changes
+
+    let product = Product {
+        id: row.try_get("id").map_err(|e| e.to_string())?,
+        sku: row.try_get("sku").map_err(|e| e.to_string())?,
+        barcode: row.try_get("barcode").ok().flatten(),
+        name: row.try_get("name").map_err(|e| e.to_string())?,
+        description: row.try_get("description").ok().flatten(),
+        category: row.try_get("category").ok().flatten(),
+<<<<<<< Updated upstream
         subcategory: row.try_get("subcategory").ok().flatten(),
         brand: row.try_get("brand").ok().flatten(),
         unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
@@ -263,14 +440,33 @@ pub async fn create_product(
         dimensions: row.try_get("dimensions").ok().flatten(),
         supplier_info: row.try_get("supplier_info").ok().flatten(),
         reorder_point: row.try_get("reorder_point").map_err(|e| e.to_string())?,
+=======
+        unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
+        cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
+        selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
+        is_active: {
+            match row.try_get::<bool, _>("is_active") {
+                Ok(b) => b,
+                Err(_) => {
+                    let v: i64 = row.try_get("is_active").map_err(|e| e.to_string())?;
+                    v != 0
+                }
+            }
+        },
+>>>>>>> Stashed changes
         created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
     };
 
+<<<<<<< Updated upstream
+=======
+    println!("DEBUG(products): updated product id={}", product.id);
+>>>>>>> Stashed changes
     Ok(product)
 }
 
 #[command]
+<<<<<<< Updated upstream
 pub async fn update_product(
     pool: State<'_, SqlitePool>,
     id: i64,
@@ -425,11 +621,26 @@ pub async fn delete_product(
     }
 
     // Soft delete by setting is_active to false
+=======
+pub async fn delete_product(pool: State<'_, SqlitePool>, id: i64) -> Result<bool, String> {
+    println!("DEBUG(products): delete_product id={}", id);
+    let pool_ref = pool.inner();
+
+>>>>>>> Stashed changes
     sqlx::query("UPDATE products SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?1")
         .bind(id)
         .execute(pool_ref)
         .await
+<<<<<<< Updated upstream
         .map_err(|e| format!("Failed to delete product: {}", e))?;
 
+=======
+        .map_err(|e| {
+            println!("DEBUG(products): delete (deactivate) failed: {}", e);
+            format!("Failed to deactivate product: {}", e)
+        })?;
+
+    println!("DEBUG(products): deactivated product id={}", id);
+>>>>>>> Stashed changes
     Ok(true)
 }

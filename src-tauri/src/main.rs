@@ -213,17 +213,25 @@ async fn main() {
             commands::inventory::get_inventory,
             commands::inventory::update_stock,
             commands::inventory::get_inventory_movements,
+<<<<<<< Updated upstream
             commands::inventory::create_stock_adjustment,
             commands::inventory::get_low_stock_items,
             
             // Sales commands
             commands::sales::create_sale,
+=======
+>>>>>>> Stashed changes
             commands::sales::get_sales,
+            commands::sales::create_sale,
             commands::sales::void_sale,
+<<<<<<< Updated upstream
             commands::sales::get_sale_details,
             commands::sales::search_sales,
             
             // Store configuration commands
+=======
+            commands::sales::get_sale_with_items,
+>>>>>>> Stashed changes
             commands::store::get_store_config,
             commands::store::update_store_config,
             

@@ -1,5 +1,6 @@
 use tauri::{command, State};
 use sqlx::{SqlitePool, Row};
+<<<<<<< Updated upstream
 use crate::models::{InventoryItem, StockUpdateRequest};
 use serde::{Deserialize, Serialize};
 
@@ -18,9 +19,102 @@ pub struct InventoryMovement {
     pub created_at: String,
     pub product_name: Option<String>,
     pub user_name: Option<String>,
+=======
+use crate::models::{InventoryItem, StockUpdateRequest, Product};
+use serde_json::json;
+
+/// Get inventory items with product data (if available)
+#[command]
+pub async fn get_inventory(pool: State<'_, SqlitePool>) -> Result<Vec<InventoryItem>, String> {
+    println!("DEBUG(inventory): get_inventory called");
+    let pool_ref = pool.inner();
+
+    let rows = sqlx::query(
+        r#"
+        SELECT i.id as inv_id,
+               i.product_id as inv_product_id,
+               i.current_stock as inv_current_stock,
+               i.minimum_stock as inv_minimum_stock,
+               i.maximum_stock as inv_maximum_stock,
+               i.last_updated as inv_last_updated,
+               p.id as p_id,
+               p.sku as p_sku,
+               p.barcode as p_barcode,
+               p.name as p_name,
+               p.description as p_description,
+               p.category as p_category,
+               p.unit_of_measure as p_uom,
+               p.cost_price as p_cost_price,
+               p.selling_price as p_selling_price,
+               p.is_active as p_is_active,
+               p.created_at as p_created_at,
+               p.updated_at as p_updated_at
+        FROM inventory i
+        LEFT JOIN products p ON p.id = i.product_id
+        ORDER BY p.name COLLATE NOCASE
+        "#,
+    )
+    .fetch_all(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(inventory): query failed: {}", e);
+        format!("Database error: {}", e)
+    })?;
+
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows {
+        // Build product if present
+        let product = match row.try_get::<Option<i64>, _>("p_id") {
+            Ok(Some(_pid)) => {
+                // There is a product row
+                let prod = Product {
+                    id: row.try_get("p_id").map_err(|e| e.to_string())?,
+                    sku: row.try_get("p_sku").map_err(|e| e.to_string())?,
+                    barcode: row.try_get("p_barcode").ok().flatten(),
+                    name: row.try_get("p_name").map_err(|e| e.to_string())?,
+                    description: row.try_get("p_description").ok().flatten(),
+                    category: row.try_get("p_category").ok().flatten(),
+                    unit_of_measure: row.try_get("p_uom").map_err(|e| e.to_string())?,
+                    cost_price: row.try_get("p_cost_price").map_err(|e| e.to_string())?,
+                    selling_price: row.try_get("p_selling_price").map_err(|e| e.to_string())?,
+                    is_active: match row.try_get::<bool, _>("p_is_active") {
+                        Ok(b) => b,
+                        Err(_) => {
+                            let v: i64 = row.try_get("p_is_active").map_err(|e| e.to_string())?;
+                            v != 0
+                        }
+                    },
+                    created_at: row.try_get("p_created_at").map_err(|e| e.to_string())?,
+                    updated_at: row.try_get("p_updated_at").map_err(|e| e.to_string())?,
+                };
+                Some(prod)
+            }
+            _ => None,
+        };
+
+        let item = InventoryItem {
+            id: row.try_get::<i64, _>("inv_id").map_err(|e| e.to_string())?,
+            product_id: row.try_get::<i64, _>("inv_product_id").map_err(|e| e.to_string())?,
+            current_stock: row.try_get::<i32, _>("inv_current_stock").map_err(|e| e.to_string())?,
+            minimum_stock: row.try_get::<i32, _>("inv_minimum_stock").map_err(|e| e.to_string())?,
+            maximum_stock: row.try_get::<i32, _>("inv_maximum_stock").map_err(|e| e.to_string())?,
+            last_updated: row.try_get::<String, _>("inv_last_updated").map_err(|e| e.to_string())?,
+            product,
+        };
+
+        out.push(item);
+    }
+
+    println!("DEBUG(inventory): returning {} inventory items", out.len());
+    Ok(out)
+>>>>>>> Stashed changes
 }
 
+/// Update stock for a product and insert an inventory movement log.
+/// If no inventory row exists, creates one.
+/// Returns true on success.
 #[command]
+<<<<<<< Updated upstream
 pub async fn get_inventory(pool: State<'_, SqlitePool>) -> Result<Vec<InventoryItem>, String> {
     let pool_ref = pool.inner();
     
@@ -85,9 +179,72 @@ pub async fn get_inventory(pool: State<'_, SqlitePool>) -> Result<Vec<InventoryI
     }
 
     Ok(inventory_items)
+=======
+pub async fn update_stock(pool: State<'_, SqlitePool>, request: StockUpdateRequest) -> Result<bool, String> {
+    println!(
+        "DEBUG(inventory): update_stock called product_id={} change={} type={}",
+        request.product_id, request.quantity_change, request.movement_type
+    );
+
+    let pool_ref = pool.inner();
+
+    // Get current stock if exists
+    let existing = sqlx::query("SELECT id, current_stock FROM inventory WHERE product_id = ?1")
+        .bind(request.product_id)
+        .fetch_optional(pool_ref)
+        .await
+        .map_err(|e| format!("Failed to query inventory: {}", e))?;
+
+    let previous_stock: i32;
+    if let Some(row) = existing {
+        previous_stock = row.try_get::<i32, _>("current_stock").map_err(|e| e.to_string())?;
+    } else {
+        // If no inventory entry exists, insert a new one with zero stock first
+        previous_stock = 0;
+        sqlx::query("INSERT INTO inventory (product_id, current_stock, minimum_stock, maximum_stock, last_updated) VALUES (?1, 0, 0, 0, CURRENT_TIMESTAMP)")
+            .bind(request.product_id)
+            .execute(pool_ref)
+            .await
+            .map_err(|e| format!("Failed to create inventory row: {}", e))?;
+    }
+
+    let new_stock = previous_stock.saturating_add(request.quantity_change);
+
+    // Update inventory
+    sqlx::query("UPDATE inventory SET current_stock = ?1, last_updated = CURRENT_TIMESTAMP WHERE product_id = ?2")
+        .bind(new_stock)
+        .bind(request.product_id)
+        .execute(pool_ref)
+        .await
+        .map_err(|e| format!("Failed to update inventory: {}", e))?;
+
+    // Insert movement log
+    sqlx::query(
+        r#"
+        INSERT INTO inventory_movements
+            (product_id, movement_type, quantity_change, previous_stock, new_stock, reference_id, reference_type, notes, user_id, created_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, NULL, NULL, ?6, NULL, CURRENT_TIMESTAMP)
+        "#,
+    )
+    .bind(request.product_id)
+    .bind(&request.movement_type)
+    .bind(request.quantity_change)
+    .bind(previous_stock)
+    .bind(new_stock)
+    .bind(&request.notes)
+    .execute(pool_ref)
+    .await
+    .map_err(|e| format!("Failed to insert inventory movement: {}", e))?;
+
+    println!("DEBUG(inventory): update_stock completed product_id={} new_stock={}", request.product_id, new_stock);
+    Ok(true)
+>>>>>>> Stashed changes
 }
 
+/// Get inventory movements. If product_id is Some(id) return movements for that product,
+/// otherwise return all movements (most recent first).
 #[command]
+<<<<<<< Updated upstream
 pub async fn update_stock(
     pool: State<'_, SqlitePool>,
     request: StockUpdateRequest,
@@ -319,4 +476,43 @@ pub async fn get_low_stock_items(
     }
 
     Ok(low_stock_items)
+=======
+pub async fn get_inventory_movements(pool: State<'_, SqlitePool>, product_id: Option<i64>) -> Result<Vec<serde_json::Value>, String> {
+    println!("DEBUG(inventory): get_inventory_movements called product_id={:?}", product_id);
+    let pool_ref = pool.inner();
+
+    let rows = if let Some(pid) = product_id {
+        sqlx::query("SELECT id, product_id, movement_type, quantity_change, previous_stock, new_stock, reference_id, reference_type, notes, user_id, created_at FROM inventory_movements WHERE product_id = ?1 ORDER BY created_at DESC")
+            .bind(pid)
+            .fetch_all(pool_ref)
+            .await
+            .map_err(|e| format!("Failed to query inventory_movements: {}", e))?
+    } else {
+        sqlx::query("SELECT id, product_id, movement_type, quantity_change, previous_stock, new_stock, reference_id, reference_type, notes, user_id, created_at FROM inventory_movements ORDER BY created_at DESC")
+            .fetch_all(pool_ref)
+            .await
+            .map_err(|e| format!("Failed to query inventory_movements: {}", e))?
+    };
+
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows {
+        let obj = json!({
+            "id": row.try_get::<i64, _>("id").map_err(|e| e.to_string())?,
+            "product_id": row.try_get::<i64, _>("product_id").map_err(|e| e.to_string())?,
+            "movement_type": row.try_get::<String, _>("movement_type").map_err(|e| e.to_string())?,
+            "quantity_change": row.try_get::<i32, _>("quantity_change").map_err(|e| e.to_string())?,
+            "previous_stock": row.try_get::<i32, _>("previous_stock").map_err(|e| e.to_string())?,
+            "new_stock": row.try_get::<i32, _>("new_stock").map_err(|e| e.to_string())?,
+            "reference_id": row.try_get::<Option<i64>, _>("reference_id").map_err(|e| e.to_string())?,
+            "reference_type": row.try_get::<Option<String>, _>("reference_type").map_err(|e| e.to_string())?,
+            "notes": row.try_get::<Option<String>, _>("notes").map_err(|e| e.to_string())?,
+            "user_id": row.try_get::<Option<i64>, _>("user_id").map_err(|e| e.to_string())?,
+            "created_at": row.try_get::<String, _>("created_at").map_err(|e| e.to_string())?,
+        });
+        out.push(obj);
+    }
+
+    println!("DEBUG(inventory): returning {} movements", out.len());
+    Ok(out)
+>>>>>>> Stashed changes
 }

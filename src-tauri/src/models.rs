@@ -140,6 +140,7 @@ pub struct Sale {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateSaleRequest {
+    pub cashier_id: i64, // Add this
     pub items: Vec<SaleItemRequest>,
     pub subtotal: f64,
     pub tax_amount: f64,
@@ -176,6 +177,12 @@ pub struct SaleItem {
     pub cost_price: f64,
     pub created_at: String,
     pub product: Option<Product>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SaleWithItems {
+    pub sale: Sale,
+    pub items: Vec<SaleItem>,
 }
 
 // Store configuration models
