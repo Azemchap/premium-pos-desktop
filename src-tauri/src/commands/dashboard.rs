@@ -1,264 +1,104 @@
 use tauri::{command, State};
+use crate::models::{DashboardStats, RecentActivity};
 use sqlx::{SqlitePool, Row};
-use crate::models::{DashboardStats, Sale, Product, InventoryItem};
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RecentActivity {
-    pub sales: Vec<Sale>,
-    pub low_stock_items: Vec<InventoryItem>,
-    pub recent_products: Vec<Product>,
-}
-
-#[command]
+#[tauri::command]
 pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, String> {
-    let pool_ref = pool.inner();
-    
-    // Today's sales
-    let today_sales = sqlx::query(
-        "SELECT COALESCE(SUM(total_amount), 0) as total_sales,
-                COUNT(*) as transaction_count
-         FROM sales 
-         WHERE DATE(created_at) = DATE('now') AND is_voided = 0"
-    )
-    .fetch_one(pool_ref)
-    .await
-    .map_err(|e| format!("Failed to get today's sales: {}", e))?;
+    // Today's date
+    let today = chrono::Utc::now().date_naive();
+    let week_ago = today - chrono::Duration::days(7);
+    let month_ago = today - chrono::Duration::days(30);
 
-    let today_sales_amount: f64 = today_sales.try_get("total_sales").map_err(|e| e.to_string())?;
-    let today_transactions: i32 = today_sales.try_get("transaction_count").map_err(|e| e.to_string())?;
+    // Today's sales
+    let today_sales_result = sqlx::query(
+        "SELECT COUNT(*) as count, SUM(total_amount) as total FROM sales WHERE DATE(created_at) = DATE(?)"
+    )
+    .bind(today)
+    .fetch_one(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let today_transactions: i64 = today_sales_result.try_get("count").map_err(|e| e.to_string())?;
+    let today_sales: f64 = today_sales_result.try_get("total").map_err(|e| e.to_string()).unwrap_or(0.0);
 
     // Week sales
-    let week_sales = sqlx::query(
-        "SELECT COALESCE(SUM(total_amount), 0) as week_total
-         FROM sales 
-         WHERE DATE(created_at) >= DATE('now', '-6 days') AND is_voided = 0"
+    let week_sales_result = sqlx::query(
+        "SELECT SUM(total_amount) as total FROM sales WHERE DATE(created_at) >= DATE(?)"
     )
-    .fetch_one(pool_ref)
+    .bind(week_ago)
+    .fetch_one(pool.inner())
     .await
-    .map_err(|e| format!("Failed to get week sales: {}", e))?;
+    .map_err(|e| e.to_string())?;
 
-    let week_sales_amount: f64 = week_sales.try_get("week_total").map_err(|e| e.to_string())?;
+    let week_sales: f64 = week_sales_result.try_get("total").map_err(|e| e.to_string()).unwrap_or(0.0);
 
     // Month sales
-    let month_sales = sqlx::query(
-        "SELECT COALESCE(SUM(total_amount), 0) as month_total
-         FROM sales 
-         WHERE DATE(created_at) >= DATE('now', 'start of month') AND is_voided = 0"
+    let month_sales_result = sqlx::query(
+        "SELECT SUM(total_amount) as total FROM sales WHERE DATE(created_at) >= DATE(?)"
     )
-    .fetch_one(pool_ref)
+    .bind(month_ago)
+    .fetch_one(pool.inner())
     .await
-    .map_err(|e| format!("Failed to get month sales: {}", e))?;
+    .map_err(|e| e.to_string())?;
 
-    let month_sales_amount: f64 = month_sales.try_get("month_total").map_err(|e| e.to_string())?;
+    let month_sales: f64 = month_sales_result.try_get("total").map_err(|e| e.to_string()).unwrap_or(0.0);
 
-    // Total products
-    let total_products = sqlx::query(
-        "SELECT COUNT(*) as product_count FROM products WHERE is_active = 1"
-    )
-    .fetch_one(pool_ref)
-    .await
-    .map_err(|e| format!("Failed to get product count: {}", e))?;
+    // Product counts
+    let total_products_result = sqlx::query("SELECT COUNT(*) as count FROM products WHERE is_active = 1")
+        .fetch_one(pool.inner())
+        .await
+        .map_err(|e| e.to_string())?;
 
-    let total_products_count: i32 = total_products.try_get("product_count").map_err(|e| e.to_string())?;
+    let total_products: i64 = total_products_result.try_get("count").map_err(|e| e.to_string())?;
 
     // Low stock items
-    let low_stock_items = sqlx::query(
-        "SELECT COUNT(*) as low_stock_count
-         FROM inventory i
-         JOIN products p ON i.product_id = p.id
-         WHERE i.current_stock <= i.minimum_stock AND p.is_active = 1"
+    let low_stock_result = sqlx::query(
+        "SELECT COUNT(*) as count FROM inventory i JOIN products p ON i.product_id = p.id WHERE i.current_stock <= i.reorder_point AND p.is_active = 1"
     )
-    .fetch_one(pool_ref)
+    .fetch_one(pool.inner())
     .await
-    .map_err(|e| format!("Failed to get low stock count: {}", e))?;
+    .map_err(|e| e.to_string())?;
 
-    let low_stock_count: i32 = low_stock_items.try_get("low_stock_count").map_err(|e| e.to_string())?;
-
-    // Average transaction value
-    let avg_transaction = if today_transactions > 0 {
-        today_sales_amount / today_transactions as f64
-    } else {
-        0.0
-    };
+    let low_stock_items: i64 = low_stock_result.try_get("count").map_err(|e| e.to_string())?;
 
     let stats = DashboardStats {
-        today_sales: today_sales_amount,
+        today_sales,
         today_transactions,
-        total_products: total_products_count,
-        low_stock_items: low_stock_count,
-        average_transaction_value: avg_transaction,
-        week_sales: week_sales_amount,
-        month_sales: month_sales_amount,
+        week_sales,
+        month_sales,
+        total_products,
+        low_stock_items,
     };
 
     Ok(stats)
 }
 
-#[command]
+#[tauri::command]
 pub async fn get_recent_activity(
     pool: State<'_, SqlitePool>,
-    limit: Option<i32>,
-) -> Result<RecentActivity, String> {
-    let pool_ref = pool.inner();
-    let limit = limit.unwrap_or(10);
-
-    // Recent sales
-    let sales_rows = sqlx::query(
-        "SELECT s.id, s.sale_number, s.subtotal, s.tax_amount, s.discount_amount, s.total_amount,
-                s.payment_method, s.payment_status, s.cashier_id, s.customer_name, s.customer_phone,
-                s.customer_email, s.notes, s.is_voided, s.voided_by, s.voided_at, s.void_reason,
-                s.shift_id, s.created_at,
-                u.first_name, u.last_name
-         FROM sales s
-         JOIN users u ON s.cashier_id = u.id
-         WHERE s.is_voided = 0
-         ORDER BY s.created_at DESC
-         LIMIT ?1"
+    limit: Option<i64>,
+) -> Result<Vec<RecentActivity>, String> {
+    let lim = limit.unwrap_or(10);
+    
+    let rows = sqlx::query(
+        "SELECT 'sale' as type, id, total_amount as amount, created_at, 'Sale completed' as description FROM sales ORDER BY created_at DESC LIMIT ?"
     )
-    .bind(limit)
-    .fetch_all(pool_ref)
+    .bind(lim)
+    .fetch_all(pool.inner())
     .await
-    .map_err(|e| format!("Failed to get recent sales: {}", e))?;
+    .map_err(|e| e.to_string())?;
 
-    let mut sales = Vec::new();
-    for row in sales_rows {
-        let sale = Sale {
+    let mut activities = Vec::new();
+    for row in rows {
+        let activity = RecentActivity {
             id: row.try_get("id").map_err(|e| e.to_string())?,
-            sale_number: row.try_get("sale_number").map_err(|e| e.to_string())?,
-            subtotal: row.try_get("subtotal").map_err(|e| e.to_string())?,
-            tax_amount: row.try_get("tax_amount").map_err(|e| e.to_string())?,
-            discount_amount: row.try_get("discount_amount").map_err(|e| e.to_string())?,
-            total_amount: row.try_get("total_amount").map_err(|e| e.to_string())?,
-            payment_method: row.try_get("payment_method").map_err(|e| e.to_string())?,
-            payment_status: row.try_get("payment_status").map_err(|e| e.to_string())?,
-            cashier_id: row.try_get("cashier_id").map_err(|e| e.to_string())?,
-            customer_name: row.try_get("customer_name").ok().flatten(),
-            customer_phone: row.try_get("customer_phone").ok().flatten(),
-            customer_email: row.try_get("customer_email").ok().flatten(),
-            notes: row.try_get("notes").ok().flatten(),
-            is_voided: row.try_get("is_voided").map_err(|e| e.to_string())?,
-            voided_by: row.try_get("voided_by").ok().flatten(),
-            voided_at: row.try_get("voided_at").ok().flatten(),
-            void_reason: row.try_get("void_reason").ok().flatten(),
-            shift_id: row.try_get("shift_id").ok().flatten(),
-            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+            activity_type: row.try_get("type").map_err(|e| e.to_string())?,
+            amount: row.try_get("amount").map_err(|e| e.to_string())?,
+            description: row.try_get("description").map_err(|e| e.to_string())?,
+            timestamp: row.try_get("created_at").map_err(|e| e.to_string())?,
         };
-        sales.push(sale);
+        activities.push(activity);
     }
 
-    // Low stock items
-    let low_stock_rows = sqlx::query(
-        "SELECT i.id, i.product_id, i.current_stock, i.minimum_stock, i.maximum_stock,
-                i.reserved_stock, i.available_stock, i.last_updated, i.last_stock_take,
-                i.stock_take_count,
-                p.sku, p.barcode, p.name, p.description, p.category, p.subcategory, p.brand,
-                p.unit_of_measure, p.cost_price, p.selling_price, p.wholesale_price, p.tax_rate,
-                p.is_active, p.is_taxable, p.weight, p.dimensions, p.supplier_info, p.reorder_point,
-                p.created_at, p.updated_at
-         FROM inventory i
-         JOIN products p ON i.product_id = p.id
-         WHERE i.current_stock <= i.minimum_stock AND p.is_active = 1
-         ORDER BY (i.minimum_stock - i.current_stock) DESC
-         LIMIT ?1"
-    )
-    .bind(limit)
-    .fetch_all(pool_ref)
-    .await
-    .map_err(|e| format!("Failed to get low stock items: {}", e))?;
-
-    let mut low_stock_items = Vec::new();
-    for row in low_stock_rows {
-        let product = Product {
-            id: row.try_get("product_id").map_err(|e| e.to_string())?,
-            sku: row.try_get("sku").map_err(|e| e.to_string())?,
-            barcode: row.try_get("barcode").ok().flatten(),
-            name: row.try_get("name").map_err(|e| e.to_string())?,
-            description: row.try_get("description").ok().flatten(),
-            category: row.try_get("category").ok().flatten(),
-            subcategory: row.try_get("subcategory").ok().flatten(),
-            brand: row.try_get("brand").ok().flatten(),
-            unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
-            cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
-            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
-            wholesale_price: row.try_get("wholesale_price").map_err(|e| e.to_string())?,
-            tax_rate: row.try_get("tax_rate").map_err(|e| e.to_string())?,
-            is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
-            is_taxable: row.try_get("is_taxable").map_err(|e| e.to_string())?,
-            weight: row.try_get("weight").map_err(|e| e.to_string())?,
-            dimensions: row.try_get("dimensions").ok().flatten(),
-            supplier_info: row.try_get("supplier_info").ok().flatten(),
-            reorder_point: row.try_get("reorder_point").map_err(|e| e.to_string())?,
-            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
-            updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
-        };
-
-        let inventory_item = InventoryItem {
-            id: row.try_get("id").map_err(|e| e.to_string())?,
-            product_id: row.try_get("product_id").map_err(|e| e.to_string())?,
-            current_stock: row.try_get("current_stock").map_err(|e| e.to_string())?,
-            minimum_stock: row.try_get("minimum_stock").map_err(|e| e.to_string())?,
-            maximum_stock: row.try_get("maximum_stock").map_err(|e| e.to_string())?,
-            reserved_stock: row.try_get("reserved_stock").map_err(|e| e.to_string())?,
-            available_stock: row.try_get("available_stock").map_err(|e| e.to_string())?,
-            last_updated: row.try_get("last_updated").map_err(|e| e.to_string())?,
-            last_stock_take: row.try_get("last_stock_take").ok().flatten(),
-            stock_take_count: row.try_get("stock_take_count").map_err(|e| e.to_string())?,
-            product: Some(product),
-        };
-
-        low_stock_items.push(inventory_item);
-    }
-
-    // Recent products
-    let recent_products_rows = sqlx::query(
-        "SELECT id, sku, barcode, name, description, category, subcategory, brand,
-                unit_of_measure, cost_price, selling_price, wholesale_price, tax_rate,
-                is_active, is_taxable, weight, dimensions, supplier_info, reorder_point,
-                created_at, updated_at
-         FROM products
-         WHERE is_active = 1
-         ORDER BY created_at DESC
-         LIMIT ?1"
-    )
-    .bind(limit)
-    .fetch_all(pool_ref)
-    .await
-    .map_err(|e| format!("Failed to get recent products: {}", e))?;
-
-    let mut recent_products = Vec::new();
-    for row in recent_products_rows {
-        let product = Product {
-            id: row.try_get("id").map_err(|e| e.to_string())?,
-            sku: row.try_get("sku").map_err(|e| e.to_string())?,
-            barcode: row.try_get("barcode").ok().flatten(),
-            name: row.try_get("name").map_err(|e| e.to_string())?,
-            description: row.try_get("description").ok().flatten(),
-            category: row.try_get("category").ok().flatten(),
-            subcategory: row.try_get("subcategory").ok().flatten(),
-            brand: row.try_get("brand").ok().flatten(),
-            unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
-            cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
-            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
-            wholesale_price: row.try_get("wholesale_price").map_err(|e| e.to_string())?,
-            tax_rate: row.try_get("tax_rate").map_err(|e| e.to_string())?,
-            is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
-            is_taxable: row.try_get("is_taxable").map_err(|e| e.to_string())?,
-            weight: row.try_get("weight").map_err(|e| e.to_string())?,
-            dimensions: row.try_get("dimensions").ok().flatten(),
-            supplier_info: row.try_get("supplier_info").ok().flatten(),
-            reorder_point: row.try_get("reorder_point").map_err(|e| e.to_string())?,
-            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
-            updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
-        };
-        recent_products.push(product);
-    }
-
-    let activity = RecentActivity {
-        sales,
-        low_stock_items,
-        recent_products,
-    };
-
-    Ok(activity)
+    Ok(activities)
 }
