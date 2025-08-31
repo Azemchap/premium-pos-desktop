@@ -1,7 +1,9 @@
-use tauri::{command, State};
-use sqlx::{SqlitePool, Row};
-use crate::models::{DashboardStats, Sale, Product, InventoryItem};
+// src-tauri/src/commands/dashboard.rs (or wherever your get_stats command is)
+
+use crate::models::{DashboardStats, InventoryItem, Product, Sale};
 use serde::{Deserialize, Serialize};
+use sqlx::{Row, SqlitePool}; // Ensure Row is imported
+use tauri::{command, State};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RecentActivity {
@@ -13,75 +15,116 @@ pub struct RecentActivity {
 #[command]
 pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, String> {
     let pool_ref = pool.inner();
-    
-    // Today's sales
-    let today_sales = sqlx::query(
-        "SELECT COALESCE(SUM(total_amount), 0) as total_sales,
-                COUNT(*) as transaction_count
+
+    // --- Today's sales ---
+    let today_sales_row = sqlx::query(
+        "SELECT COALESCE(CAST(SUM(total_amount) AS REAL), 0.0) as total_sales,
+                CAST(COUNT(*) AS INTEGER) as transaction_count
          FROM sales 
-         WHERE DATE(created_at) = DATE('now') AND is_voided = 0"
+         WHERE DATE(created_at) = DATE('now') AND is_voided = 0",
     )
     .fetch_one(pool_ref)
     .await
-    .map_err(|e| format!("Failed to get today's sales: {}", e))?;
+    .map_err(|e| format!("Failed to get today's sales query: {}", e))?;
 
-    let today_sales_amount: f64 = today_sales.try_get("total_sales").map_err(|e| e.to_string())?;
-    let today_transactions: i32 = today_sales.try_get("transaction_count").map_err(|e| e.to_string())?;
+    // Explicitly fetch and map types for today's sales
+    let today_sales_amount: f64 = today_sales_row.try_get("total_sales").map_err(|e| {
+    eprintln!("Dashboard Stats Error: Failed to fetch 'total_sales' as f64. SQL Type might be incompatible. Error: {}", e);
+    format!("Type mismatch for total_sales: {}", e)
+})?;
 
-    // Week sales
-    let week_sales = sqlx::query(
-        "SELECT COALESCE(SUM(total_amount), 0) as week_total
+    let today_transactions: i32 = today_sales_row.try_get("transaction_count").map_err(|e| {
+        eprintln!(
+            "Dashboard Stats Error: Failed to fetch 'transaction_count' as i32. Error: {}",
+            e
+        );
+        format!("Type mismatch for transaction_count: {}", e)
+    })?;
+
+    // --- Week sales ---
+    let week_sales_row = sqlx::query(
+        "SELECT COALESCE(CAST(SUM(total_amount) AS REAL), 0.0) as week_total
          FROM sales 
-         WHERE DATE(created_at) >= DATE('now', '-6 days') AND is_voided = 0"
+         WHERE DATE(created_at) >= DATE('now', '-6 days') AND is_voided = 0",
     )
     .fetch_one(pool_ref)
     .await
-    .map_err(|e| format!("Failed to get week sales: {}", e))?;
+    .map_err(|e| format!("Failed to get week sales query: {}", e))?;
 
-    let week_sales_amount: f64 = week_sales.try_get("week_total").map_err(|e| e.to_string())?;
+    let week_sales_amount: f64 = week_sales_row.try_get("week_total").map_err(|e| {
+        eprintln!(
+            "Dashboard Stats Error: Failed to fetch 'week_total' as f64. Error: {}",
+            e
+        );
+        format!("Type mismatch for week_sales: {}", e)
+    })?;
 
-    // Month sales
-    let month_sales = sqlx::query(
-        "SELECT COALESCE(SUM(total_amount), 0) as month_total
+    // --- Month sales ---
+    let month_sales_row = sqlx::query(
+        "SELECT COALESCE(CAST(SUM(total_amount) AS REAL), 0.0) as month_total
          FROM sales 
-         WHERE DATE(created_at) >= DATE('now', 'start of month') AND is_voided = 0"
+         WHERE DATE(created_at) >= DATE('now', 'start of month') AND is_voided = 0",
     )
     .fetch_one(pool_ref)
     .await
-    .map_err(|e| format!("Failed to get month sales: {}", e))?;
+    .map_err(|e| format!("Failed to get month sales query: {}", e))?;
 
-    let month_sales_amount: f64 = month_sales.try_get("month_total").map_err(|e| e.to_string())?;
+    let month_sales_amount: f64 = month_sales_row.try_get("month_total").map_err(|e| {
+        eprintln!(
+            "Dashboard Stats Error: Failed to fetch 'month_total' as f64. Error: {}",
+            e
+        );
+        format!("Type mismatch for month_sales: {}", e)
+    })?;
 
-    // Total products
-    let total_products = sqlx::query(
-        "SELECT COUNT(*) as product_count FROM products WHERE is_active = 1"
+    // --- Total products ---
+    let total_products_row = sqlx::query(
+        "SELECT CAST(COUNT(*) AS INTEGER) as product_count FROM products WHERE is_active = 1",
     )
     .fetch_one(pool_ref)
     .await
-    .map_err(|e| format!("Failed to get product count: {}", e))?;
+    .map_err(|e| format!("Failed to get product count query: {}", e))?;
 
-    let total_products_count: i32 = total_products.try_get("product_count").map_err(|e| e.to_string())?;
+    let total_products_count: i32 = total_products_row.try_get("product_count").map_err(|e| {
+        eprintln!(
+            "Dashboard Stats Error: Failed to fetch 'product_count' as i32. Error: {}",
+            e
+        );
+        format!("Type mismatch for total_products: {}", e)
+    })?;
 
-    // Low stock items
-    let low_stock_items = sqlx::query(
-        "SELECT COUNT(*) as low_stock_count
+    // --- Low stock items ---
+    let low_stock_items_row = sqlx::query(
+        "SELECT CAST(COUNT(*) AS INTEGER) as low_stock_count
          FROM inventory i
          JOIN products p ON i.product_id = p.id
-         WHERE i.current_stock <= i.minimum_stock AND p.is_active = 1"
+         WHERE i.current_stock <= i.minimum_stock AND p.is_active = 1",
     )
     .fetch_one(pool_ref)
     .await
-    .map_err(|e| format!("Failed to get low stock count: {}", e))?;
+    .map_err(|e| format!("Failed to get low stock count query: {}", e))?;
 
-    let low_stock_count: i32 = low_stock_items.try_get("low_stock_count").map_err(|e| e.to_string())?;
+    let low_stock_count: i32 = low_stock_items_row
+        .try_get("low_stock_count")
+        .map_err(|e| {
+            eprintln!(
+                "Dashboard Stats Error: Failed to fetch 'low_stock_count' as i32. Error: {}",
+                e
+            );
+            format!("Type mismatch for low_stock_items: {}", e)
+        })?;
 
-    // Average transaction value
+    // --- Average transaction value ---
+    // Ensure division by zero is handled, and the result is f64
     let avg_transaction = if today_transactions > 0 {
-        today_sales_amount / today_transactions as f64
+        today_sales_amount / (today_transactions as f64) // Explicitly cast to f64 for division
     } else {
         0.0
     };
 
+    // --- Construct DashboardStats ---
+    // The 'number' type in TypeScript correctly handles both integers and floats.
+    // The key is ensuring the Rust types are correctly fetched and are compatible.
     let stats = DashboardStats {
         today_sales: today_sales_amount,
         today_transactions,
@@ -92,8 +135,13 @@ pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, St
         month_sales: month_sales_amount,
     };
 
+    // Log the fetched stats for debugging
+    println!("Dashboard Stats Fetched: {:?}", stats);
+
     Ok(stats)
 }
+
+// ... (rest of your dashboard.rs file) ...
 
 #[command]
 pub async fn get_recent_activity(
@@ -114,7 +162,7 @@ pub async fn get_recent_activity(
          JOIN users u ON s.cashier_id = u.id
          WHERE s.is_voided = 0
          ORDER BY s.created_at DESC
-         LIMIT ?1"
+         LIMIT ?1",
     )
     .bind(limit)
     .fetch_all(pool_ref)
@@ -160,7 +208,7 @@ pub async fn get_recent_activity(
          JOIN products p ON i.product_id = p.id
          WHERE i.current_stock <= i.minimum_stock AND p.is_active = 1
          ORDER BY (i.minimum_stock - i.current_stock) DESC
-         LIMIT ?1"
+         LIMIT ?1",
     )
     .bind(limit)
     .fetch_all(pool_ref)
@@ -219,7 +267,7 @@ pub async fn get_recent_activity(
          FROM products
          WHERE is_active = 1
          ORDER BY created_at DESC
-         LIMIT ?1"
+         LIMIT ?1",
     )
     .bind(limit)
     .fetch_all(pool_ref)

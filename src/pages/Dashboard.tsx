@@ -19,13 +19,13 @@ import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
 interface DashboardStats {
-    today_sales: number;
-    today_transactions: number;
-    total_products: number;
-    low_stock_items: number;
-    average_transaction_value: number;
-    week_sales: number;
-    month_sales: number;
+    today_sales: number; // This is likely f64 in Rust, maps to number in TS
+    today_transactions: number; // This is likely i32 in Rust, maps to number in TS
+    total_products: number; // This is likely i32 in Rust, maps to number in TS
+    low_stock_items: number; // This is likely i32 in Rust, maps to number in TS
+    average_transaction_value: number; // This is likely f64 in Rust, maps to number in TS
+    week_sales: number; // This is likely f64 in Rust, maps to number in TS
+    month_sales: number; // This is likely f64 in Rust, maps to number in TS
 }
 
 interface RecentActivity {
