@@ -1,6 +1,6 @@
 use crate::models::{CreateProductRequest, Product, ProductSearchRequest};
 use sqlx::{Row, SqlitePool};
-use tauri::{command, State};
+use tauri::State;
 
 #[tauri::command]
 pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, String> {

@@ -1,12 +1,10 @@
-
 use tauri_plugin_sql::{Migration, MigrationKind};
 
 pub fn get_migrations() -> Vec<Migration> {
-    vec![
-        Migration {
-            version: 1,
-            description: "create_initial_tables",
-            sql: r#"
+    vec![Migration {
+        version: 1,
+        description: "create_initial_tables",
+        sql: r#"
                 -- Store/Location configuration (single row)
                 CREATE TABLE IF NOT EXISTS locations (
                     id INTEGER PRIMARY KEY,
@@ -17,9 +15,6 @@ pub fn get_migrations() -> Vec<Migration> {
                     tax_rate REAL DEFAULT 0.0,
                     currency TEXT DEFAULT 'USD',
                     timezone TEXT DEFAULT 'UTC',
-                    logo_path TEXT,
-                    receipt_header TEXT,
-                    receipt_footer TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
@@ -35,8 +30,6 @@ pub fn get_migrations() -> Vec<Migration> {
                     role TEXT NOT NULL CHECK (role IN ('Admin', 'Manager', 'Cashier', 'StockKeeper')),
                     is_active BOOLEAN DEFAULT true,
                     last_login DATETIME,
-                    pin_code TEXT,
-                    permissions TEXT, -- JSON string for granular permissions
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
@@ -59,8 +52,8 @@ pub fn get_migrations() -> Vec<Migration> {
                     is_active BOOLEAN DEFAULT true,
                     is_taxable BOOLEAN DEFAULT true,
                     weight REAL DEFAULT 0.0,
-                    dimensions TEXT, -- JSON string for length, width, height
-                    supplier_info TEXT, -- JSON string for supplier details
+                    dimensions TEXT,
+                    supplier_info TEXT,
                     reorder_point INTEGER DEFAULT 0,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -73,8 +66,8 @@ pub fn get_migrations() -> Vec<Migration> {
                     current_stock INTEGER DEFAULT 0,
                     minimum_stock INTEGER DEFAULT 0,
                     maximum_stock INTEGER DEFAULT 0,
-                    reserved_stock INTEGER DEFAULT 0, -- For pending sales
-                    available_stock INTEGER DEFAULT 0, -- current_stock - reserved_stock
+                    reserved_stock INTEGER DEFAULT 0,
+                    available_stock INTEGER DEFAULT 0,
                     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
                     last_stock_take DATETIME,
                     stock_take_count INTEGER DEFAULT 0,
@@ -85,12 +78,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE TABLE IF NOT EXISTS inventory_movements (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     product_id INTEGER NOT NULL REFERENCES products(id),
-                    movement_type TEXT NOT NULL CHECK (movement_type IN ('sale', 'return', 'adjustment', 'stock_take', 'damage', 'transfer', 'receipt', 'reservation')),
+                    movement_type TEXT NOT NULL CHECK (movement_type IN ('sale', 'return', 'adjustment', 'stock_take', 'damage', 'transfer', 'receipt', 'reservation', 'void')),
                     quantity_change INTEGER NOT NULL,
                     previous_stock INTEGER NOT NULL,
                     new_stock INTEGER NOT NULL,
-                    reference_id INTEGER, -- Links to sale_id, return_id, etc.
-                    reference_type TEXT, -- 'sale', 'return', 'adjustment', etc.
+                    reference_id INTEGER,
+                    reference_type TEXT,
                     notes TEXT,
                     user_id INTEGER REFERENCES users(id),
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -129,7 +122,7 @@ pub fn get_migrations() -> Vec<Migration> {
                     discount_amount REAL DEFAULT 0.0,
                     line_total REAL NOT NULL,
                     tax_amount REAL DEFAULT 0.0,
-                    cost_price REAL DEFAULT 0.0, -- For profit calculation
+                    cost_price REAL DEFAULT 0.0,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
@@ -145,6 +138,7 @@ pub fn get_migrations() -> Vec<Migration> {
                     processed_by INTEGER NOT NULL REFERENCES users(id),
                     reason TEXT,
                     notes TEXT,
+                    shift_id INTEGER REFERENCES shifts(id),
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
@@ -167,7 +161,7 @@ pub fn get_migrations() -> Vec<Migration> {
                     printer_type TEXT NOT NULL CHECK (printer_type IN ('thermal', 'inkjet', 'laser')),
                     template_content TEXT NOT NULL,
                     is_default BOOLEAN DEFAULT false,
-                    paper_width INTEGER DEFAULT 80, -- mm
+                    paper_width INTEGER DEFAULT 80,
                     font_size INTEGER DEFAULT 12,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -201,7 +195,7 @@ pub fn get_migrations() -> Vec<Migration> {
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
-                -- Create comprehensive indexes for better performance
+                -- Create indexes for better performance
                 CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
                 CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);
                 CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active);
@@ -241,16 +235,15 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active);
 
                 -- Insert default store configuration
-                INSERT OR IGNORE INTO locations (id, name, address, phone, email, tax_rate, currency, timezone, receipt_header, receipt_footer)
-                VALUES (1, 'Premium POS Store', '123 Main Street', '+1-555-0123', 'info@premiumpos.com', 0.08, 'USD', 'America/New_York', 'Thank you for shopping with us!', 'Please come again!');
+                INSERT OR IGNORE INTO locations (id, name, address, phone, email, tax_rate, currency, timezone)
+                VALUES (1, 'Premium POS Store', '123 Main Street', '+1-555-0123', 'info@premiumpos.com', 0.08, 'USD', 'America/New_York');
 
                 -- Insert default receipt templates
                 INSERT OR IGNORE INTO receipt_templates (name, template_type, printer_type, template_content, is_default, paper_width, font_size)
                 VALUES 
-                ('Default Sale Receipt', 'sale', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nSALE #{{sale_number}}\nDate: {{sale_date}}\nCashier: {{cashier_name}}\n\n{{items}}\n\nSubtotal: {{subtotal}}\nTax: {{tax_amount}}\nTotal: {{total_amount}}\n\n{{receipt_footer}}', 1, 80, 12),
-                ('Default Return Receipt', 'return', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nRETURN #{{return_number}}\nDate: {{return_date}}\nProcessed by: {{user_name}}\n\n{{items}}\n\nTotal Refund: {{total_amount}}\n\n{{receipt_footer}}', 1, 80, 12);
+                ('Default Sale Receipt', 'sale', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nSALE #{{sale_number}}\nDate: {{sale_date}}\nCashier: {{cashier_name}}\n\n{{items}}\n\nSubtotal: {{subtotal}}\nTax: {{tax_amount}}\nTotal: {{total_amount}}\n\nThank you for your business!', 1, 80, 12),
+                ('Default Return Receipt', 'return', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nRETURN #{{return_number}}\nDate: {{return_date}}\nProcessed by: {{user_name}}\n\n{{items}}\n\nTotal Refund: {{total_amount}}\n\nThank you!', 1, 80, 12);
             "#,
-            kind: MigrationKind::Up,
-        }
-    ]
+        kind: MigrationKind::Up,
+    }]
 }
