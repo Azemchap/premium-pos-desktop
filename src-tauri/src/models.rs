@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 
 // User models
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct User {
     pub id: i64,
     pub username: String,
@@ -42,7 +43,7 @@ pub struct LoginResponse {
 }
 
 // Product models
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct Product {
     pub id: i64,
     pub sku: String,
@@ -89,7 +90,7 @@ pub struct CreateProductRequest {
 }
 
 // Inventory models
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct InventoryItem {
     pub id: i64,
     pub product_id: i64,
@@ -112,10 +113,32 @@ pub struct StockUpdateRequest {
     pub notes: Option<String>,
     pub reference_id: Option<i64>,
     pub reference_type: Option<String>,
+    pub new_stock: i32,
+    pub reserved_stock: i32,
+    pub product_name: String,
+    pub sku: String,
+    pub user_id: Option<i64>,
+    pub user_name: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
+pub struct InventoryMovement {
+    pub id: i64,
+    pub product_id: i64,
+    pub product_name: String,
+    pub sku: String,
+    pub quantity_change: i32,
+    pub movement_type: String,
+    pub notes: Option<String>,
+    pub reference_id: Option<i64>,
+    pub reference_type: Option<String>,
+    pub user_id: Option<i64>,
+    pub user_name: Option<String>,
+    pub created_at: String,
 }
 
 // Sales models
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct Sale {
     pub id: i64,
     pub sale_number: String,
@@ -140,7 +163,8 @@ pub struct Sale {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateSaleRequest {
-    pub cashier_id: i64, // Add this
+    pub sale_number: String,
+    pub cashier_id: i64,
     pub items: Vec<SaleItemRequest>,
     pub subtotal: f64,
     pub tax_amount: f64,
@@ -151,20 +175,32 @@ pub struct CreateSaleRequest {
     pub customer_phone: Option<String>,
     pub customer_email: Option<String>,
     pub notes: Option<String>,
+    pub shift_id: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SaleItemRequest {
     pub product_id: i64,
+    pub product_name: String,
+    pub sku: String,
     pub quantity: i32,
     pub unit_price: f64,
     pub discount_amount: f64,
     pub line_total: f64,
+    pub total_price: f64,
     pub tax_amount: f64,
     pub cost_price: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ReturnItemRequest {
+    pub product_id: i64,
+    pub quantity: i32,
+    pub reason: String,
+    pub refund_amount: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct SaleItem {
     pub id: i64,
     pub sale_id: i64,
@@ -186,7 +222,7 @@ pub struct SaleWithItems {
 }
 
 // Store configuration models
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct StoreConfig {
     pub id: i64,
     pub name: String,
@@ -218,7 +254,7 @@ pub struct UpdateStoreConfigRequest {
 }
 
 // Shift models
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct Shift {
     pub id: i64,
     pub user_id: i64,
@@ -248,7 +284,7 @@ pub struct CloseShiftRequest {
 }
 
 // Cash drawer transaction models
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct CashDrawerTransaction {
     pub id: i64,
     pub shift_id: i64,
@@ -268,7 +304,7 @@ pub struct CreateCashDrawerTransactionRequest {
 }
 
 // Receipt template models
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct ReceiptTemplate {
     pub id: i64,
     pub name: String,
@@ -303,6 +339,15 @@ pub struct DashboardStats {
     pub average_transaction_value: f64,
     pub week_sales: f64,
     pub month_sales: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
+pub struct RecentActivity {
+    pub id: i64,
+    pub activity_type: String,
+    pub amount: f64,
+    pub description: String,
+    pub timestamp: String,
 }
 
 // Search and filter models

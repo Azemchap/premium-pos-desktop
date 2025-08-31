@@ -1,10 +1,12 @@
-use crate::models::{CreateUserRequest, User};
-use sqlx::{Row, SqlitePool};
 use tauri::{command, State};
+use crate::models::{User, CreateUserRequest};
+use sqlx::{SqlitePool, Row};
 
 #[tauri::command]
-pub async fn get_users(pool: State<'_, SqlitePool>) -> Result<Vec<User>, String> {
-    let rows = sqlx::query("SELECT * FROM users WHERE is_active = 1 ORDER BY username")
+pub async fn get_users(
+    pool: State<'_, SqlitePool>,
+) -> Result<Vec<User>, String> {
+    let rows = sqlx::query("SELECT * FROM users ORDER BY username")
         .fetch_all(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
@@ -18,6 +20,8 @@ pub async fn get_users(pool: State<'_, SqlitePool>) -> Result<Vec<User>, String>
             first_name: row.try_get("first_name").map_err(|e| e.to_string())?,
             last_name: row.try_get("last_name").map_err(|e| e.to_string())?,
             role: row.try_get("role").map_err(|e| e.to_string())?,
+            pin_code: row.try_get("pin_code").map_err(|e| e.to_string())?,
+            permissions: row.try_get("permissions").map_err(|e| e.to_string())?,
             is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
             last_login: row.try_get("last_login").ok().flatten(),
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
@@ -35,7 +39,7 @@ pub async fn create_user(
     request: CreateUserRequest,
 ) -> Result<User, String> {
     let user_id = sqlx::query(
-        "INSERT INTO users (username, email, password, first_name, last_name, role, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)"
+        "INSERT INTO users (username, email, password_hash, first_name, last_name, role, pin_code, permissions, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)"
     )
     .bind(&request.username)
     .bind(&request.email)
@@ -43,6 +47,10 @@ pub async fn create_user(
     .bind(&request.first_name)
     .bind(&request.last_name)
     .bind(&request.role)
+    .bind(&request.pin_code)
+    .bind(&request.permissions)
+    .bind(chrono::Utc::now().naive_utc().to_string())
+    .bind(chrono::Utc::now().naive_utc().to_string())
     .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?
@@ -55,10 +63,12 @@ pub async fn create_user(
         first_name: request.first_name,
         last_name: request.last_name,
         role: request.role,
+        pin_code: request.pin_code,
+        permissions: request.permissions,
         is_active: true,
         last_login: None,
-        created_at: chrono::Utc::now().naive_utc(),
-        updated_at: chrono::Utc::now().naive_utc(),
+        created_at: chrono::Utc::now().naive_utc().to_string(),
+        updated_at: chrono::Utc::now().naive_utc().to_string(),
     };
 
     Ok(user)
@@ -71,15 +81,16 @@ pub async fn update_user(
     request: CreateUserRequest,
 ) -> Result<User, String> {
     sqlx::query(
-        "UPDATE users SET username = ?, email = ?, password = ?, first_name = ?, last_name = ?, role = ?, updated_at = ? WHERE id = ?"
+        "UPDATE users SET username = ?, email = ?, first_name = ?, last_name = ?, role = ?, pin_code = ?, permissions = ?, updated_at = ? WHERE id = ?"
     )
     .bind(&request.username)
     .bind(&request.email)
-    .bind(&request.password)
     .bind(&request.first_name)
     .bind(&request.last_name)
     .bind(&request.role)
-    .bind(chrono::Utc::now().naive_utc())
+    .bind(&request.pin_code)
+    .bind(&request.permissions)
+    .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(user_id)
     .execute(pool.inner())
     .await
@@ -92,18 +103,23 @@ pub async fn update_user(
         first_name: request.first_name,
         last_name: request.last_name,
         role: request.role,
+        pin_code: request.pin_code,
+        permissions: request.permissions,
         is_active: true,
         last_login: None,
-        created_at: chrono::Utc::now().naive_utc(),
-        updated_at: chrono::Utc::now().naive_utc(),
+        created_at: chrono::Utc::now().naive_utc().to_string(),
+        updated_at: chrono::Utc::now().naive_utc().to_string(),
     };
 
     Ok(user)
 }
 
 #[tauri::command]
-pub async fn delete_user(pool: State<'_, SqlitePool>, user_id: i64) -> Result<bool, String> {
-    let result = sqlx::query("UPDATE users SET is_active = 0 WHERE id = ?")
+pub async fn delete_user(
+    pool: State<'_, SqlitePool>,
+    user_id: i64,
+) -> Result<bool, String> {
+    let result = sqlx::query("DELETE FROM users WHERE id = ?")
         .bind(user_id)
         .execute(pool.inner())
         .await

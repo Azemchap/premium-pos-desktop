@@ -1,57 +1,80 @@
-use crate::models::{StoreConfig, UpdateStoreConfigRequest};
-use sqlx::{Row, SqlitePool};
 use tauri::{command, State};
+use crate::models::StoreConfig;
+use sqlx::{SqlitePool, Row};
 
 #[tauri::command]
-pub async fn get_store_config(pool: State<'_, SqlitePool>) -> Result<StoreConfig, String> {
-    let row = sqlx::query(
-        "SELECT id, name, address, phone, email, tax_rate, currency, timezone, logo_path, receipt_header, receipt_footer, created_at, updated_at FROM locations WHERE id = 1"
-    )
-    .fetch_one(pool.inner())
-    .await
-    .map_err(|e| e.to_string())?;
+pub async fn get_store_config(
+    pool: State<'_, SqlitePool>,
+) -> Result<StoreConfig, String> {
+    let row = sqlx::query("SELECT * FROM store_config LIMIT 1")
+        .fetch_optional(pool.inner())
+        .await
+        .map_err(|e| e.to_string())?;
 
-    let config = StoreConfig {
-        id: row.try_get("id").map_err(|e| e.to_string())?,
-        name: row.try_get("name").map_err(|e| e.to_string())?,
-        address: row.try_get("address").map_err(|e| e.to_string())?,
-        phone: row.try_get("phone").map_err(|e| e.to_string())?,
-        email: row.try_get("email").map_err(|e| e.to_string())?,
-        tax_rate: row.try_get("tax_rate").map_err(|e| e.to_string())?,
-        currency: row.try_get("currency").map_err(|e| e.to_string())?,
-        timezone: row.try_get("timezone").map_err(|e| e.to_string())?,
-        logo_path: row.try_get("logo_path").ok().flatten(),
-        receipt_header: row.try_get("receipt_header").ok().flatten(),
-        receipt_footer: row.try_get("receipt_footer").ok().flatten(),
-        created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
-        updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
-    };
-
-    Ok(config)
+    if let Some(row) = row {
+        let config = StoreConfig {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            name: row.try_get("name").map_err(|e| e.to_string())?,
+            address: row.try_get("address").ok().flatten(),
+            phone: row.try_get("phone").ok().flatten(),
+            email: row.try_get("email").ok().flatten(),
+            tax_rate: row.try_get("tax_rate").map_err(|e| e.to_string())?,
+            currency: row.try_get("currency").map_err(|e| e.to_string())?,
+            timezone: row.try_get("timezone").map_err(|e| e.to_string())?,
+            logo_path: row.try_get("logo_path").ok().flatten(),
+            receipt_header: row.try_get("receipt_header").ok().flatten(),
+            receipt_footer: row.try_get("receipt_footer").ok().flatten(),
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+            updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
+        };
+        Ok(config)
+    } else {
+        // Return default config if none exists
+        Ok(StoreConfig {
+            id: 1,
+            name: "My Store".to_string(),
+            address: None,
+            phone: None,
+            email: None,
+            tax_rate: 0.0,
+            currency: "USD".to_string(),
+            timezone: "UTC".to_string(),
+            logo_path: None,
+            receipt_header: None,
+            receipt_footer: None,
+            created_at: chrono::Utc::now().naive_utc().to_string(),
+            updated_at: chrono::Utc::now().naive_utc().to_string(),
+        })
+    }
 }
 
 #[tauri::command]
 pub async fn update_store_config(
     pool: State<'_, SqlitePool>,
-    request: UpdateStoreConfigRequest,
+    config: StoreConfig,
 ) -> Result<StoreConfig, String> {
     sqlx::query(
-        "UPDATE locations SET name = ?, address = ?, phone = ?, email = ?, tax_rate = ?, currency = ?, timezone = ?, logo_path = ?, receipt_header = ?, receipt_footer = ?, updated_at = ? WHERE id = 1"
+        "UPDATE store_config SET name = ?, address = ?, phone = ?, email = ?, tax_rate = ?, currency = ?, timezone = ?, logo_path = ?, receipt_header = ?, receipt_footer = ?, updated_at = ? WHERE id = ?"
     )
-    .bind(&request.name)
-    .bind(&request.address)
-    .bind(&request.phone)
-    .bind(&request.email)
-    .bind(request.tax_rate)
-    .bind(&request.currency)
-    .bind(&request.timezone)
-    .bind(&request.logo_path)
-    .bind(&request.receipt_header)
-    .bind(&request.receipt_footer)
-    .bind(chrono::Utc::now().naive_utc())
+    .bind(&config.name)
+    .bind(&config.address)
+    .bind(&config.phone)
+    .bind(&config.email)
+    .bind(config.tax_rate)
+    .bind(&config.currency)
+    .bind(&config.timezone)
+    .bind(&config.logo_path)
+    .bind(&config.receipt_header)
+    .bind(&config.receipt_footer)
+    .bind(chrono::Utc::now().naive_utc().to_string())
+    .bind(config.id)
     .execute(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
+<<<<<<< Current (Your changes)
     get_store_config(pool).await
+=======
+    Ok(config)
+>>>>>>> Incoming (Background Agent changes)
 }
