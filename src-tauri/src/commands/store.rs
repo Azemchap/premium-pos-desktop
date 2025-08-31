@@ -72,9 +72,5 @@ pub async fn update_store_config(
     .await
     .map_err(|e| e.to_string())?;
 
-<<<<<<< Current (Your changes)
     get_store_config(pool).await
-=======
-    Ok(config)
->>>>>>> Incoming (Background Agent changes)
 }

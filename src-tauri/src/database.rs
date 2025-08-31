@@ -1,7 +1,4 @@
 
-<<<<<<< Current (Your changes)
-use tauri_plugin_sql::{Migration, MigrationKind};
-=======
 pub struct Migration {
     pub version: u32,
     pub description: &'static str,
@@ -99,26 +96,28 @@ pub const INITIAL_MIGRATION: &str = r#"
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Sales transactions
+    -- Sales table
     CREATE TABLE IF NOT EXISTS sales (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sale_number TEXT UNIQUE NOT NULL,
-        total_amount REAL NOT NULL,
-        tax_amount REAL DEFAULT 0.0,
-        payment_method TEXT NOT NULL,
-        payment_status TEXT DEFAULT 'completed',
         cashier_id INTEGER NOT NULL REFERENCES users(id),
-        customer_name TEXT,
-        customer_phone TEXT,
-        customer_email TEXT,
+        shift_id INTEGER REFERENCES shifts(id),
+        customer_id INTEGER REFERENCES customers(id),
+        subtotal REAL NOT NULL,
+        tax_amount REAL NOT NULL,
+        total_amount REAL NOT NULL,
+        payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'card', 'check', 'gift_card', 'store_credit')),
+        payment_status TEXT NOT NULL CHECK (payment_status IN ('pending', 'completed', 'failed', 'refunded')),
         is_voided BOOLEAN DEFAULT false,
-        voided_at DATETIME,
         void_reason TEXT,
-        shift_id INTEGER,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        voided_by INTEGER REFERENCES users(id),
+        voided_at DATETIME,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Sale line items
+    -- Sale items table
     CREATE TABLE IF NOT EXISTS sale_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sale_id INTEGER NOT NULL REFERENCES sales(id),
@@ -128,46 +127,63 @@ pub const INITIAL_MIGRATION: &str = r#"
         quantity INTEGER NOT NULL,
         unit_price REAL NOT NULL,
         total_price REAL NOT NULL,
+        tax_rate REAL DEFAULT 0.0,
         tax_amount REAL DEFAULT 0.0,
-        cost_price REAL DEFAULT 0.0, -- For profit calculation
+        discount_amount REAL DEFAULT 0.0,
+        discount_reason TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Returns/Refunds
+    -- Returns table
     CREATE TABLE IF NOT EXISTS returns (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        return_number TEXT UNIQUE NOT NULL,
         original_sale_id INTEGER REFERENCES sales(id),
+        customer_id INTEGER REFERENCES customers(id),
+        user_id INTEGER NOT NULL REFERENCES users(id),
         return_reason TEXT NOT NULL,
-        total_refund_amount REAL NOT NULL,
+        refund_method TEXT NOT NULL CHECK (refund_method IN ('cash', 'card', 'store_credit', 'exchange')),
+        refund_amount REAL NOT NULL,
+        notes TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Return line items
+    -- Return items table
     CREATE TABLE IF NOT EXISTS return_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         return_id INTEGER NOT NULL REFERENCES returns(id),
         product_id INTEGER NOT NULL REFERENCES products(id),
+        product_name TEXT NOT NULL,
+        sku TEXT NOT NULL,
         quantity INTEGER NOT NULL,
-        refund_amount REAL NOT NULL,
-        reason TEXT,
+        unit_price REAL NOT NULL,
+        total_price REAL NOT NULL,
+        condition TEXT CHECK (condition IN ('new', 'like_new', 'good', 'fair', 'poor')),
+        notes TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Receipt templates
-    CREATE TABLE IF NOT EXISTS receipt_templates (
+    -- Customers table
+    CREATE TABLE IF NOT EXISTS customers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        template_type TEXT NOT NULL CHECK (template_type IN ('sale', 'return', 'void')),
-        printer_type TEXT NOT NULL CHECK (printer_type IN ('thermal', 'inkjet', 'laser')),
-        template_content TEXT NOT NULL,
-        is_default BOOLEAN DEFAULT false,
-        paper_width INTEGER DEFAULT 80, -- mm
-        font_size INTEGER DEFAULT 12,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        email TEXT UNIQUE,
+        phone TEXT,
+        address TEXT,
+        city TEXT,
+        state TEXT,
+        zip_code TEXT,
+        country TEXT DEFAULT 'USA',
+        loyalty_points INTEGER DEFAULT 0,
+        total_spent REAL DEFAULT 0.0,
+        last_visit DATETIME,
+        is_active BOOLEAN DEFAULT true,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Shifts for cash management
+    -- Shifts table for cashier management
     CREATE TABLE IF NOT EXISTS shifts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL REFERENCES users(id),
@@ -261,7 +277,6 @@ pub const INITIAL_MIGRATION: &str = r#"
     ('Default Sale Receipt', 'sale', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nSALE #{{sale_number}}\nDate: {{sale_date}}\nCashier: {{cashier_name}}\n\n{{items}}\n\nSubtotal: {{subtotal}}\nTax: {{tax_amount}}\nTotal: {{total_amount}}\n\n{{receipt_footer}}', 1, 80, 12),
     ('Default Return Receipt', 'return', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nRETURN #{{return_number}}\nDate: {{return_date}}\nProcessed by: {{user_name}}\n\n{{items}}\n\nTotal Refund: {{total_amount}}\n\n{{receipt_footer}}', 1, 80, 12);
 "#;
->>>>>>> Incoming (Background Agent changes)
 
 pub fn get_migrations() -> Vec<Migration> {
     vec![

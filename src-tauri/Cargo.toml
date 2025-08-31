@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tauri = "2.0"
+tauri = { version = "2.0", features = [] }
 tauri-plugin-sql = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -20,7 +20,7 @@ log = "0.4"
 env_logger = "0.10"
 
 [build-dependencies]
-tauri-build = "2.0"
+tauri-build = { version = "2.0", features = [] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

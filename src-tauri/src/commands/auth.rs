@@ -49,11 +49,6 @@ pub async fn authenticate_with_pin(
     pool: State<'_, SqlitePool>,
     pin_code: &str,
 ) -> Result<Option<User>, String> {
-<<<<<<< Current (Your changes)
-    // In a real application, you would store and validate session tokens
-    // For now, we'll just return None to indicate invalid session
-    Ok(None)
-=======
     let row = sqlx::query(
         "SELECT * FROM users WHERE pin_code = ? AND is_active = 1"
     )
@@ -157,5 +152,4 @@ pub async fn reset_password(
     .map_err(|e| e.to_string())?;
 
     Ok(())
->>>>>>> Incoming (Background Agent changes)
 }
