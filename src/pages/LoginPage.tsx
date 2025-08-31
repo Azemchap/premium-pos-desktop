@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,17 @@ import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { Eye, EyeOff, Store, Lock, User } from "lucide-react";
 
+// --- Corrected Imports & Readiness Check ---
+// Removed the `isTauri` import as we'll rely on checking `window.__TAURI__` directly.
+
+// Let's revise the readiness check.
+// If `window.__TAURI__` and `window.__TAURI__.core` exist, we assume it's ready.
+const isAppInTauri = () => {
+  return typeof window.__TAURI__ !== "undefined" && window.__TAURI__ !== null && typeof window.__TAURI__.core !== 'undefined';
+};
+
 interface LoginRequest {
-  username: string;  // Changed from email to username
+  username: string;
   password: string;
   [key: string]: unknown;
 }
@@ -31,7 +40,7 @@ interface LoginResponse {
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginRequest>({
-    username: "admin",  // Default to the correct username
+    username: "admin",
     password: "admin123",
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -40,30 +49,56 @@ export default function LoginPage() {
   const { login } = useAuthStore();
   const navigate = useNavigate();
 
+  // --- State to track if Tauri APIs are ready ---
+  const [tauriReady, setTauriReady] = useState(isAppInTauri());
+
+  useEffect(() => {
+    console.log("LoginPage mounted.");
+    console.log("window.__TAURI__ available?", !!window.__TAURI__);
+    if (window.__TAURI__) {
+      console.log("window.__TAURI__.core available?", !!window.__TAURI__.core);
+      if (window.__TAURI__.core) {
+        console.log("window.__TAURI__.core.invoke exists:", typeof window.__TAURI__.core.invoke === 'function');
+      }
+    }
+    // Update state to reflect initial readiness
+    setTauriReady(isAppInTauri());
+
+  }, []);
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // The issue here is how invoke arguments are passed.
+    // The Rust handler expects its parameters within an object, possibly named 'request'.
+
     setLoading(true);
     setError("");
 
     try {
-      // Call the correct command with the correct parameters
+      console.log("Attempting to invoke login_user...");
       const response = await invoke<LoginResponse>("login_user", {
-        username: formData.username,
-        password: formData.password
+        // Wrap the arguments in an object that matches the Rust handler's expected structure.
+        // The error message "missing required key request" implies the Rust side
+        // is looking for something like: { request: { username: '...', password: '...' } }
+        request: { // <-- Add this 'request' object wrapper
+          username: formData.username,
+          password: formData.password
+        }
       });
+      console.log("Invoke response received:", response);
 
-      // Store the session token in localStorage for future use
       localStorage.setItem("session_token", response.session_token);
-
-      // Login the user
       login(response.user);
 
       toast.success("Login successful!");
       navigate("/");
     } catch (error: any) {
-      console.error("Login failed:", error);
-      setError(error.message || "Login failed. Please check your credentials.");
-      toast.error("Login failed");
+      console.error("Error during invoke:", error);
+      // If Tauri is ready, the error is likely from the argument mismatch.
+      setError(error.message || "Login failed due to incorrect arguments or server error.");
+      toast.error(`Login failed: ${error.message || 'An unknown error occurred'}`);
     } finally {
       setLoading(false);
     }
@@ -75,6 +110,26 @@ export default function LoginPage() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const testDatabaseQuery = async () => {
+    // Removed the !tauriReady guard here as well.
+
+    console.log("Attempting test database query...");
+    try {
+      const users = await invoke("get_users");
+      console.log("get_users response:", users);
+      if (Array.isArray(users)) {
+        toast.success(`Database test successful! Found ${users.length} users.`);
+      } else {
+        toast.warning("Database test completed, but got unexpected response format.");
+      }
+    } catch (error: any) {
+      console.error("Database test failed:", error);
+      // If tauriReady was false, the error message might reflect that.
+      toast.error(`Database test failed: ${error.message || 'An unknown error occurred'}`);
+      setError(`Database test failed: ${error.message || 'An unknown error occurred'}`);
+    }
   };
 
   return (
@@ -115,6 +170,7 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   required
                   className="pl-10"
+                // Removed disabled={loading || !tauriReady}
                 />
               </div>
             </div>
@@ -132,6 +188,7 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   required
                   className="pl-10 pr-10"
+                // Removed disabled={loading || !tauriReady}
                 />
                 <Button
                   type="button"
@@ -139,6 +196,7 @@ export default function LoginPage() {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
+                // Removed disabled={loading || !tauriReady}
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4 text-muted-foreground" />
@@ -152,7 +210,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              disabled={loading}
+            // Removed disabled={loading || !tauriReady}
             >
               {loading ? (
                 <div className="flex items-center">
@@ -169,6 +227,12 @@ export default function LoginPage() {
             <p className="text-sm text-muted-foreground">
               Demo credentials: <strong>admin</strong> / <strong>admin123</strong>
             </p>
+          </div>
+
+          <div className="mt-4 text-center">
+            <Button variant="outline" onClick={testDatabaseQuery} /* Removed disabled={!tauriReady || loading} */ >
+              Test Database Connection
+            </Button>
           </div>
         </CardContent>
       </Card>

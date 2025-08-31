@@ -10,10 +10,11 @@ pub async fn login_user(pool: State<'_, SqlitePool>, request: LoginRequest) -> R
     println!("DEBUG(auth): received password length = {}", request.password.len());
 
     let pool_ref = pool.inner();
-    // fetch user
+    
+    // Try to find user by username first, then by email if username fails
     let row = sqlx::query(
         "SELECT id, username, email, password_hash, first_name, last_name, role, is_active, last_login, created_at, updated_at
-         FROM users WHERE username = ?1 AND is_active = 1",
+         FROM users WHERE (username = ?1 OR email = ?1) AND is_active = 1",
     )
     .bind(&request.username)
     .fetch_optional(pool_ref)
@@ -45,6 +46,7 @@ pub async fn login_user(pool: State<'_, SqlitePool>, request: LoginRequest) -> R
     }
 
     let id: i64 = row.try_get("id").map_err(|e| e.to_string())?;
+    
     // Update last_login (best-effort; non-fatal)
     if let Err(e) = sqlx::query("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?1")
         .bind(id)
