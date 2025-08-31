@@ -1,6 +1,6 @@
+use crate::models::{CloseShiftRequest, CreateShiftRequest, Shift};
+use sqlx::{Row, SqlitePool};
 use tauri::{command, State};
-use sqlx::{SqlitePool, Row};
-use crate::models::{Shift, CreateShiftRequest, CloseShiftRequest};
 
 #[command]
 pub async fn create_shift(
@@ -9,15 +9,14 @@ pub async fn create_shift(
     request: CreateShiftRequest,
 ) -> Result<Shift, String> {
     let pool_ref = pool.inner();
-    
+
     // Check if user already has an open shift
-    let existing_shift = sqlx::query(
-        "SELECT id FROM shifts WHERE user_id = ?1 AND status = 'open'"
-    )
-    .bind(user_id)
-    .fetch_optional(pool_ref)
-    .await
-    .map_err(|e| format!("Database error: {}", e))?;
+    let existing_shift =
+        sqlx::query("SELECT id FROM shifts WHERE user_id = ?1 AND status = 'open'")
+            .bind(user_id)
+            .fetch_optional(pool_ref)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
 
     if existing_shift.is_some() {
         return Err("User already has an open shift".to_string());
@@ -26,7 +25,7 @@ pub async fn create_shift(
     // Create new shift
     let result = sqlx::query(
         "INSERT INTO shifts (user_id, start_time, opening_amount, status) 
-         VALUES (?1, CURRENT_TIMESTAMP, ?2, 'open')"
+         VALUES (?1, CURRENT_TIMESTAMP, ?2, 'open')",
     )
     .bind(user_id)
     .bind(request.opening_amount)
@@ -40,7 +39,7 @@ pub async fn create_shift(
     let row = sqlx::query(
         "SELECT id, user_id, start_time, end_time, opening_amount, closing_amount, 
                 total_sales, total_returns, cash_sales, card_sales, status, notes, created_at
-         FROM shifts WHERE id = ?1"
+         FROM shifts WHERE id = ?1",
     )
     .bind(shift_id)
     .fetch_one(pool_ref)
@@ -74,16 +73,14 @@ pub async fn close_shift(
     request: CloseShiftRequest,
 ) -> Result<Shift, String> {
     let pool_ref = pool.inner();
-    
+
     // Verify shift exists and belongs to user
-    let shift = sqlx::query(
-        "SELECT id, status FROM shifts WHERE id = ?1 AND user_id = ?2"
-    )
-    .bind(shift_id)
-    .bind(user_id)
-    .fetch_optional(pool_ref)
-    .await
-    .map_err(|e| format!("Database error: {}", e))?;
+    let shift = sqlx::query("SELECT id, status FROM shifts WHERE id = ?1 AND user_id = ?2")
+        .bind(shift_id)
+        .bind(user_id)
+        .fetch_optional(pool_ref)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
     let shift = match shift {
         Some(s) => s,
@@ -108,9 +105,15 @@ pub async fn close_shift(
     .await
     .map_err(|e| format!("Failed to calculate sales totals: {}", e))?;
 
-    let total_sales: f64 = sales_totals.try_get("total_sales").map_err(|e| e.to_string())?;
-    let cash_sales: f64 = sales_totals.try_get("cash_sales").map_err(|e| e.to_string())?;
-    let card_sales: f64 = sales_totals.try_get("card_sales").map_err(|e| e.to_string())?;
+    let total_sales: f64 = sales_totals
+        .try_get("total_sales")
+        .map_err(|e| e.to_string())?;
+    let cash_sales: f64 = sales_totals
+        .try_get("cash_sales")
+        .map_err(|e| e.to_string())?;
+    let card_sales: f64 = sales_totals
+        .try_get("card_sales")
+        .map_err(|e| e.to_string())?;
 
     // Close the shift
     sqlx::query(
@@ -122,7 +125,7 @@ pub async fn close_shift(
             card_sales = ?4,
             status = 'closed',
             notes = ?5
-         WHERE id = ?6"
+         WHERE id = ?6",
     )
     .bind(request.closing_amount)
     .bind(total_sales)
@@ -138,7 +141,7 @@ pub async fn close_shift(
     let row = sqlx::query(
         "SELECT id, user_id, start_time, end_time, opening_amount, closing_amount, 
                 total_sales, total_returns, cash_sales, card_sales, status, notes, created_at
-         FROM shifts WHERE id = ?1"
+         FROM shifts WHERE id = ?1",
     )
     .bind(shift_id)
     .fetch_one(pool_ref)
@@ -170,11 +173,11 @@ pub async fn get_current_shift(
     user_id: i64,
 ) -> Result<Option<Shift>, String> {
     let pool_ref = pool.inner();
-    
+
     let row = sqlx::query(
         "SELECT id, user_id, start_time, end_time, opening_amount, closing_amount, 
                 total_sales, total_returns, cash_sales, card_sales, status, notes, created_at
-         FROM shifts WHERE user_id = ?1 AND status = 'open'"
+         FROM shifts WHERE user_id = ?1 AND status = 'open'",
     )
     .bind(user_id)
     .fetch_optional(pool_ref)
@@ -212,10 +215,10 @@ pub async fn get_shift_history(
     offset: Option<i32>,
 ) -> Result<Vec<Shift>, String> {
     let pool_ref = pool.inner();
-    
+
     let limit = limit.unwrap_or(50);
     let offset = offset.unwrap_or(0);
-    
+
     let query = if let Some(uid) = user_id {
         "SELECT id, user_id, start_time, end_time, opening_amount, closing_amount, 
                 total_sales, total_returns, cash_sales, card_sales, status, notes, created_at

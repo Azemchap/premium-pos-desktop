@@ -1,7 +1,7 @@
-use tauri::{command, State};
-use sqlx::{SqlitePool, Row};
 use crate::models::{InventoryItem, StockUpdateRequest};
 use serde::{Deserialize, Serialize};
+use sqlx::{Row, SqlitePool};
+use tauri::{command, State};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InventoryMovement {
@@ -23,7 +23,7 @@ pub struct InventoryMovement {
 #[command]
 pub async fn get_inventory(pool: State<'_, SqlitePool>) -> Result<Vec<InventoryItem>, String> {
     let pool_ref = pool.inner();
-    
+
     let rows = sqlx::query(
         "SELECT i.id, i.product_id, i.current_stock, i.minimum_stock, i.maximum_stock,
                 i.reserved_stock, i.available_stock, i.last_updated, i.last_stock_take,
@@ -35,7 +35,7 @@ pub async fn get_inventory(pool: State<'_, SqlitePool>) -> Result<Vec<InventoryI
          FROM inventory i
          JOIN products p ON i.product_id = p.id
          WHERE p.is_active = 1
-         ORDER BY p.name ASC"
+         ORDER BY p.name ASC",
     )
     .fetch_all(pool_ref)
     .await
@@ -93,22 +93,25 @@ pub async fn update_stock(
     request: StockUpdateRequest,
 ) -> Result<bool, String> {
     let pool_ref = pool.inner();
-    
-    // Get current stock
-    let current_stock = sqlx::query(
-        "SELECT current_stock, reserved_stock FROM inventory WHERE product_id = ?1"
-    )
-    .bind(request.product_id)
-    .fetch_one(pool_ref)
-    .await
-    .map_err(|e| format!("Failed to get current stock: {}", e))?;
 
-    let current_stock_value: i32 = current_stock.try_get("current_stock").map_err(|e| e.to_string())?;
-    let reserved_stock_value: i32 = current_stock.try_get("reserved_stock").map_err(|e| e.to_string())?;
-    
+    // Get current stock
+    let current_stock =
+        sqlx::query("SELECT current_stock, reserved_stock FROM inventory WHERE product_id = ?1")
+            .bind(request.product_id)
+            .fetch_one(pool_ref)
+            .await
+            .map_err(|e| format!("Failed to get current stock: {}", e))?;
+
+    let current_stock_value: i32 = current_stock
+        .try_get("current_stock")
+        .map_err(|e| e.to_string())?;
+    let reserved_stock_value: i32 = current_stock
+        .try_get("reserved_stock")
+        .map_err(|e| e.to_string())?;
+
     let new_stock = current_stock_value + request.quantity_change;
     let new_available_stock = new_stock - reserved_stock_value;
-    
+
     if new_stock < 0 {
         return Err("Stock cannot go below zero".to_string());
     }
@@ -119,7 +122,7 @@ pub async fn update_stock(
             current_stock = ?1,
             available_stock = ?2,
             last_updated = CURRENT_TIMESTAMP
-         WHERE product_id = ?3"
+         WHERE product_id = ?3",
     )
     .bind(new_stock)
     .bind(new_available_stock)
@@ -158,10 +161,10 @@ pub async fn get_inventory_movements(
     offset: Option<i32>,
 ) -> Result<Vec<InventoryMovement>, String> {
     let pool_ref = pool.inner();
-    
+
     let limit = limit.unwrap_or(100);
     let offset = offset.unwrap_or(0);
-    
+
     let query = if let Some(pid) = product_id {
         "SELECT im.id, im.product_id, im.movement_type, im.quantity_change, im.previous_stock,
                 im.new_stock, im.reference_id, im.reference_type, im.notes, im.user_id, im.created_at,
@@ -233,7 +236,7 @@ pub async fn create_stock_adjustment(
     user_id: i64,
 ) -> Result<bool, String> {
     let pool_ref = pool.inner();
-    
+
     let request = StockUpdateRequest {
         product_id,
         quantity_change,
@@ -253,9 +256,9 @@ pub async fn get_low_stock_items(
     limit: Option<i32>,
 ) -> Result<Vec<InventoryItem>, String> {
     let pool_ref = pool.inner();
-    
+
     let limit = limit.unwrap_or(50);
-    
+
     let rows = sqlx::query(
         "SELECT i.id, i.product_id, i.current_stock, i.minimum_stock, i.maximum_stock,
                 i.reserved_stock, i.available_stock, i.last_updated, i.last_stock_take,
@@ -268,7 +271,7 @@ pub async fn get_low_stock_items(
          JOIN products p ON i.product_id = p.id
          WHERE i.current_stock <= i.minimum_stock AND p.is_active = 1
          ORDER BY (i.minimum_stock - i.current_stock) DESC
-         LIMIT ?1"
+         LIMIT ?1",
     )
     .bind(limit)
     .fetch_all(pool_ref)
