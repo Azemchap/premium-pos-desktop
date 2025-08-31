@@ -165,7 +165,7 @@ pub async fn get_inventory_movements(
     let limit = limit.unwrap_or(100);
     let offset = offset.unwrap_or(0);
 
-    let query = if let Some(pid) = product_id {
+    let query = if let Some(_pid) = product_id {
         "SELECT im.id, im.product_id, im.movement_type, im.quantity_change, im.previous_stock,
                 im.new_stock, im.reference_id, im.reference_type, im.notes, im.user_id, im.created_at,
                 p.name as product_name,
@@ -235,7 +235,7 @@ pub async fn create_stock_adjustment(
     reason: String,
     user_id: i64,
 ) -> Result<bool, String> {
-    let pool_ref = pool.inner();
+    let _pool_ref = pool.inner();
 
     let request = StockUpdateRequest {
         product_id,

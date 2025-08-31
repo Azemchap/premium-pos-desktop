@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Store, Lock, User } from "lucide-react";
 
 interface LoginRequest {
-  email: string;
+  username: string;  // Changed from email to username
   password: string;
   [key: string]: unknown;
 }
@@ -31,8 +31,8 @@ interface LoginResponse {
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginRequest>({
-    email: "",
-    password: "",
+    username: "admin",  // Default to the correct username
+    password: "admin123",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,7 +46,11 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await invoke<LoginResponse>("login", formData);
+      // Call the correct command with the correct parameters
+      const response = await invoke<LoginResponse>("login_user", {
+        username: formData.username,
+        password: formData.password
+      });
 
       // Store the session token in localStorage for future use
       localStorage.setItem("session_token", response.session_token);
@@ -99,15 +103,15 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Username</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={formData.username}
                   onChange={handleInputChange}
                   required
                   className="pl-10"
@@ -163,7 +167,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Demo credentials: admin@premiumpos.com / admin123
+              Demo credentials: <strong>admin</strong> / <strong>admin123</strong>
             </p>
           </div>
         </CardContent>

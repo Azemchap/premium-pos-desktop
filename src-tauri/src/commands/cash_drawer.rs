@@ -19,7 +19,7 @@ pub async fn create_transaction(
     .await
     .map_err(|e| format!("Database error: {}", e))?;
 
-    let shift = match shift {
+    let _shift = match shift {
         Some(s) => s,
         None => return Err("Shift not found or not open".to_string()),
     };
@@ -75,7 +75,7 @@ pub async fn get_transactions(
     let limit = limit.unwrap_or(100);
     let offset = offset.unwrap_or(0);
     
-    let query = if let Some(sid) = shift_id {
+    let query = if let Some(_sid) = shift_id {
         "SELECT id, shift_id, transaction_type, amount, reason, user_id, created_at
          FROM cash_drawer_transactions WHERE shift_id = ?1 ORDER BY created_at DESC LIMIT ?2 OFFSET ?3"
     } else {

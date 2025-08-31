@@ -40,32 +40,5 @@
         "targets": "all",
         "externalBin": [],
         "resources": []
-    },
-    "plugins": {
-        "sql": {
-            "enabled": true
-        },
-        "fs": {
-            "enabled": true,
-            "scope": {
-                "allow": [
-                    "$APPDATA/**",
-                    "$APPDATA/../Local/**",
-                    "$APPDATA/../Roaming/**"
-                ]
-            }
-        },
-        "shell": {
-            "enabled": true,
-            "scope": {
-                "allow": [
-                    "print",
-                    "printui"
-                ]
-            }
-        },
-        "notification": {
-            "enabled": true
-        }
     }
 }

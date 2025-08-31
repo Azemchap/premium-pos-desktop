@@ -219,7 +219,7 @@ pub async fn get_shift_history(
     let limit = limit.unwrap_or(50);
     let offset = offset.unwrap_or(0);
 
-    let query = if let Some(uid) = user_id {
+    let query = if let Some(_uid) = user_id {
         "SELECT id, user_id, start_time, end_time, opening_amount, closing_amount, 
                 total_sales, total_returns, cash_sales, card_sales, status, notes, created_at
          FROM shifts WHERE user_id = ?1 ORDER BY start_time DESC LIMIT ?2 OFFSET ?3"

@@ -1,4 +1,4 @@
-use crate::models::{CreateSaleRequest, Sale, SaleItem, SaleItemRequest};
+use crate::models::{CreateSaleRequest, Sale, SaleItem};
 use sqlx::{Row, SqlitePool};
 use tauri::{command, State};
 use uuid::Uuid;
