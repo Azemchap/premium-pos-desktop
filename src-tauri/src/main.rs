@@ -1,16 +1,16 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod database;
 mod commands;
+mod database;
 mod models;
 
+use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
-use sqlx::{sqlite::SqlitePoolOptions, SqlitePool, Executor, Row};
+use directories::ProjectDirs;
+use sqlx::{sqlite::SqlitePoolOptions, Executor, Row, SqlitePool};
 use std::fs::OpenOptions;
 use std::io::Write;
-use directories::ProjectDirs;
-use bcrypt::{hash, verify, DEFAULT_COST};
 
 /// Apply migrations (simple runner splitting statements by ';')
 async fn apply_migrations(pool: &SqlitePool) -> Result<(), String> {
@@ -31,9 +31,9 @@ async fn apply_migrations(pool: &SqlitePool) -> Result<(), String> {
                 "DEBUG(main): executing statement (preview): {}",
                 &s.chars().take(80).collect::<String>()
             );
-            pool.execute(s)
-                .await
-                .map_err(|e| format!("Migration failed (v{}): {} -- stmt: {}", mig.version, e, s))?;
+            pool.execute(s).await.map_err(|e| {
+                format!("Migration failed (v{}): {} -- stmt: {}", mig.version, e, s)
+            })?;
         }
     }
     println!("DEBUG(main): migrations applied successfully");
@@ -61,7 +61,7 @@ async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
             let pwd_hash = hash(admin_password, DEFAULT_COST)
                 .map_err(|e| format!("bcrypt hash error: {}", e))?;
             sqlx::query(
-                "INSERT INTO users (username, email, password_hash, first_name, last_name, role, pin_code) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                "INSERT INTO users (username, email, password_hash, first_name, last_name, role) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             )
             .bind(admin_username)
             .bind(admin_email)
@@ -69,7 +69,6 @@ async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
             .bind(admin_first)
             .bind(admin_last)
             .bind(admin_role)
-            .bind("1234") // Default PIN code
             .execute(pool)
             .await
             .map_err(|e| format!("Failed to insert admin user: {}", e))?;
@@ -129,11 +128,14 @@ async fn main() {
         match OpenOptions::new().create(true).write(true).open(&db_path) {
             Ok(mut f) => {
                 if let Err(e) = f.write_all(b"") {
-                    eprintln!("WARN: failed to write to newly created db file {:?}: {}", db_path, e);
+                    eprintln!(
+                        "WARN: failed to write to newly created db file {:?}: {}",
+                        db_path, e
+                    );
                 }
             }
             Err(e) => {
-                panic!("Failed to create database file {:?}: {}", e);
+                panic!("Failed to create database file {:?}: {}", db_path, e);
             }
         }
     }
@@ -195,54 +197,49 @@ async fn main() {
             commands::auth::login_user,
             commands::auth::register_user,
             commands::auth::verify_session,
-            
             // User management commands
             commands::users::get_users,
             commands::users::create_user,
             commands::users::update_user,
             commands::users::delete_user,
-            
             // Product management commands
             commands::products::get_products,
+            commands::products::get_product_by_id,
             commands::products::create_product,
             commands::products::update_product,
             commands::products::delete_product,
             commands::products::search_products,
-            
+            commands::products::get_product_by_barcode,
             // Inventory management commands
             commands::inventory::get_inventory,
             commands::inventory::update_stock,
             commands::inventory::get_inventory_movements,
             commands::inventory::create_stock_adjustment,
             commands::inventory::get_low_stock_items,
-            
             // Sales commands
             commands::sales::create_sale,
             commands::sales::get_sales,
             commands::sales::void_sale,
             commands::sales::get_sale_details,
             commands::sales::search_sales,
-            
             // Store configuration commands
             commands::store::get_store_config,
             commands::store::update_store_config,
-            
             // Shift management commands
             commands::shifts::create_shift,
             commands::shifts::close_shift,
             commands::shifts::get_current_shift,
             commands::shifts::get_shift_history,
-            
             // Cash drawer commands
             commands::cash_drawer::create_transaction,
             commands::cash_drawer::get_transactions,
-            
+            commands::cash_drawer::get_cash_drawer_balance,
             // Receipt template commands
             commands::receipts::get_templates,
             commands::receipts::create_template,
             commands::receipts::update_template,
             commands::receipts::delete_template,
-            
+            commands::receipts::get_default_template,
             // Dashboard commands
             commands::dashboard::get_stats,
             commands::dashboard::get_recent_activity,

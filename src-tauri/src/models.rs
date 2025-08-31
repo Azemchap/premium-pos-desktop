@@ -11,8 +11,6 @@ pub struct User {
     pub role: String,
     pub is_active: bool,
     pub last_login: Option<String>,
-    pub pin_code: Option<String>,
-    pub permissions: Option<String>, // JSON string for granular permissions
     pub created_at: String,
     pub updated_at: String,
 }
@@ -25,8 +23,6 @@ pub struct CreateUserRequest {
     pub first_name: String,
     pub last_name: String,
     pub role: String,
-    pub pin_code: Option<String>,
-    pub permissions: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -88,6 +84,18 @@ pub struct CreateProductRequest {
     pub reorder_point: i32,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProductSearchRequest {
+    pub search_term: Option<String>,
+    pub category: Option<String>,
+    pub brand: Option<String>,
+    pub min_price: Option<f64>,
+    pub max_price: Option<f64>,
+    pub is_active: Option<bool>,
+    pub limit: Option<i32>,
+    pub offset: Option<i32>,
+}
+
 // Inventory models
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InventoryItem {
@@ -112,6 +120,7 @@ pub struct StockUpdateRequest {
     pub notes: Option<String>,
     pub reference_id: Option<i64>,
     pub reference_type: Option<String>,
+    pub user_id: Option<i64>,
 }
 
 // Sales models
@@ -159,8 +168,6 @@ pub struct SaleItemRequest {
     pub unit_price: f64,
     pub discount_amount: f64,
     pub line_total: f64,
-    pub tax_amount: f64,
-    pub cost_price: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -189,9 +196,6 @@ pub struct StoreConfig {
     pub tax_rate: f64,
     pub currency: String,
     pub timezone: String,
-    pub logo_path: Option<String>,
-    pub receipt_header: Option<String>,
-    pub receipt_footer: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -205,9 +209,6 @@ pub struct UpdateStoreConfigRequest {
     pub tax_rate: f64,
     pub currency: String,
     pub timezone: String,
-    pub logo_path: Option<String>,
-    pub receipt_header: Option<String>,
-    pub receipt_footer: Option<String>,
 }
 
 // Shift models
@@ -231,7 +232,6 @@ pub struct Shift {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateShiftRequest {
     pub opening_amount: f64,
-    pub notes: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -296,25 +296,4 @@ pub struct DashboardStats {
     pub average_transaction_value: f64,
     pub week_sales: f64,
     pub month_sales: f64,
-}
-
-// Search and filter models
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ProductSearchRequest {
-    pub query: Option<String>,
-    pub category: Option<String>,
-    pub brand: Option<String>,
-    pub is_active: Option<bool>,
-    pub limit: Option<i32>,
-    pub offset: Option<i32>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SalesSearchRequest {
-    pub start_date: Option<String>,
-    pub end_date: Option<String>,
-    pub cashier_id: Option<i64>,
-    pub payment_method: Option<String>,
-    pub limit: Option<i32>,
-    pub offset: Option<i32>,
 }
