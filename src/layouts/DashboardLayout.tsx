@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,24 +13,24 @@ import {
     SheetContent,
 } from "@/components/ui/sheet";
 import { useAuthStore } from "@/store/authStore";
-import { useNavigate, useLocation } from "react-router-dom";
 import {
-    Menu,
-    Search,
-    Bell,
-    Settings,
-    LogOut,
-    User,
-    Sun,
-    Moon,
-    ChevronDown,
-    Home,
-    ShoppingCart,
-    Package,
     BarChart3,
-    Users,
-    Database
+    Bell,
+    ChevronDown,
+    Database,
+    Home,
+    LogOut,
+    Menu,
+    Moon,
+    Package,
+    Settings,
+    ShoppingCart,
+    Sun,
+    User,
+    Users
 } from "lucide-react";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface NavigationItem {
     name: string;
@@ -53,7 +51,6 @@ const navigation: NavigationItem[] = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
     const { user, logout, theme, setTheme } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
