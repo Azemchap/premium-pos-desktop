@@ -1,15 +1,13 @@
-use tauri::{command, State};
-use crate::models::{InventoryItem, StockUpdateRequest, InventoryMovement};
-use sqlx::{SqlitePool, Row};
+use crate::models::{InventoryItem, InventoryMovement, StockUpdateRequest};
+use sqlx::{Row, SqlitePool};
+use tauri::State;
 
 #[tauri::command]
-pub async fn get_inventory(
-    pool: State<'_, SqlitePool>,
-) -> Result<Vec<InventoryItem>, String> {
+pub async fn get_inventory(pool: State<'_, SqlitePool>) -> Result<Vec<InventoryItem>, String> {
     let rows = sqlx::query(
         "SELECT i.*, p.name as product_name, p.sku FROM inventory i 
          JOIN products p ON i.product_id = p.id 
-         ORDER BY p.name"
+         ORDER BY p.name",
     )
     .fetch_all(pool.inner())
     .await
@@ -44,7 +42,7 @@ pub async fn get_inventory_by_product_id(
     let row = sqlx::query(
         "SELECT i.*, p.name as product_name, p.sku FROM inventory i 
          JOIN products p ON i.product_id = p.id 
-         WHERE i.product_id = ?"
+         WHERE i.product_id = ?",
     )
     .bind(product_id)
     .fetch_optional(pool.inner())
@@ -115,13 +113,11 @@ pub async fn update_stock(
     tx.commit().await.map_err(|e| e.to_string())?;
 
     // Return updated inventory item
-    let row = sqlx::query(
-        "SELECT * FROM inventory WHERE product_id = ?"
-    )
-    .bind(product_id)
-    .fetch_one(pool.inner())
-    .await
-    .map_err(|e| e.to_string())?;
+    let row = sqlx::query("SELECT * FROM inventory WHERE product_id = ?")
+        .bind(product_id)
+        .fetch_one(pool.inner())
+        .await
+        .map_err(|e| e.to_string())?;
 
     let item = InventoryItem {
         id: row.try_get("id").map_err(|e| e.to_string())?,
@@ -174,9 +170,9 @@ pub async fn create_stock_adjustment(
         reference_id: None,
         reference_type: None,
         new_stock,
-        reserved_stock: 0, // This will be updated from inventory
+        reserved_stock: 0,            // This will be updated from inventory
         product_name: "".to_string(), // Will be fetched
-        sku: "".to_string(), // Will be fetched
+        sku: "".to_string(),          // Will be fetched
         user_id: Some(user_id),
         user_name: Some(user_name),
     };

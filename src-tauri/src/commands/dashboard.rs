@@ -1,14 +1,12 @@
-use tauri::{command, State};
-use sqlx::{SqlitePool, Row};
 use chrono::Datelike;
+use sqlx::{Row, SqlitePool};
+use tauri::State;
 
 #[tauri::command]
-pub async fn get_dashboard_stats(
-    pool: State<'_, SqlitePool>,
-) -> Result<serde_json::Value, String> {
+pub async fn get_dashboard_stats(pool: State<'_, SqlitePool>) -> Result<serde_json::Value, String> {
     let today = chrono::Utc::now().date_naive();
-    let start_of_month = chrono::NaiveDate::from_ymd_opt(today.year(), today.month(), 1)
-        .unwrap_or(today);
+    let start_of_month =
+        chrono::NaiveDate::from_ymd_opt(today.year(), today.month(), 1).unwrap_or(today);
     let end_of_month = chrono::NaiveDate::from_ymd_opt(today.year(), today.month() + 1, 1)
         .unwrap_or(today)
         .pred_opt()
@@ -16,7 +14,7 @@ pub async fn get_dashboard_stats(
 
     // Today's sales
     let today_sales: f64 = sqlx::query_scalar(
-        "SELECT COALESCE(SUM(total_amount), 0.0) FROM sales WHERE DATE(created_at) = ?"
+        "SELECT COALESCE(SUM(total_amount), 0.0) FROM sales WHERE DATE(created_at) = ?",
     )
     .bind(today.to_string())
     .fetch_one(pool.inner())
@@ -24,13 +22,12 @@ pub async fn get_dashboard_stats(
     .map_err(|e| e.to_string())?;
 
     // Today's transactions
-    let today_transactions: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM sales WHERE DATE(created_at) = ?"
-    )
-    .bind(today.to_string())
-    .fetch_one(pool.inner())
-    .await
-    .map_err(|e| e.to_string())?;
+    let today_transactions: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM sales WHERE DATE(created_at) = ?")
+            .bind(today.to_string())
+            .fetch_one(pool.inner())
+            .await
+            .map_err(|e| e.to_string())?;
 
     // Month's sales
     let month_sales: f64 = sqlx::query_scalar(
@@ -44,7 +41,7 @@ pub async fn get_dashboard_stats(
 
     // Month's transactions
     let month_transactions: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM sales WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?"
+        "SELECT COUNT(*) FROM sales WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?",
     )
     .bind(start_of_month.to_string())
     .bind(end_of_month.to_string())
@@ -53,12 +50,11 @@ pub async fn get_dashboard_stats(
     .map_err(|e| e.to_string())?;
 
     // Low stock products
-    let low_stock_products: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM inventory WHERE current_stock <= reorder_point"
-    )
-    .fetch_one(pool.inner())
-    .await
-    .map_err(|e| e.to_string())?;
+    let low_stock_products: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM inventory WHERE current_stock <= reorder_point")
+            .fetch_one(pool.inner())
+            .await
+            .map_err(|e| e.to_string())?;
 
     // Total products
     let total_products: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM products")
@@ -87,7 +83,7 @@ pub async fn get_recent_sales(
     let rows = sqlx::query(
         "SELECT s.*, u.username as cashier_name FROM sales s 
          LEFT JOIN users u ON s.user_id = u.id 
-         ORDER BY s.created_at DESC LIMIT ?"
+         ORDER BY s.created_at DESC LIMIT ?",
     )
     .bind(limit)
     .fetch_all(pool.inner())

@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use log::debug;
-use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
+use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 use std::path::PathBuf;
 
 mod commands;
@@ -18,10 +18,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_path = initialize_database().await?;
     debug!("Database initialized at: {:?}", db_path);
 
+    // Build a proper sqlite connection URL - fixed version
+    let db_url = format!("sqlite:{}", db_path.to_string_lossy());
+    debug!("sqlx connection string = {}", db_url);
+
     // Create SQLite connection pool
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(&format!("sqlite://{}", db_path.display()))
+        .connect(&db_url)
         .await?;
     debug!("Database connection pool created");
 
@@ -55,6 +59,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             commands::sales::create_sale,
             commands::sales::get_sales,
             commands::sales::get_sale_by_id,
+            commands::sales::create_sale_new,
+            commands::sales::get_products_for_sale,
+            commands::sales::get_sales_history,
+            commands::sales::get_sale_details,
+            commands::sales::void_sale,
             commands::sales::process_return,
             commands::shifts::open_shift,
             commands::shifts::close_shift,
@@ -95,8 +104,7 @@ async fn initialize_database() -> Result<PathBuf, Box<dyn std::error::Error>> {
     debug!("resolved app_dir = {:?}", app_dir);
 
     let db_path = app_dir.join("pos.db");
-    let db_path_absolute = db_path.canonicalize().unwrap_or(db_path.clone());
-    debug!("final db absolute path = {:?}", db_path_absolute);
+    debug!("database path = {:?}", db_path);
 
     // Create database file if it doesn't exist
     if !db_path.exists() {
@@ -104,54 +112,54 @@ async fn initialize_database() -> Result<PathBuf, Box<dyn std::error::Error>> {
         debug!("Created new database file at {:?}", db_path);
     }
 
-    debug!("sqlx connection string = sqlite://{}", db_path_absolute.display());
-    Ok(db_path_absolute)
+    // Return the path without canonicalization to avoid Windows issues
+    Ok(db_path)
 }
 
 async fn run_migrations(pool: &SqlitePool) -> Result<(), Box<dyn std::error::Error>> {
-    debug!("applying 1 migration(s)");
-    
-    // Create tables
+    debug!("applying migrations");
+
+    // Note: database::INITIAL_MIGRATION must contain CREATE TABLE for any tables that are
+    // inserted into (e.g. receipt_templates). Make sure the migration SQL is correct.
     sqlx::query(database::INITIAL_MIGRATION)
         .execute(pool)
         .await?;
-    
+
     debug!("migrations applied successfully");
     Ok(())
 }
 
 async fn ensure_admin_user(pool: &SqlitePool) -> Result<(), Box<dyn std::error::Error>> {
     // Check if admin user exists
-    let admin_exists = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM users WHERE username = 'admin'"
-    )
-    .fetch_one(pool)
-    .await?;
+    let admin_exists =
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM users WHERE username = 'admin'")
+            .fetch_one(pool)
+            .await?;
 
     if admin_exists == 0 {
         // Create default admin user
         let hashed_password = bcrypt::hash("admin123", bcrypt::DEFAULT_COST)?;
-        
+
         sqlx::query(
             "INSERT INTO users (username, email, password_hash, first_name, last_name, role, pin_code, permissions, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
-        .bind("admin")
-        .bind("admin@premiumpos.com")
-        .bind(hashed_password)
-        .bind("Admin")
-        .bind("User")
-        .bind("admin")
-        .bind("1234")
-        .bind("all")
-        .bind(true)
-        .bind(chrono::Utc::now().naive_utc().to_string())
-        .bind(chrono::Utc::now().naive_utc().to_string())
+        .bind("admin") // username
+        .bind("admin@premiumpos.com") // email
+        .bind(hashed_password) // password_hash
+        .bind("Admin") // first_name
+        .bind("User") // last_name
+        .bind("Admin") // role
+        .bind("1234") // pin_code
+        .bind("all") // permissions
+        .bind(true) // is_active
+        .bind(chrono::Utc::now().naive_utc().to_string()) // created_at
+        .bind(chrono::Utc::now().naive_utc().to_string()) // updated_at
         .execute(pool)
         .await?;
-        
+
         debug!("inserted default admin user");
     }
-    
+
     debug!("Admin user ensured");
     Ok(())
 }

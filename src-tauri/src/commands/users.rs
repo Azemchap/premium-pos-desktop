@@ -1,11 +1,9 @@
-use tauri::{command, State};
-use crate::models::{User, CreateUserRequest};
-use sqlx::{SqlitePool, Row};
+use crate::models::{CreateUserRequest, User};
+use sqlx::{Row, SqlitePool};
+use tauri::State;
 
 #[tauri::command]
-pub async fn get_users(
-    pool: State<'_, SqlitePool>,
-) -> Result<Vec<User>, String> {
+pub async fn get_users(pool: State<'_, SqlitePool>) -> Result<Vec<User>, String> {
     let rows = sqlx::query("SELECT * FROM users ORDER BY username")
         .fetch_all(pool.inner())
         .await
@@ -115,10 +113,7 @@ pub async fn update_user(
 }
 
 #[tauri::command]
-pub async fn delete_user(
-    pool: State<'_, SqlitePool>,
-    user_id: i64,
-) -> Result<bool, String> {
+pub async fn delete_user(pool: State<'_, SqlitePool>, user_id: i64) -> Result<bool, String> {
     let result = sqlx::query("DELETE FROM users WHERE id = ?")
         .bind(user_id)
         .execute(pool.inner())

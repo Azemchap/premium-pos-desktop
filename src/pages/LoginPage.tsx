@@ -10,28 +10,24 @@ import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { Eye, EyeOff, Store, Lock, User } from "lucide-react";
 
-interface LoginRequest {
+interface User {
+    id: number;
+    username: string;
     email: string;
-    password: string;
-    [key: string]: unknown;
-}
-
-interface LoginResponse {
-    user: {
-        id: number;
-        first_name: string;
-        last_name: string;
-        email: string;
-        role: string;
-        pin_code?: string;
-        permissions?: string;
-    };
-    session_token: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    pin_code?: string;
+    permissions?: string;
+    is_active: boolean;
+    last_login?: string;
+    created_at: string;
+    updated_at: string;
 }
 
 export default function LoginPage() {
-    const [formData, setFormData] = useState<LoginRequest>({
-        email: "",
+    const [formData, setFormData] = useState({
+        username: "",
         password: "",
     });
     const [showPassword, setShowPassword] = useState(false);
@@ -46,16 +42,33 @@ export default function LoginPage() {
         setError("");
 
         try {
-            const response = await invoke<LoginResponse>("login", formData);
-            
-            // Store the session token in localStorage for future use
-            localStorage.setItem("session_token", response.session_token);
-            
-            // Login the user
-            login(response.user);
-            
-            toast.success("Login successful!");
-            navigate("/");
+            // Call the correct Rust command with correct parameters
+            const user = await invoke<User | null>("authenticate_user", {
+                username: formData.username,
+                password: formData.password
+            });
+
+            if (user) {
+                // Update last login
+                await invoke("update_last_login", { userId: user.id });
+
+                // Login the user
+                login({
+                    id: user.id,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    email: user.email,
+                    role: user.role,
+                    pin_code: user.pin_code,
+                    permissions: user.permissions
+                });
+
+                toast.success("Login successful!");
+                navigate("/");
+            } else {
+                setError("Invalid username or password. Please try again.");
+                toast.error("Login failed");
+            }
         } catch (error: any) {
             console.error("Login failed:", error);
             setError(error.message || "Login failed. Please check your credentials.");
@@ -89,7 +102,7 @@ export default function LoginPage() {
                         </CardDescription>
                     </div>
                 </CardHeader>
-                
+
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {error && (
@@ -97,24 +110,24 @@ export default function LoginPage() {
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
                         )}
-                        
+
                         <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="username">Username</Label>
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                                 <Input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    placeholder="Enter your email"
-                                    value={formData.email}
+                                    id="username"
+                                    name="username"
+                                    type="text"
+                                    placeholder="Enter your username"
+                                    value={formData.username}
                                     onChange={handleInputChange}
                                     required
                                     className="pl-10"
                                 />
                             </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                             <Label htmlFor="password">Password</Label>
                             <div className="relative">
@@ -144,7 +157,7 @@ export default function LoginPage() {
                                 </Button>
                             </div>
                         </div>
-                        
+
                         <Button
                             type="submit"
                             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
@@ -160,10 +173,10 @@ export default function LoginPage() {
                             )}
                         </Button>
                     </form>
-                    
+
                     <div className="mt-6 text-center">
                         <p className="text-sm text-muted-foreground">
-                            Demo credentials: admin@premiumpos.com / admin123
+                            Demo credentials: admin / admin123
                         </p>
                     </div>
                 </CardContent>

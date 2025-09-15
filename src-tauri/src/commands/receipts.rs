@@ -1,6 +1,6 @@
-use tauri::{command, State};
-use crate::models::{ReceiptTemplate, CreateReceiptTemplateRequest};
-use sqlx::{SqlitePool, Row};
+use crate::models::{CreateReceiptTemplateRequest, ReceiptTemplate};
+use sqlx::{Row, SqlitePool};
+use tauri::State;
 
 #[tauri::command]
 pub async fn get_receipt_templates(

@@ -1,11 +1,9 @@
-use tauri::{command, State};
-use crate::models::{Product, CreateProductRequest};
-use sqlx::{SqlitePool, Row};
+use crate::models::{CreateProductRequest, Product};
+use sqlx::{Row, SqlitePool};
+use tauri::State;
 
 #[tauri::command]
-pub async fn get_products(
-    pool: State<'_, SqlitePool>,
-) -> Result<Vec<Product>, String> {
+pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, String> {
     let rows = sqlx::query("SELECT * FROM products ORDER BY name")
         .fetch_all(pool.inner())
         .await
@@ -202,10 +200,7 @@ pub async fn update_product(
 }
 
 #[tauri::command]
-pub async fn delete_product(
-    pool: State<'_, SqlitePool>,
-    product_id: i64,
-) -> Result<bool, String> {
+pub async fn delete_product(pool: State<'_, SqlitePool>, product_id: i64) -> Result<bool, String> {
     let result = sqlx::query("DELETE FROM products WHERE id = ?")
         .bind(product_id)
         .execute(pool.inner())
@@ -222,7 +217,7 @@ pub async fn search_products(
 ) -> Result<Vec<Product>, String> {
     let search_pattern = format!("%{}%", query);
     let rows = sqlx::query(
-        "SELECT * FROM products WHERE name LIKE ? OR sku LIKE ? OR barcode LIKE ? ORDER BY name"
+        "SELECT * FROM products WHERE name LIKE ? OR sku LIKE ? OR barcode LIKE ? ORDER BY name",
     )
     .bind(&search_pattern)
     .bind(&search_pattern)

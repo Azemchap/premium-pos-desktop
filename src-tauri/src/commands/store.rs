@@ -1,11 +1,9 @@
-use tauri::{command, State};
 use crate::models::StoreConfig;
-use sqlx::{SqlitePool, Row};
+use sqlx::{Row, SqlitePool};
+use tauri::State;
 
 #[tauri::command]
-pub async fn get_store_config(
-    pool: State<'_, SqlitePool>,
-) -> Result<StoreConfig, String> {
+pub async fn get_store_config(pool: State<'_, SqlitePool>) -> Result<StoreConfig, String> {
     let row = sqlx::query("SELECT * FROM store_config LIMIT 1")
         .fetch_optional(pool.inner())
         .await

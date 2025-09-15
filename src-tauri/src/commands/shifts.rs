@@ -1,6 +1,6 @@
-use tauri::{command, State};
-use crate::models::{Shift, CreateShiftRequest, CloseShiftRequest};
-use sqlx::{SqlitePool, Row};
+use crate::models::{CloseShiftRequest, CreateShiftRequest, Shift};
+use sqlx::{Row, SqlitePool};
+use tauri::State;
 
 #[tauri::command]
 pub async fn open_shift(
@@ -47,15 +47,18 @@ pub async fn close_shift(
 ) -> Result<Shift, String> {
     // Calculate totals from sales
     let sales_result = sqlx::query(
-        "SELECT COUNT(*) as count, SUM(total_amount) as total FROM sales WHERE shift_id = ?"
+        "SELECT COUNT(*) as count, SUM(total_amount) as total FROM sales WHERE shift_id = ?",
     )
     .bind(shift_id)
     .fetch_one(pool.inner())
     .await
     .map_err(|e| e.to_string())?;
 
-    let total_transactions: i64 = sales_result.try_get("count").map_err(|e| e.to_string())?;
-    let total_sales: f64 = sales_result.try_get("total").map_err(|e| e.to_string()).unwrap_or(0.0);
+    let _total_transactions: i64 = sales_result.try_get("count").map_err(|e| e.to_string())?;
+    let total_sales: f64 = sales_result
+        .try_get("total")
+        .map_err(|e| e.to_string())
+        .unwrap_or(0.0);
 
     // Update shift
     sqlx::query(

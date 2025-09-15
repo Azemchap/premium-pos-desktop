@@ -1,6 +1,6 @@
-use tauri::{command, State};
 use crate::models::{CashDrawerTransaction, CreateCashDrawerTransactionRequest};
-use sqlx::{SqlitePool, Row};
+use sqlx::{Row, SqlitePool};
+use tauri::State;
 
 #[tauri::command]
 pub async fn add_cash_transaction(
@@ -45,7 +45,9 @@ pub async fn get_cash_drawer_balance(
         .await
         .map_err(|e| e.to_string())?;
 
-    let opening_amount: f64 = shift_row.try_get("opening_amount").map_err(|e| e.to_string())?;
+    let opening_amount: f64 = shift_row
+        .try_get("opening_amount")
+        .map_err(|e| e.to_string())?;
 
     let transactions_result = sqlx::query(
         "SELECT SUM(CASE WHEN transaction_type = 'add' THEN amount ELSE -amount END) as net_change FROM cash_drawer_transactions WHERE shift_id = ?"
@@ -55,7 +57,10 @@ pub async fn get_cash_drawer_balance(
     .await
     .map_err(|e| e.to_string())?;
 
-    let net_change: f64 = transactions_result.try_get("net_change").map_err(|e| e.to_string()).unwrap_or(0.0);
+    let net_change: f64 = transactions_result
+        .try_get("net_change")
+        .map_err(|e| e.to_string())
+        .unwrap_or(0.0);
 
     Ok(opening_amount + net_change)
 }

@@ -13,7 +13,7 @@ pub struct User {
     pub is_active: bool,
     pub last_login: Option<String>,
     pub pin_code: Option<String>,
-    pub permissions: Option<String>, // JSON string for granular permissions
+    pub permissions: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -61,8 +61,32 @@ pub struct Product {
     pub is_active: bool,
     pub is_taxable: bool,
     pub weight: f64,
-    pub dimensions: Option<String>, // JSON string for length, width, height
-    pub supplier_info: Option<String>, // JSON string for supplier details
+    pub dimensions: Option<String>,
+    pub supplier_info: Option<String>,
+    pub reorder_point: i32,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProductWithInventory {
+    pub id: i64,
+    pub name: String,
+    pub sku: String,
+    pub barcode: Option<String>,
+    pub price: f64,
+    pub cost_price: f64,
+    pub tax_rate: f64,
+    pub is_taxable: bool,
+    pub current_stock: i32,
+    pub minimum_stock: i32,
+    pub is_active: bool,
+    pub selling_price: f64,
+    pub wholesale_price: f64,
+    pub category: Option<String>,
+    pub brand: Option<String>,
+    pub unit_of_measure: String,
+    pub weight: f64,
     pub reorder_point: i32,
     pub created_at: String,
     pub updated_at: String,
@@ -176,6 +200,16 @@ pub struct CreateSaleRequest {
     pub customer_email: Option<String>,
     pub notes: Option<String>,
     pub shift_id: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateSaleItemRequest {
+    pub product_id: i64,
+    pub product_name: String,
+    pub quantity: i32,
+    pub price: f64,
+    pub tax_rate: f64,
+    pub tax_amount: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

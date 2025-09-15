@@ -1,4 +1,3 @@
-// src/pages/Sales.tsx
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,13 +28,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { 
-    Plus, 
-    Minus, 
-    Trash2, 
-    Search, 
-    ShoppingCart, 
-    CreditCard, 
+import {
+    Plus,
+    Minus,
+    Trash2,
+    Search,
+    ShoppingCart,
+    CreditCard,
     DollarSign,
     User,
     Receipt,
@@ -43,10 +42,14 @@ import {
     Phone,
     Mail,
     QrCode,
-    Check
+    Check,
+    Smartphone,
+    FileText,
+    History
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
+import CalculatorComponent from "@/components/CalculatorComponent";
 
 interface Product {
     id: number;
@@ -60,6 +63,15 @@ interface Product {
     current_stock: number;
     minimum_stock: number;
     is_active: boolean;
+    selling_price: number;
+    wholesale_price: number;
+    category?: string;
+    brand?: string;
+    unit_of_measure: string;
+    weight: number;
+    reorder_point: number;
+    created_at: string;
+    updated_at: string;
 }
 
 interface CartItem {
@@ -111,14 +123,14 @@ export default function Sales() {
     const paymentMethods = [
         { value: "cash", label: "Cash", icon: DollarSign },
         { value: "card", label: "Card", icon: CreditCard },
-        { value: "mobile", label: "Mobile Payment", icon: QrCode },
+        { value: "mobile", label: "Mobile Payment", icon: Smartphone },
         { value: "check", label: "Check", icon: Check }
     ];
 
     const loadProducts = async () => {
         try {
             setLoading(true);
-            const result = await invoke<Product[]>("get_products");
+            const result = await invoke<Product[]>("get_products_for_sale");
             setProducts(result);
         } catch (error) {
             console.error("Failed to load products:", error);
@@ -130,18 +142,14 @@ export default function Sales() {
 
     const addToCart = (product: Product, quantity: number = 1) => {
         const existingItem = cart.find(item => item.product.id === product.id);
-        
+
         if (existingItem) {
-            setCart(cart.map(item => 
-                item.product.id === product.id 
-                    ? { ...item, quantity: item.quantity + quantity }
-                    : item
-            ));
+            updateCartItemQuantity(product.id, existingItem.quantity + quantity);
         } else {
-            const taxAmount = product.is_taxable && product.tax_rate 
+            const taxAmount = product.is_taxable && product.tax_rate
                 ? (product.price * quantity * product.tax_rate) / 100
                 : 0;
-            
+
             const newItem: CartItem = {
                 product,
                 quantity,
@@ -149,10 +157,10 @@ export default function Sales() {
                 tax_amount: taxAmount,
                 total: (product.price * quantity) + taxAmount
             };
-            
+
             setCart([...cart, newItem]);
         }
-        
+
         setSearchQuery("");
         toast.success(`${product.name} added to cart`);
     };
@@ -162,13 +170,13 @@ export default function Sales() {
             removeFromCart(productId);
             return;
         }
-        
+
         setCart(cart.map(item => {
             if (item.product.id === productId) {
-                const taxAmount = item.product.is_taxable && item.product.tax_rate 
+                const taxAmount = item.product.is_taxable && item.product.tax_rate
                     ? (item.product.price * quantity * item.product.tax_rate) / 100
                     : 0;
-                
+
                 return {
                     ...item,
                     quantity,
@@ -219,34 +227,36 @@ export default function Sales() {
 
         try {
             setProcessing(true);
-            
-            const saleData = {
-                customer_name: customerInfo.name || undefined,
-                customer_phone: customerInfo.phone || undefined,
-                customer_email: customerInfo.email || undefined,
-                payment_method: paymentInfo.method,
-                payment_reference: paymentInfo.reference || undefined,
-                notes: notes || undefined,
-                items: cart.map(item => ({
-                    product_id: item.product.id,
-                    quantity: item.quantity,
-                    price: item.price,
-                    tax_amount: item.tax_amount
-                }))
-            };
 
-            const result = await invoke<SaleResult>("create_sale", saleData);
-            
+            const items = cart.map(item => ({
+                product_id: item.product.id,
+                product_name: item.product.name,
+                quantity: item.quantity,
+                price: item.price,
+                tax_rate: item.product.tax_rate || 0,
+                tax_amount: item.tax_amount
+            }));
+
+            const result = await invoke<SaleResult>("create_sale_new", {
+                customerName: customerInfo.name || undefined,
+                customerPhone: customerInfo.phone || undefined,
+                customerEmail: customerInfo.email || undefined,
+                paymentMethod: paymentInfo.method,
+                paymentReference: paymentInfo.reference || undefined,
+                notes: notes || undefined,
+                items
+            });
+
             toast.success(`Sale completed! Sale #${result.sale_number}`);
-            
+
             // Print receipt (placeholder for now)
             console.log("Printing receipt for sale:", result);
-            
+
             // Clear cart and reset
             clearCart();
             setPaymentInfo({ method: "cash", amount: 0, reference: "" });
             setIsPaymentDialogOpen(false);
-            
+
         } catch (error) {
             console.error("Failed to process sale:", error);
             toast.error("Failed to process sale");
@@ -255,12 +265,16 @@ export default function Sales() {
         }
     };
 
-    const filteredProducts = products.filter(product => 
-        product.is_active && 
+    const handleCalculatorResult = (result: number) => {
+        setPaymentInfo(prev => ({ ...prev, amount: result }));
+    };
+
+    const filteredProducts = products.filter(product =>
+        product.is_active &&
         product.current_stock > 0 &&
         (product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase())))
+            product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase())))
     );
 
     useEffect(() => {
@@ -290,7 +304,7 @@ export default function Sales() {
                                     className="pl-10"
                                 />
                             </div>
-                            
+
                             {searchQuery && (
                                 <div className="border rounded-lg max-h-60 overflow-y-auto">
                                     {loading ? (
@@ -406,6 +420,7 @@ export default function Sales() {
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => updateCartItemQuantity(item.product.id, item.quantity + 1)}
+                                                            disabled={item.quantity >= item.product.current_stock}
                                                         >
                                                             <Plus className="w-3 h-3" />
                                                         </Button>
@@ -454,15 +469,18 @@ export default function Sales() {
                                             {customerInfo.name ? "Edit Customer" : "Add Customer"}
                                         </Button>
                                         <Button
-                                            variant="outline"
-                                            onClick={() => setIsPaymentDialogOpen(true)}
+                                            onClick={() => {
+                                                setPaymentInfo(prev => ({ ...prev, amount: getTotal() }));
+                                                setIsPaymentDialogOpen(true);
+                                            }}
                                             disabled={cart.length === 0}
+                                            className="bg-primary hover:bg-primary/90"
                                         >
                                             <CreditCard className="w-4 h-4 mr-2" />
-                                            Checkout
+                                            Checkout ${getTotal().toFixed(2)}
                                         </Button>
                                     </div>
-                                    
+
                                     {customerInfo.name && (
                                         <div className="p-3 bg-muted rounded-lg">
                                             <p className="font-medium">{customerInfo.name}</p>
@@ -480,7 +498,7 @@ export default function Sales() {
                                             )}
                                         </div>
                                     )}
-                                    
+
                                     <div>
                                         <Label htmlFor="notes">Notes</Label>
                                         <Textarea
@@ -498,7 +516,7 @@ export default function Sales() {
                 </Card>
             </div>
 
-            {/* Right Column - Quick Actions & Recent Sales */}
+            {/* Right Column - Quick Actions & Summary */}
             <div className="space-y-6">
                 {/* Quick Actions */}
                 <Card>
@@ -510,13 +528,22 @@ export default function Sales() {
                             <Receipt className="w-4 h-4 mr-2" />
                             Reprint Receipt
                         </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                            <Calculator className="w-4 h-4 mr-2" />
-                            Calculator
-                        </Button>
+                        <CalculatorComponent
+                            onResult={handleCalculatorResult}
+                            trigger={
+                                <Button variant="outline" className="w-full justify-start">
+                                    <Calculator className="w-4 h-4 mr-2" />
+                                    Calculator
+                                </Button>
+                            }
+                        />
                         <Button variant="outline" className="w-full justify-start">
                             <QrCode className="w-4 h-4 mr-2" />
                             Scan Barcode
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                            <History className="w-4 h-4 mr-2" />
+                            Sales History
                         </Button>
                     </CardContent>
                 </Card>
@@ -549,6 +576,27 @@ export default function Sales() {
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Quick Stats */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Today's Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                            <span>Sales Today:</span>
+                            <span className="font-medium">$0.00</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span>Transactions:</span>
+                            <span className="font-medium">0</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span>Avg. Sale:</span>
+                            <span className="font-medium">$0.00</span>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Customer Information Dialog */}
@@ -567,7 +615,7 @@ export default function Sales() {
                                 id="customer-name"
                                 placeholder="Customer name"
                                 value={customerInfo.name}
-                                onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
+                                onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
                             />
                         </div>
                         <div>
@@ -576,7 +624,7 @@ export default function Sales() {
                                 id="customer-phone"
                                 placeholder="Phone number"
                                 value={customerInfo.phone}
-                                onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
+                                onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
                             />
                         </div>
                         <div>
@@ -586,7 +634,7 @@ export default function Sales() {
                                 type="email"
                                 placeholder="Email address"
                                 value={customerInfo.email}
-                                onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
+                                onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
                             />
                         </div>
                     </div>
@@ -613,7 +661,7 @@ export default function Sales() {
                     <div className="space-y-4">
                         <div>
                             <Label htmlFor="payment-method">Payment Method</Label>
-                            <Select value={paymentInfo.method} onValueChange={(value) => setPaymentInfo({...paymentInfo, method: value})}>
+                            <Select value={paymentInfo.method} onValueChange={(value) => setPaymentInfo({ ...paymentInfo, method: value })}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -634,15 +682,26 @@ export default function Sales() {
                         </div>
                         <div>
                             <Label htmlFor="payment-amount">Amount Received</Label>
-                            <Input
-                                id="payment-amount"
-                                type="number"
-                                step="0.01"
-                                min={getTotal()}
-                                value={paymentInfo.amount}
-                                onChange={(e) => setPaymentInfo({...paymentInfo, amount: parseFloat(e.target.value) || 0})}
-                                placeholder="0.00"
-                            />
+                            <div className="flex space-x-2">
+                                <Input
+                                    id="payment-amount"
+                                    type="number"
+                                    step="0.01"
+                                    min={0}
+                                    value={paymentInfo.amount}
+                                    onChange={(e) => setPaymentInfo({ ...paymentInfo, amount: parseFloat(e.target.value) || 0 })}
+                                    placeholder="0.00"
+                                    className="flex-1"
+                                />
+                                <CalculatorComponent
+                                    onResult={handleCalculatorResult}
+                                    trigger={
+                                        <Button variant="outline" size="sm">
+                                            <Calculator className="w-4 h-4" />
+                                        </Button>
+                                    }
+                                />
+                            </div>
                         </div>
                         {paymentInfo.method !== "cash" && (
                             <div>
@@ -651,15 +710,23 @@ export default function Sales() {
                                     id="payment-reference"
                                     placeholder="Transaction reference or check number"
                                     value={paymentInfo.reference}
-                                    onChange={(e) => setPaymentInfo({...paymentInfo, reference: e.target.value})}
+                                    onChange={(e) => setPaymentInfo({ ...paymentInfo, reference: e.target.value })}
                                 />
                             </div>
                         )}
                         {paymentInfo.amount > getTotal() && (
-                            <div className="p-3 bg-muted rounded-lg">
-                                <div className="flex justify-between font-medium">
+                            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex justify-between font-medium text-green-800">
                                     <span>Change:</span>
                                     <span>${getChange().toFixed(2)}</span>
+                                </div>
+                            </div>
+                        )}
+                        {paymentInfo.amount < getTotal() && paymentInfo.amount > 0 && (
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <div className="flex justify-between font-medium text-red-800">
+                                    <span>Remaining:</span>
+                                    <span>${(getTotal() - paymentInfo.amount).toFixed(2)}</span>
                                 </div>
                             </div>
                         )}
@@ -668,7 +735,7 @@ export default function Sales() {
                         <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
                             Cancel
                         </Button>
-                        <Button 
+                        <Button
                             onClick={handleCheckout}
                             disabled={processing || paymentInfo.amount < getTotal()}
                         >

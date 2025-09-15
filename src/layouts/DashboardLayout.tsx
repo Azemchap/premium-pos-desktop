@@ -98,7 +98,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             </div>
                             <span className="font-bold text-xl">Premium POS</span>
                         </div>
-                        
+
                         <nav className="space-y-2">
                             {filteredNavigation.map((item) => (
                                 <Button
@@ -130,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             <span className="font-bold text-xl">Premium POS</span>
                         </div>
                     </div>
-                    
+
                     <nav className="flex flex-1 flex-col">
                         <ul role="list" className="flex flex-1 flex-col gap-y-7">
                             <li>
@@ -149,7 +149,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                     ))}
                                 </ul>
                             </li>
-                            
+
                             <li className="mt-auto">
                                 <div className="space-y-2">
                                     <div className="p-3 bg-muted rounded-lg">
@@ -169,7 +169,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex items-center space-x-2">
                                         <Button
                                             variant="outline"
@@ -214,22 +214,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {/* Separator */}
                     <div className="h-6 w-px bg-border lg:hidden" />
 
-                    <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-                        <div className="relative flex flex-1">
-                            <Search className="pointer-events-none absolute inset-y-0 left-0 flex w-5 h-5 items-center pl-3 text-muted-foreground" />
-                            <Input
-                                className="block h-full w-full border-0 py-0 pl-10 pr-0 text-sm placeholder:text-muted-foreground focus:ring-0"
-                                placeholder="Search..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
+                    <div className=" flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+
                         
-                        <div className="flex items-center gap-x-4 lg:gap-x-6">
+                        <div className="ml-auto flex items-center gap-x-4 lg:gap-x-6">
                             <Button variant="ghost" size="sm">
                                 <Bell className="w-5 h-5" />
                             </Button>
-                            
+
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="flex items-center space-x-2">
