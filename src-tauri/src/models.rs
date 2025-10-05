@@ -1,3 +1,4 @@
+// src/models.rs
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
@@ -69,6 +70,27 @@ pub struct Product {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct CreateProductRequest {
+    pub sku: String,
+    pub barcode: Option<String>,
+    pub name: String,
+    pub description: Option<String>,
+    pub category: Option<String>,
+    pub subcategory: Option<String>,
+    pub brand: Option<String>,
+    pub unit_of_measure: String,
+    pub cost_price: f64,
+    pub selling_price: f64,
+    pub wholesale_price: f64,
+    pub tax_rate: f64,
+    pub is_taxable: bool,
+    pub weight: f64,
+    pub dimensions: Option<String>,
+    pub supplier_info: Option<String>,
+    pub reorder_point: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ProductWithInventory {
     pub id: i64,
     pub name: String,
@@ -90,27 +112,6 @@ pub struct ProductWithInventory {
     pub reorder_point: i32,
     pub created_at: String,
     pub updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateProductRequest {
-    pub sku: String,
-    pub barcode: Option<String>,
-    pub name: String,
-    pub description: Option<String>,
-    pub category: Option<String>,
-    pub subcategory: Option<String>,
-    pub brand: Option<String>,
-    pub unit_of_measure: String,
-    pub cost_price: f64,
-    pub selling_price: f64,
-    pub wholesale_price: f64,
-    pub tax_rate: f64,
-    pub is_taxable: bool,
-    pub weight: f64,
-    pub dimensions: Option<String>,
-    pub supplier_info: Option<String>,
-    pub reorder_point: i32,
 }
 
 // Inventory models
@@ -375,13 +376,33 @@ pub struct DashboardStats {
     pub month_sales: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
-pub struct RecentActivity {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RecentSale {
     pub id: i64,
-    pub activity_type: String,
-    pub amount: f64,
-    pub description: String,
-    pub timestamp: String,
+    pub sale_number: String,
+    pub total_amount: f64,
+    pub customer_name: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LowStockItem {
+    pub id: i64,
+    pub current_stock: i32,
+    pub minimum_stock: i32,
+    pub product: ProductSummary,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProductSummary {
+    pub name: String,
+    pub sku: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RecentActivity {
+    pub sales: Vec<RecentSale>,
+    pub low_stock_items: Vec<LowStockItem>,
 }
 
 // Search and filter models

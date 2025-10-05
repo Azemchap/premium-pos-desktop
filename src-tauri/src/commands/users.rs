@@ -72,6 +72,7 @@ pub async fn create_user(
     Ok(user)
 }
 
+
 #[tauri::command]
 pub async fn update_user(
     pool: State<'_, SqlitePool>,

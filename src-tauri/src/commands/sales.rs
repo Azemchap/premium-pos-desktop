@@ -253,6 +253,90 @@ pub async fn get_sales(
 }
 
 #[tauri::command]
+pub async fn get_sales_by_date(
+    pool: State<'_, SqlitePool>,
+    from_date: String,
+    to_date: String,
+) -> Result<Vec<Sale>, String> {
+    let rows = sqlx::query(
+        "SELECT * FROM sales WHERE DATE(created_at) BETWEEN ? AND ? ORDER BY created_at DESC",
+    )
+    .bind(from_date)
+    .bind(to_date)
+    .fetch_all(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut sales = Vec::new();
+    for row in rows {
+        let sale = Sale {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            sale_number: row.try_get("sale_number").map_err(|e| e.to_string())?,
+            subtotal: row.try_get("subtotal").map_err(|e| e.to_string())?,
+            tax_amount: row.try_get("tax_amount").map_err(|e| e.to_string())?,
+            discount_amount: row.try_get("discount_amount").map_err(|e| e.to_string())?,
+            total_amount: row.try_get("total_amount").map_err(|e| e.to_string())?,
+            payment_method: row.try_get("payment_method").map_err(|e| e.to_string())?,
+            payment_status: row.try_get("payment_status").map_err(|e| e.to_string())?,
+            cashier_id: row.try_get("cashier_id").map_err(|e| e.to_string())?,
+            customer_name: row.try_get("customer_name").ok().flatten(),
+            customer_phone: row.try_get("customer_phone").ok().flatten(),
+            customer_email: row.try_get("customer_email").ok().flatten(),
+            notes: row.try_get("notes").ok().flatten(),
+            is_voided: row.try_get("is_voided").map_err(|e| e.to_string())?,
+            voided_by: row.try_get("voided_by").ok().flatten(),
+            voided_at: row.try_get("voided_at").ok().flatten(),
+            void_reason: row.try_get("void_reason").ok().flatten(),
+            shift_id: row.try_get("shift_id").ok().flatten(),
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+        };
+        sales.push(sale);
+    }
+
+    Ok(sales)
+}
+
+#[tauri::command]
+pub async fn get_sales_by_cashier(
+    pool: State<'_, SqlitePool>,
+    cashier_id: i64,
+) -> Result<Vec<Sale>, String> {
+    let rows = sqlx::query("SELECT * FROM sales WHERE cashier_id = ? ORDER BY created_at DESC")
+        .bind(cashier_id)
+        .fetch_all(pool.inner())
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut sales = Vec::new();
+    for row in rows {
+        let sale = Sale {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            sale_number: row.try_get("sale_number").map_err(|e| e.to_string())?,
+            subtotal: row.try_get("subtotal").map_err(|e| e.to_string())?,
+            tax_amount: row.try_get("tax_amount").map_err(|e| e.to_string())?,
+            discount_amount: row.try_get("discount_amount").map_err(|e| e.to_string())?,
+            total_amount: row.try_get("total_amount").map_err(|e| e.to_string())?,
+            payment_method: row.try_get("payment_method").map_err(|e| e.to_string())?,
+            payment_status: row.try_get("payment_status").map_err(|e| e.to_string())?,
+            cashier_id: row.try_get("cashier_id").map_err(|e| e.to_string())?,
+            customer_name: row.try_get("customer_name").ok().flatten(),
+            customer_phone: row.try_get("customer_phone").ok().flatten(),
+            customer_email: row.try_get("customer_email").ok().flatten(),
+            notes: row.try_get("notes").ok().flatten(),
+            is_voided: row.try_get("is_voided").map_err(|e| e.to_string())?,
+            voided_by: row.try_get("voided_by").ok().flatten(),
+            voided_at: row.try_get("voided_at").ok().flatten(),
+            void_reason: row.try_get("void_reason").ok().flatten(),
+            shift_id: row.try_get("shift_id").ok().flatten(),
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+        };
+        sales.push(sale);
+    }
+
+    Ok(sales)
+}
+
+#[tauri::command]
 pub async fn get_sale_by_id(
     pool: State<'_, SqlitePool>,
     sale_id: i64,

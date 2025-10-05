@@ -1,3 +1,4 @@
+// src/commands/products.rs
 use crate::models::{CreateProductRequest, Product};
 use sqlx::{Row, SqlitePool};
 use tauri::State;
@@ -82,62 +83,143 @@ pub async fn get_product_by_id(
 }
 
 #[tauri::command]
+pub async fn check_product_unique(
+    pool: State<'_, SqlitePool>,
+    sku: String,
+    barcode: Option<String>,
+    exclude_product_id: Option<i64>,
+) -> Result<bool, String> {
+    let sku_exists = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM products WHERE sku = ? AND (? IS NULL OR id != ?)",
+    )
+    .bind(&sku)
+    .bind(exclude_product_id)
+    .bind(exclude_product_id.unwrap_or(0))
+    .fetch_one(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    if sku_exists > 0 {
+        return Ok(false);
+    }
+
+    if let Some(barcode) = barcode {
+        if !barcode.is_empty() {
+            let barcode_exists = sqlx::query_scalar::<_, i64>(
+                "SELECT COUNT(*) FROM products WHERE barcode = ? AND (? IS NULL OR id != ?)",
+            )
+            .bind(&barcode)
+            .bind(exclude_product_id)
+            .bind(exclude_product_id.unwrap_or(0))
+            .fetch_one(pool.inner())
+            .await
+            .map_err(|e| e.to_string())?;
+
+            if barcode_exists > 0 {
+                return Ok(false);
+            }
+        }
+    }
+
+    Ok(true)
+}
+
+#[tauri::command]
+pub async fn get_categories(pool: State<'_, SqlitePool>) -> Result<Vec<String>, String> {
+    let rows = sqlx::query(
+        "SELECT DISTINCT category FROM products WHERE category IS NOT NULL ORDER BY category",
+    )
+    .fetch_all(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let categories = rows
+        .into_iter()
+        .map(|row| row.try_get("category").map_err(|e| e.to_string()))
+        .collect::<Result<Vec<String>, String>>()?;
+
+    Ok(categories)
+}
+
+#[tauri::command]
+pub async fn get_brands(pool: State<'_, SqlitePool>) -> Result<Vec<String>, String> {
+    let rows =
+        sqlx::query("SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL ORDER BY brand")
+            .fetch_all(pool.inner())
+            .await
+            .map_err(|e| e.to_string())?;
+
+    let brands = rows
+        .into_iter()
+        .map(|row| row.try_get("brand").map_err(|e| e.to_string()))
+        .collect::<Result<Vec<String>, String>>()?;
+
+    Ok(brands)
+}
+
+#[tauri::command]
 pub async fn create_product(
     pool: State<'_, SqlitePool>,
     request: CreateProductRequest,
 ) -> Result<Product, String> {
-    let product_id = sqlx::query(
-        "INSERT INTO products (sku, barcode, name, description, category, subcategory, brand, unit_of_measure, cost_price, selling_price, wholesale_price, tax_rate, is_active, is_taxable, weight, dimensions, supplier_info, reorder_point, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)"
+    let mut tx = pool.inner().begin().await.map_err(|e| e.to_string())?;
+
+    let insert_query = r#"
+        INSERT INTO products (
+            name, description, sku, barcode, category, subcategory, brand,
+            unit_of_measure, cost_price, selling_price, wholesale_price, tax_rate,
+            is_active, is_taxable, weight, dimensions, supplier_info, reorder_point,
+            created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    "#;
+
+    let product_id = sqlx::query(insert_query)
+        .bind(&request.name)
+        .bind(&request.description)
+        .bind(&request.sku)
+        .bind(&request.barcode)
+        .bind(&request.category)
+        .bind(&request.subcategory)
+        .bind(&request.brand)
+        .bind(&request.unit_of_measure)
+        .bind(request.cost_price)
+        .bind(request.selling_price)
+        .bind(request.wholesale_price)
+        .bind(request.tax_rate)
+        .bind(true)
+        .bind(request.is_taxable)
+        .bind(request.weight)
+        .bind(&request.dimensions)
+        .bind(&request.supplier_info)
+        .bind(request.reorder_point)
+        .bind(chrono::Utc::now().naive_utc().to_string())
+        .bind(chrono::Utc::now().naive_utc().to_string())
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?
+        .last_insert_rowid();
+
+    // Create inventory record for the new product
+    sqlx::query(
+        "INSERT INTO inventory (product_id, quantity_on_hand, available_stock, quantity_reserved, minimum_stock, reorder_point, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     )
-    .bind(&request.sku)
-    .bind(&request.barcode)
-    .bind(&request.name)
-    .bind(&request.description)
-    .bind(&request.category)
-    .bind(&request.subcategory)
-    .bind(&request.brand)
-    .bind(&request.unit_of_measure)
-    .bind(request.cost_price)
-    .bind(request.selling_price)
-    .bind(request.wholesale_price)
-    .bind(request.tax_rate)
-    .bind(request.is_taxable)
-    .bind(request.weight)
-    .bind(&request.dimensions)
-    .bind(&request.supplier_info)
+    .bind(product_id)
+    .bind(0)
+    .bind(0)
+    .bind(0)
+    .bind(0)
     .bind(request.reorder_point)
     .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(chrono::Utc::now().naive_utc().to_string())
-    .execute(pool.inner())
+    .execute(&mut *tx)
     .await
-    .map_err(|e| e.to_string())?
-    .last_insert_rowid();
+    .map_err(|e| e.to_string())?;
 
-    let product = Product {
-        id: product_id,
-        sku: request.sku,
-        barcode: request.barcode,
-        name: request.name,
-        description: request.description,
-        category: request.category,
-        subcategory: request.subcategory,
-        brand: request.brand,
-        unit_of_measure: request.unit_of_measure,
-        cost_price: request.cost_price,
-        selling_price: request.selling_price,
-        wholesale_price: request.wholesale_price,
-        tax_rate: request.tax_rate,
-        is_active: true,
-        is_taxable: request.is_taxable,
-        weight: request.weight,
-        dimensions: request.dimensions,
-        supplier_info: request.supplier_info,
-        reorder_point: request.reorder_point,
-        created_at: chrono::Utc::now().naive_utc().to_string(),
-        updated_at: chrono::Utc::now().naive_utc().to_string(),
-    };
+    // FIXED: Added t.e missing dot before map_err
+    tx.commit().await.map_err(|e| e.to_string())?;
 
-    Ok(product)
+    let product = get_product_by_id(pool, product_id).await?;
+    product.ok_or_else(|| "Failed to retrieve created product".to_string())
 }
 
 #[tauri::command]
@@ -146,6 +228,8 @@ pub async fn update_product(
     product_id: i64,
     request: CreateProductRequest,
 ) -> Result<Product, String> {
+    let mut tx = pool.inner().begin().await.map_err(|e| e.to_string())?;
+
     sqlx::query(
         "UPDATE products SET sku = ?, barcode = ?, name = ?, description = ?, category = ?, subcategory = ?, brand = ?, unit_of_measure = ?, cost_price = ?, selling_price = ?, wholesale_price = ?, tax_rate = ?, is_taxable = ?, weight = ?, dimensions = ?, supplier_info = ?, reorder_point = ?, updated_at = ? WHERE id = ?"
     )
@@ -168,35 +252,14 @@ pub async fn update_product(
     .bind(request.reorder_point)
     .bind(chrono::Utc::now().naive_utc().to_string())
     .bind(product_id)
-    .execute(pool.inner())
+    .execute(&mut *tx)
     .await
     .map_err(|e| e.to_string())?;
 
-    let product = Product {
-        id: product_id,
-        sku: request.sku,
-        barcode: request.barcode,
-        name: request.name,
-        description: request.description,
-        category: request.category,
-        subcategory: request.subcategory,
-        brand: request.brand,
-        unit_of_measure: request.unit_of_measure,
-        cost_price: request.cost_price,
-        selling_price: request.selling_price,
-        wholesale_price: request.wholesale_price,
-        tax_rate: request.tax_rate,
-        is_active: true,
-        is_taxable: request.is_taxable,
-        weight: request.weight,
-        dimensions: request.dimensions,
-        supplier_info: request.supplier_info,
-        reorder_point: request.reorder_point,
-        created_at: chrono::Utc::now().naive_utc().to_string(),
-        updated_at: chrono::Utc::now().naive_utc().to_string(),
-    };
+    tx.commit().await.map_err(|e| e.to_string())?;
 
-    Ok(product)
+    let product = get_product_by_id(pool, product_id).await?;
+    product.ok_or_else(|| "Failed to retrieve updated product".to_string())
 }
 
 #[tauri::command]

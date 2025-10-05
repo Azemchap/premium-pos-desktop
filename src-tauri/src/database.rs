@@ -1,3 +1,4 @@
+// src/database.rs
 // Complete database.rs file with all necessary tables
 #[allow(dead_code)]
 pub struct Migration {
@@ -32,7 +33,7 @@ CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
-    sku TEXT UNIQUE,
+    sku TEXT UNIQUE NOT NULL,
     barcode TEXT UNIQUE,
     category TEXT,
     subcategory TEXT,
@@ -72,9 +73,9 @@ CREATE TABLE IF NOT EXISTS inventory (
 CREATE TABLE IF NOT EXISTS stock_movements (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     product_id INTEGER NOT NULL,
-    movement_type TEXT NOT NULL, -- 'in', 'out', 'adjustment'
+    movement_type TEXT NOT NULL,
     quantity INTEGER NOT NULL,
-    reference_type TEXT, -- 'sale', 'purchase', 'adjustment', 'return'
+    reference_type TEXT,
     reference_id INTEGER,
     notes TEXT,
     user_id INTEGER,
@@ -83,32 +84,33 @@ CREATE TABLE IF NOT EXISTS stock_movements (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Sales table - Updated to match Rust models
+-- Sales table
 CREATE TABLE IF NOT EXISTS sales (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sale_number TEXT UNIQUE NOT NULL,
+    subtotal REAL NOT NULL,
+    tax_amount REAL NOT NULL,
+    discount_amount REAL NOT NULL DEFAULT 0,
+    total_amount REAL NOT NULL,
+    payment_method TEXT NOT NULL,
+    payment_status TEXT NOT NULL DEFAULT 'completed',
+    cashier_id INTEGER NOT NULL,
     customer_name TEXT,
     customer_phone TEXT,
     customer_email TEXT,
-    subtotal REAL NOT NULL DEFAULT 0,
-    tax_amount REAL NOT NULL DEFAULT 0,
-    discount_amount REAL NOT NULL DEFAULT 0,
-    total_amount REAL NOT NULL,
-    payment_method TEXT NOT NULL DEFAULT 'cash',
-    payment_status TEXT NOT NULL DEFAULT 'completed',
-    cashier_id INTEGER NOT NULL,
-    shift_id INTEGER,
     notes TEXT,
     is_voided BOOLEAN NOT NULL DEFAULT FALSE,
     voided_by INTEGER,
     voided_at DATETIME,
     void_reason TEXT,
+    shift_id INTEGER,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (cashier_id) REFERENCES users(id),
+    FOREIGN KEY (voided_by) REFERENCES users(id),
     FOREIGN KEY (shift_id) REFERENCES shifts(id)
 );
 
--- Sale items table - Updated to match Rust models
+-- Sale items table
 CREATE TABLE IF NOT EXISTS sale_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sale_id INTEGER NOT NULL,
@@ -117,94 +119,53 @@ CREATE TABLE IF NOT EXISTS sale_items (
     unit_price REAL NOT NULL,
     discount_amount REAL NOT NULL DEFAULT 0,
     line_total REAL NOT NULL,
-    tax_amount REAL NOT NULL DEFAULT 0,
-    cost_price REAL NOT NULL DEFAULT 0,
+    tax_amount REAL NOT NULL,
+    cost_price REAL NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id)
-);
-
--- Returns table
-CREATE TABLE IF NOT EXISTS returns (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    original_sale_id INTEGER NOT NULL,
-    return_reason TEXT,
-    total_refund_amount REAL NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (original_sale_id) REFERENCES sales(id)
-);
-
--- Return items table
-CREATE TABLE IF NOT EXISTS return_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    return_id INTEGER NOT NULL,
-    product_id INTEGER NOT NULL,
-    quantity INTEGER NOT NULL,
-    refund_amount REAL NOT NULL,
-    reason TEXT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (return_id) REFERENCES returns(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
 -- Shifts table
 CREATE TABLE IF NOT EXISTS shifts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    shift_number TEXT UNIQUE NOT NULL,
     user_id INTEGER NOT NULL,
     start_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_time DATETIME,
-    starting_cash REAL NOT NULL DEFAULT 0,
-    ending_cash REAL,
-    expected_cash REAL,
+    opening_amount REAL NOT NULL,
+    closing_amount REAL,
     total_sales REAL NOT NULL DEFAULT 0,
     total_returns REAL NOT NULL DEFAULT 0,
     cash_sales REAL NOT NULL DEFAULT 0,
     card_sales REAL NOT NULL DEFAULT 0,
-    other_sales REAL NOT NULL DEFAULT 0,
-    status TEXT NOT NULL DEFAULT 'open', -- 'open', 'closed'
+    status TEXT NOT NULL DEFAULT 'open',
     notes TEXT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Cash drawer transactions table
+-- Cash transactions table
 CREATE TABLE IF NOT EXISTS cash_transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     shift_id INTEGER NOT NULL,
-    transaction_type TEXT NOT NULL, -- 'sale', 'return', 'pay_in', 'pay_out'
+    transaction_type TEXT NOT NULL,
     amount REAL NOT NULL,
-    description TEXT,
-    reference_id INTEGER,
+    reason TEXT,
     user_id INTEGER NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (shift_id) REFERENCES shifts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Receipt templates table
-CREATE TABLE IF NOT EXISTS receipt_templates (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE NOT NULL,
-    template_type TEXT NOT NULL DEFAULT 'sale',
-    printer_type TEXT NOT NULL DEFAULT 'thermal',
-    template_content TEXT NOT NULL DEFAULT '',
-    is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    paper_width INTEGER NOT NULL DEFAULT 80,
-    font_size INTEGER NOT NULL DEFAULT 12,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Store configuration table
+-- Store config table
 CREATE TABLE IF NOT EXISTS store_config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL DEFAULT 'Premium POS Store',
+    name TEXT NOT NULL,
     address TEXT,
     phone TEXT,
     email TEXT,
-    tax_rate REAL NOT NULL DEFAULT 19.25,
+    tax_rate REAL NOT NULL DEFAULT 0,
     currency TEXT NOT NULL DEFAULT 'USD',
     timezone TEXT NOT NULL DEFAULT 'UTC',
     logo_path TEXT,
@@ -214,17 +175,25 @@ CREATE TABLE IF NOT EXISTS store_config (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert default store configuration
-INSERT OR IGNORE INTO store_config (id, name) VALUES (1, 'Premium POS Store');
+-- Receipt templates table
+CREATE TABLE IF NOT EXISTS receipt_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    template_type TEXT NOT NULL,
+    printer_type TEXT NOT NULL,
+    template_content TEXT NOT NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    paper_width INTEGER NOT NULL DEFAULT 80,
+    font_size INTEGER NOT NULL DEFAULT 12,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
--- Insert default receipt template
-INSERT OR IGNORE INTO receipt_templates (
-    name, 
-    template_type, 
-    printer_type,
-    template_content,
-    is_default
-) VALUES (
+-- Insert default store config if not exists
+INSERT OR IGNORE INTO store_config (id, name, tax_rate, currency, timezone) VALUES (1, 'Premium POS', 0, 'USD', 'UTC');
+
+-- Insert default receipt template if not exists
+INSERT OR IGNORE INTO receipt_templates (name, template_type, printer_type, template_content, is_default) VALUES (
     'Default Sale Receipt',
     'sale',
     'thermal',

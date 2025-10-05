@@ -15,6 +15,7 @@ import {
     BarChart3
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
@@ -57,13 +58,13 @@ export default function Dashboard() {
     const loadDashboardData = async () => {
         try {
             setLoading(true);
-            
+
             // Load stats and recent activity in parallel
             const [statsData, activityData] = await Promise.all([
-                invoke<DashboardStats>("get_stats"),
+                invoke<DashboardStats>("get_dashboard_stats"),
                 invoke<RecentActivity>("get_recent_activity", { limit: 5 })
             ]);
-            
+
             setStats(statsData);
             setRecentActivity(activityData);
         } catch (error) {
@@ -88,257 +89,97 @@ export default function Dashboard() {
 
     useEffect(() => {
         loadDashboardData();
+
+        // Refresh automatically when a sale is created
+        let unlisten: (() => void) | undefined;
+        (async () => {
+            try {
+                const off = await listen("sale_created", async () => {
+                    await loadDashboardData();
+                });
+                unlisten = off;
+            } catch (e) {
+                // Event bus might not be available in some contexts
+            }
+        })();
+
+        return () => {
+            if (unlisten) unlisten();
+        };
     }, []);
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD'
-        }).format(amount);
-    };
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
     };
 
     const getStockStatus = (current: number, minimum: number) => {
-        if (current === 0) return { status: 'Out of Stock', color: 'destructive' as const };
-        if (current <= minimum) return { status: 'Low Stock', color: 'destructive' as const };
-        if (current <= minimum * 1.5) return { status: 'Warning', color: 'secondary' as const };
+        if (current <= 0) return { status: 'Out of Stock', color: 'destructive' as const };
+        if (current <= minimum) return { status: 'Low Stock', color: 'secondary' as const };
         return { status: 'In Stock', color: 'default' as const };
     };
 
-    if (loading) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <Skeleton className="h-8 w-32" />
-                    <Skeleton className="h-10 w-32" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <Card key={i}>
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-4 w-24" />
-                                        <Skeleton className="h-8 w-20" />
-                                        <Skeleton className="h-3 w-16" />
-                                    </div>
-                                    <Skeleton className="h-12 w-12 rounded-lg" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {Array.from({ length: 2 }).map((_, i) => (
-                        <Card key={i}>
-                            <CardHeader>
-                                <Skeleton className="h-6 w-32" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {Array.from({ length: 4 }).map((_, j) => (
-                                        <div key={j} className="flex items-center justify-between py-2">
-                                            <div className="space-y-2">
-                                                <Skeleton className="h-4 w-24" />
-                                                <Skeleton className="h-3 w-20" />
-                                            </div>
-                                            <Skeleton className="h-4 w-16" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-8">
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Dashboard</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Welcome back, {user?.first_name}! Here's what's happening today.
-                    </p>
+                <h1 className="text-2xl font-bold">Dashboard</h1>
+                <Button variant="outline" onClick={refreshData} disabled={refreshing}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                    Refresh
+                </Button>
+            </div>
+
+            {loading ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {[...Array(4)].map((_, i) => (
+                        <Skeleton key={i} className="h-32 w-full" />
+                    ))}
                 </div>
-                <div className="flex items-center space-x-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={refreshData}
-                        disabled={refreshing}
-                    >
-                        <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
-                    <Button>
-                        <TrendingUp className="w-4 h-4 mr-2" />
-                        Generate Report
-                    </Button>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Today Sales</CardTitle>
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatCurrency(stats?.today_sales || 0)}</div>
+                            <p className="text-xs text-muted-foreground">
+                                {stats?.today_transactions || 0} transactions
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Week Sales</CardTitle>
+                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatCurrency(stats?.week_sales || 0)}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Month Sales</CardTitle>
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatCurrency(stats?.month_sales || 0)}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
+                            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats?.low_stock_items || 0}</div>
+                            <p className="text-xs text-muted-foreground">items below threshold</p>
+                        </CardContent>
+                    </Card>
                 </div>
-            </div>
+            )}
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Today's Sales
-                                </p>
-                                <p className="text-2xl font-bold">
-                                    {formatCurrency(stats?.today_sales || 0)}
-                                </p>
-                                <p className="text-sm text-green-600">
-                                    {stats?.today_transactions || 0} transactions
-                                </p>
-                            </div>
-                            <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/20">
-                                <DollarSign className="w-6 h-6 text-green-600" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Week Sales
-                                </p>
-                                <p className="text-2xl font-bold">
-                                    {formatCurrency(stats?.week_sales || 0)}
-                                </p>
-                                <p className="text-sm text-blue-600">
-                                    <Calendar className="w-3 h-3 inline mr-1" />
-                                    Last 7 days
-                                </p>
-                            </div>
-                            <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                                <BarChart3 className="w-6 h-6 text-blue-600" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Products
-                                </p>
-                                <p className="text-2xl font-bold">
-                                    {stats?.total_products || 0}
-                                </p>
-                                <p className="text-sm text-purple-600">
-                                    Active products
-                                </p>
-                            </div>
-                            <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                                <Package className="w-6 h-6 text-purple-600" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Low Stock Items
-                                </p>
-                                <p className="text-2xl font-bold">
-                                    {stats?.low_stock_items || 0}
-                                </p>
-                                <p className="text-sm text-orange-600">
-                                    Need attention
-                                </p>
-                            </div>
-                            <div className="p-3 rounded-lg bg-orange-100 dark:bg-orange-900/20">
-                                <AlertCircle className="w-6 h-6 text-orange-600" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Additional Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center">
-                            <DollarSign className="w-5 h-5 mr-2" />
-                            Sales Performance
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Average Transaction</span>
-                            <span className="font-semibold">
-                                {formatCurrency(stats?.average_transaction_value || 0)}
-                            </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Month Sales</span>
-                            <span className="font-semibold">
-                                {formatCurrency(stats?.month_sales || 0)}
-                            </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Today's Transactions</span>
-                            <span className="font-semibold">
-                                {stats?.today_transactions || 0}
-                            </span>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center">
-                            <Package className="w-5 h-5 mr-2" />
-                            Inventory Status
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Total Products</span>
-                            <span className="font-semibold">{stats?.total_products || 0}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Low Stock Items</span>
-                            <Badge variant="destructive">{stats?.low_stock_items || 0}</Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Stock Health</span>
-                            <span className="font-semibold text-green-600">
-                                {stats && stats.total_products > 0 
-                                    ? Math.round(((stats.total_products - stats.low_stock_items) / stats.total_products) * 100)
-                                    : 0}% Healthy
-                            </span>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader>
                         <CardTitle>Recent Sales</CardTitle>
@@ -351,7 +192,7 @@ export default function Dashboard() {
                                         <div>
                                             <p className="font-medium">{sale.sale_number}</p>
                                             <p className="text-sm text-muted-foreground">
-                                                {sale.customer_name || 'Walk-in Customer'} • {formatDate(sale.created_at)}
+                                                {sale.customer_name || 'Walk-in'} • {new Date(sale.created_at).toLocaleString()}
                                             </p>
                                         </div>
                                         <p className="font-semibold">{formatCurrency(sale.total_amount)}</p>

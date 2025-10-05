@@ -1,18 +1,21 @@
-use chrono::Datelike;
+// src/commands/dashboard.rs
+use chrono::{Datelike, Duration, NaiveDate};
 use sqlx::{Row, SqlitePool};
 use tauri::State;
 
+use crate::models::{DashboardStats, LowStockItem, ProductSummary, RecentActivity, RecentSale};
+
 #[tauri::command]
-pub async fn get_dashboard_stats(pool: State<'_, SqlitePool>) -> Result<serde_json::Value, String> {
+pub async fn get_dashboard_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, String> {
     let today = chrono::Utc::now().date_naive();
-    let start_of_month =
-        chrono::NaiveDate::from_ymd_opt(today.year(), today.month(), 1).unwrap_or(today);
-    let end_of_month = chrono::NaiveDate::from_ymd_opt(today.year(), today.month() + 1, 1)
+    let start_of_week = today - Duration::days(today.weekday().num_days_from_monday() as i64);
+    let start_of_month = NaiveDate::from_ymd_opt(today.year(), today.month(), 1).unwrap_or(today);
+    let end_of_month = NaiveDate::from_ymd_opt(today.year(), today.month() + 1, 1)
         .unwrap_or(today)
         .pred_opt()
         .unwrap_or(today);
 
-    // Today's sales
+    // Today's sales and transactions
     let today_sales: f64 = sqlx::query_scalar(
         "SELECT COALESCE(SUM(total_amount), 0.0) FROM sales WHERE DATE(created_at) = ?",
     )
@@ -21,13 +24,21 @@ pub async fn get_dashboard_stats(pool: State<'_, SqlitePool>) -> Result<serde_js
     .await
     .map_err(|e| e.to_string())?;
 
-    // Today's transactions
-    let today_transactions: i64 =
+    let today_transactions: i32 =
         sqlx::query_scalar("SELECT COUNT(*) FROM sales WHERE DATE(created_at) = ?")
             .bind(today.to_string())
             .fetch_one(pool.inner())
             .await
             .map_err(|e| e.to_string())?;
+
+    // Week's sales
+    let week_sales: f64 = sqlx::query_scalar(
+        "SELECT COALESCE(SUM(total_amount), 0.0) FROM sales WHERE DATE(created_at) >= ?",
+    )
+    .bind(start_of_week.to_string())
+    .fetch_one(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
 
     // Month's sales
     let month_sales: f64 = sqlx::query_scalar(
@@ -39,40 +50,93 @@ pub async fn get_dashboard_stats(pool: State<'_, SqlitePool>) -> Result<serde_js
     .await
     .map_err(|e| e.to_string())?;
 
-    // Month's transactions
-    let month_transactions: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM sales WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?",
-    )
-    .bind(start_of_month.to_string())
-    .bind(end_of_month.to_string())
-    .fetch_one(pool.inner())
-    .await
-    .map_err(|e| e.to_string())?;
-
-    // Low stock products
-    let low_stock_products: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM inventory WHERE current_stock <= reorder_point")
-            .fetch_one(pool.inner())
-            .await
-            .map_err(|e| e.to_string())?;
-
     // Total products
-    let total_products: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM products")
+    let total_products: i32 = sqlx::query_scalar("SELECT COUNT(*) FROM products")
         .fetch_one(pool.inner())
         .await
         .map_err(|e| e.to_string())?;
 
-    let stats = serde_json::json!({
-        "today_sales": today_sales,
-        "today_transactions": today_transactions,
-        "month_sales": month_sales,
-        "month_transactions": month_transactions,
-        "low_stock_products": low_stock_products,
-        "total_products": total_products,
-        "date": today.to_string()
-    });
+    // Low stock items
+    let low_stock_items: i32 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM inventory WHERE quantity_on_hand <= minimum_stock",
+    )
+    .fetch_one(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
 
-    Ok(stats)
+    // Average transaction value
+    let average_transaction_value = if today_transactions > 0 {
+        today_sales / today_transactions as f64
+    } else {
+        0.0
+    };
+
+    Ok(DashboardStats {
+        today_sales,
+        today_transactions,
+        total_products,
+        low_stock_items,
+        average_transaction_value,
+        week_sales,
+        month_sales,
+    })
+}
+
+#[tauri::command]
+pub async fn get_recent_activity(
+    pool: State<'_, SqlitePool>,
+    limit: i64,
+) -> Result<RecentActivity, String> {
+    // Fetch recent sales
+    let sales_rows = sqlx::query(
+        "SELECT id, sale_number, total_amount, customer_name, created_at FROM sales ORDER BY created_at DESC LIMIT ?"
+    )
+    .bind(limit)
+    .fetch_all(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut sales = Vec::new();
+    for row in sales_rows {
+        sales.push(RecentSale {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            sale_number: row.try_get("sale_number").map_err(|e| e.to_string())?,
+            total_amount: row.try_get("total_amount").map_err(|e| e.to_string())?,
+            customer_name: row.try_get("customer_name").ok().flatten(),
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+        });
+    }
+
+    // Fetch low stock items
+    let low_stock_rows = sqlx::query(
+        "SELECT i.id, i.quantity_on_hand as current_stock, i.minimum_stock, p.name, p.sku 
+         FROM inventory i 
+         JOIN products p ON i.product_id = p.id 
+         WHERE i.quantity_on_hand <= i.minimum_stock 
+         ORDER BY i.quantity_on_hand ASC LIMIT ?",
+    )
+    .bind(limit)
+    .fetch_all(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut low_stock_items = Vec::new();
+    for row in low_stock_rows {
+        low_stock_items.push(LowStockItem {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            current_stock: row.try_get("current_stock").map_err(|e| e.to_string())?,
+            minimum_stock: row.try_get("minimum_stock").map_err(|e| e.to_string())?,
+            product: ProductSummary {
+                name: row.try_get("name").map_err(|e| e.to_string())?,
+                sku: row.try_get("sku").map_err(|e| e.to_string())?,
+            },
+        });
+    }
+
+    Ok(RecentActivity {
+        sales,
+        low_stock_items,
+    })
 }
 
 #[tauri::command]
@@ -81,9 +145,10 @@ pub async fn get_recent_sales(
     limit: i64,
 ) -> Result<serde_json::Value, String> {
     let rows = sqlx::query(
-        "SELECT s.*, u.username as cashier_name FROM sales s 
-         LEFT JOIN users u ON s.user_id = u.id 
-         ORDER BY s.created_at DESC LIMIT ?",
+        "SELECT s.id, s.sale_number, s.total_amount, s.payment_method, s.created_at, u.first_name || ' ' || u.last_name AS cashier_name 
+         FROM sales s 
+         LEFT JOIN users u ON s.cashier_id = u.id 
+         ORDER BY s.created_at DESC LIMIT ?"
     )
     .bind(limit)
     .fetch_all(pool.inner())

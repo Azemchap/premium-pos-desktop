@@ -1,3 +1,4 @@
+// src/main.rs
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -8,6 +9,15 @@ use std::path::PathBuf;
 mod commands;
 mod database;
 mod models;
+
+use commands::auth::{
+    authenticate_user, authenticate_with_pin, change_password, reset_password, update_last_login,
+};
+use commands::sales::{
+    create_sale, create_sale_new, get_products_for_sale, get_sale_by_id, get_sale_details,
+    get_sales, get_sales_by_cashier, get_sales_by_date, get_sales_history, process_return,
+    void_sale,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,12 +51,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tauri::Builder::default()
         .manage(pool)
         .invoke_handler(tauri::generate_handler![
+            authenticate_user,
+            authenticate_with_pin,
+            change_password,
+            reset_password,
+            update_last_login,
             commands::users::get_users,
             commands::users::create_user,
             commands::users::update_user,
             commands::users::delete_user,
             commands::products::get_products,
             commands::products::get_product_by_id,
+            commands::products::check_product_unique,
+            commands::products::get_categories,
+            commands::products::get_brands,
             commands::products::create_product,
             commands::products::update_product,
             commands::products::delete_product,
@@ -56,37 +74,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             commands::inventory::update_stock,
             commands::inventory::create_stock_adjustment,
             commands::inventory::get_stock_movements,
-            commands::sales::create_sale,
-            commands::sales::get_sales,
-            commands::sales::get_sale_by_id,
-            commands::sales::create_sale_new,
-            commands::sales::get_products_for_sale,
-            commands::sales::get_sales_history,
-            commands::sales::get_sale_details,
-            commands::sales::void_sale,
-            commands::sales::process_return,
-            commands::shifts::open_shift,
-            commands::shifts::close_shift,
-            commands::shifts::get_current_shift,
+            commands::inventory::update_inventory_settings,
+            create_sale,
+            create_sale_new,
+            get_sales,
+            get_sales_history,
+            get_sale_by_id,
+            get_sales_by_date,
+            get_sales_by_cashier,
+            get_sale_details,
+            void_sale,
+            process_return,
+            get_products_for_sale,
+            commands::shifts::start_shift,
+            commands::shifts::end_shift,
+            commands::shifts::get_active_shift,
             commands::shifts::get_shift_history,
-            commands::cash_drawer::add_cash_transaction,
-            commands::cash_drawer::get_cash_drawer_balance,
-            commands::cash_drawer::get_transaction_history,
             commands::receipts::get_receipt_templates,
             commands::receipts::create_receipt_template,
             commands::receipts::update_receipt_template,
-            commands::receipts::delete_receipt_template,
-            commands::receipts::get_default_template,
             commands::store::get_store_config,
             commands::store::update_store_config,
             commands::dashboard::get_dashboard_stats,
+            commands::dashboard::get_recent_activity,
             commands::dashboard::get_recent_sales,
-            commands::dashboard::get_top_products,
-            commands::auth::authenticate_user,
-            commands::auth::authenticate_with_pin,
-            commands::auth::update_last_login,
-            commands::auth::change_password,
-            commands::auth::reset_password,
+            commands::dashboard::get_top_products
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -95,9 +107,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn initialize_database() -> Result<PathBuf, Box<dyn std::error::Error>> {
-    let app_dir = directories::ProjectDirs::from("com", "premiumpos", "premiumpos")
-        .ok_or("Failed to determine app directory")?
-        .data_local_dir()
+    let app_dir = directories::ProjectDirs::from("com", "premiumpos", "PremiumPOS")
+        .ok_or("Failed to get app directory")?
+        .data_dir()
         .to_path_buf();
 
     std::fs::create_dir_all(&app_dir)?;

@@ -231,3 +231,46 @@ pub async fn get_stock_movements(
 
     Ok(movements)
 }
+
+#[tauri::command]
+pub async fn update_inventory_settings(
+    pool: State<'_, SqlitePool>,
+    product_id: i64,
+    minimum_stock: i32,
+    maximum_stock: Option<i32>,
+) -> Result<InventoryItem, String> {
+    sqlx::query(
+        "UPDATE inventory SET minimum_stock = ?, maximum_stock = ?, updated_at = ? WHERE product_id = ?",
+    )
+    .bind(minimum_stock)
+    .bind(maximum_stock)
+    .bind(chrono::Utc::now().naive_utc().to_string())
+    .bind(product_id)
+    .execute(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let row = sqlx::query(
+        "SELECT i.*, p.name as product_name, p.sku FROM inventory i JOIN products p ON i.product_id = p.id WHERE i.product_id = ?",
+    )
+    .bind(product_id)
+    .fetch_one(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let item = InventoryItem {
+        id: row.try_get("id").map_err(|e| e.to_string())?,
+        product_id: row.try_get("product_id").map_err(|e| e.to_string())?,
+        current_stock: row.try_get("current_stock").map_err(|e| e.to_string())?,
+        minimum_stock: row.try_get("minimum_stock").map_err(|e| e.to_string())?,
+        maximum_stock: row.try_get("maximum_stock").map_err(|e| e.to_string())?,
+        reserved_stock: row.try_get("reserved_stock").map_err(|e| e.to_string())?,
+        available_stock: row.try_get("available_stock").map_err(|e| e.to_string())?,
+        last_updated: row.try_get("last_updated").map_err(|e| e.to_string())?,
+        last_stock_take: row.try_get("last_stock_take").ok().flatten(),
+        stock_take_count: row.try_get("stock_take_count").map_err(|e| e.to_string())?,
+        product: None,
+    };
+
+    Ok(item)
+}
