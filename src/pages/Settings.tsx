@@ -20,7 +20,9 @@ import {
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useSettings } from "@/hooks/useSettings";
 import { useAuthStore } from "@/store/authStore";
+import { playSound } from "@/store/settingsStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Bell,
@@ -73,10 +75,7 @@ export default function Settings() {
 
   const { theme, toggleTheme } = useAuthStore();
   const { currency, changeCurrency, availableCurrencies } = useCurrency();
-  const [autoSave, setAutoSave] = useState(true);
-  const [lowStockAlerts, setLowStockAlerts] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [soundEffects, setSoundEffects] = useState(true);
+  const { preferences, updatePreference, updatePreferences, resetToDefaults } = useSettings();
 
   // Using availableCurrencies from useCurrency hook instead
   // const currencies = availableCurrencies;
@@ -119,20 +118,28 @@ export default function Settings() {
   const saveStoreConfig = async () => {
     if (!storeForm.name.trim()) {
       toast.error("Store name is required");
+      playSound('error', preferences);
       return;
     }
 
     try {
       setSaving(true);
       await invoke("update_store_config", { request: storeForm });
-      toast.success("Store configuration saved successfully");
+      toast.success("✅ Store configuration saved successfully");
+      playSound('success', preferences);
       loadStoreConfig();
     } catch (error) {
       console.error("Failed to save store config:", error);
-      toast.error("Failed to save store configuration");
+      toast.error("❌ Failed to save store configuration");
+      playSound('error', preferences);
     } finally {
       setSaving(false);
     }
+  };
+  
+  const saveAllSettings = () => {
+    toast.success("✅ All settings saved successfully");
+    playSound('success', preferences);
   };
 
   const resetStoreConfig = () => {
@@ -163,10 +170,20 @@ export default function Settings() {
             Configure your store and system preferences
           </p>
         </div>
-        <Button onClick={saveStoreConfig} disabled={saving || loading}>
-          <Save className="w-4 h-4 mr-2" />
-          {saving ? "Saving..." : "Save Changes"}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => {
+            resetToDefaults();
+            toast.success("🔄 All preferences reset to defaults");
+            playSound('success', preferences);
+          }}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Reset All
+          </Button>
+          <Button onClick={saveAllSettings}>
+            <Save className="w-4 h-4 mr-2" />
+            Save All Settings
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="store" className="space-y-4">
@@ -366,7 +383,7 @@ export default function Settings() {
                     Automatically save changes in forms
                   </p>
                 </div>
-                <Switch checked={autoSave} onCheckedChange={setAutoSave} />
+                <Switch checked={preferences.autoSave} onCheckedChange={(checked) => { updatePreference('autoSave', checked); toast.success(checked ? '✅ Auto-save enabled' : 'Auto-save disabled'); playSound('click', preferences); }} />
               </div>
 
               <div className="flex items-center justify-between">
@@ -376,7 +393,7 @@ export default function Settings() {
                     Notify when products are running low
                   </p>
                 </div>
-                <Switch checked={lowStockAlerts} onCheckedChange={setLowStockAlerts} />
+                <Switch checked={preferences.lowStockAlerts} onCheckedChange={(checked) => { updatePreference('lowStockAlerts', checked); toast.success(checked ? '✅ Low stock alerts enabled' : 'Low stock alerts disabled'); playSound('click', preferences); }} />
               </div>
 
               <div className="flex items-center justify-between">
@@ -386,12 +403,12 @@ export default function Settings() {
                     Play sounds for actions and notifications
                   </p>
                 </div>
-                <Switch checked={soundEffects} onCheckedChange={setSoundEffects} />
+                <Switch checked={preferences.soundEffects} onCheckedChange={(checked) => { updatePreference('soundEffects', checked); toast.success(checked ? '✅ Sound effects enabled' : '🔇 Sound effects disabled'); if (checked) playSound('success', { ...preferences, soundEffects: true }); }} />
               </div>
 
               <div className="space-y-2">
                 <Label>Data Retention Period</Label>
-                <Select defaultValue="1year">
+                <Select value={preferences.dataRetention} onValueChange={(value: any) => { updatePreference('dataRetention', value); toast.success(`✅ Data retention set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -410,7 +427,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Backup Frequency</Label>
-                <Select defaultValue="daily">
+                <Select value={preferences.backupFrequency} onValueChange={(value: any) => { updatePreference('backupFrequency', value); toast.success(`✅ Backup frequency set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -484,7 +501,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Compact View</Label>
-                <Select defaultValue="comfortable">
+                <Select value={preferences.compactView} onValueChange={(value: any) => { updatePreference('compactView', value); toast.success(`✅ View changed to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -498,7 +515,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Font Size</Label>
-                <Select defaultValue="medium">
+                <Select value={preferences.fontSize} onValueChange={(value: any) => { updatePreference('fontSize', value); toast.success(`✅ Font size changed to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -512,7 +529,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Sidebar Position</Label>
-                <Select defaultValue="left">
+                <Select value={preferences.sidebarPosition} onValueChange={(value: any) => { updatePreference('sidebarPosition', value); toast.success(`✅ Sidebar position set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -543,47 +560,47 @@ export default function Settings() {
                     Receive notifications via email
                   </p>
                 </div>
-                <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+                <Switch checked={preferences.emailNotifications} onCheckedChange={(checked) => { updatePreference('emailNotifications', checked); toast.success(checked ? '✅ Email notifications enabled' : 'Email notifications disabled'); playSound('click', preferences); }} />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Desktop Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Show notifications on desktop
+                  </p>
+                </div>
+                <Switch checked={preferences.pushNotifications} onCheckedChange={(checked) => { updatePreference('pushNotifications', checked); toast.success(checked ? '🔔 Desktop notifications enabled' : 'Desktop notifications disabled'); playSound('click', preferences); }} />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Low Stock Notifications</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get notified when items are low in stock
+                    Alert when inventory is low
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch checked={preferences.lowStockNotifications} onCheckedChange={(checked) => { updatePreference('lowStockNotifications', checked); toast.success(checked ? '📦 Low stock notifications enabled' : 'Low stock notifications disabled'); playSound('click', preferences); }} />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Daily Sales Summary</Label>
+                  <Label>Sales Notifications</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive daily sales reports
+                    Notify on completed sales
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch checked={preferences.salesNotifications} onCheckedChange={(checked) => { updatePreference('salesNotifications', checked); toast.success(checked ? '💰 Sales notifications enabled' : 'Sales notifications disabled'); playSound('click', preferences); }} />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>New User Registration</Label>
+                  <Label>Inventory Updates</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get notified when new users are created
+                    Notify on inventory changes
                   </p>
                 </div>
-                <Switch />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>System Updates</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Notifications about system updates
-                  </p>
-                </div>
-                <Switch defaultChecked />
+                <Switch checked={preferences.inventoryNotifications} onCheckedChange={(checked) => { updatePreference('inventoryNotifications', checked); toast.success(checked ? '📊 Inventory notifications enabled' : 'Inventory notifications disabled'); playSound('click', preferences); }} />
               </div>
             </CardContent>
           </Card>
@@ -606,36 +623,51 @@ export default function Settings() {
                     Automatically print receipt after sale
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch checked={preferences.autoPrint} onCheckedChange={(checked) => { updatePreference('autoPrint', checked); toast.success(checked ? '🖨️ Auto-print enabled' : 'Auto-print disabled'); playSound('click', preferences); }} />
               </div>
 
               <div className="space-y-2">
-                <Label>Receipt Template</Label>
-                <Select defaultValue="standard">
+                <Label>Default Printer</Label>
+                <Select value={preferences.receiptPrinter} onValueChange={(value: any) => { updatePreference('receiptPrinter', value); toast.success(`🖨️ Default printer set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="detailed">Detailed</SelectItem>
-                    <SelectItem value="compact">Compact</SelectItem>
-                    <SelectItem value="thermal">Thermal Printer</SelectItem>
+                    <SelectItem value="default">System Default</SelectItem>
+                    <SelectItem value="thermal-58">Thermal 58mm</SelectItem>
+                    <SelectItem value="thermal-80">Thermal 80mm</SelectItem>
+                    <SelectItem value="a4">A4 Printer</SelectItem>
+                    <SelectItem value="letter">Letter Printer</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label>Paper Size</Label>
-                <Select defaultValue="80mm">
+                <Select value={preferences.paperSize} onValueChange={(value: any) => { updatePreference('paperSize', value); toast.success(`📄 Paper size set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="57mm">57mm (Thermal)</SelectItem>
-                    <SelectItem value="80mm">80mm (Thermal)</SelectItem>
-                    <SelectItem value="a4">A4 (Letter)</SelectItem>
+                    <SelectItem value="58mm">58mm</SelectItem>
+                    <SelectItem value="80mm">80mm</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Print Copies</Label>
+                <Input 
+                  type="number" 
+                  min="1" 
+                  max="5" 
+                  value={preferences.printCopies} 
+                  onChange={(e) => { 
+                    const value = parseInt(e.target.value) || 1; 
+                    updatePreference('printCopies', value); 
+                    toast.success(`📄 Print copies set to ${value}`); 
+                  }} 
+                />
               </div>
 
               <div className="flex items-center justify-between">
@@ -645,26 +677,17 @@ export default function Settings() {
                     Display logo on receipts
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch checked={preferences.showLogo} onCheckedChange={(checked) => { updatePreference('showLogo', checked); toast.success(checked ? '🏪 Logo will be shown on receipts' : 'Logo hidden from receipts'); playSound('click', preferences); }} />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Show Barcode</Label>
+                  <Label>Show Tax Breakdown</Label>
                   <p className="text-sm text-muted-foreground">
-                    Include barcode on receipts
+                    Display detailed tax information
                   </p>
                 </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Footer Message</Label>
-                <Textarea
-                  placeholder="Thank you for your purchase! Visit us again."
-                  rows={3}
-                  defaultValue="Thank you for shopping with us!"
-                />
+                <Switch checked={preferences.showTaxBreakdown} onCheckedChange={(checked) => { updatePreference('showTaxBreakdown', checked); toast.success(checked ? '💵 Tax breakdown will be shown' : 'Tax breakdown hidden'); playSound('click', preferences); }} />
               </div>
             </CardContent>
           </Card>

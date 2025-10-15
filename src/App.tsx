@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { Toaster } from "sonner";
+import SettingsApplier from "@/components/SettingsApplier";
 import LoginPage from "@/pages/LoginPage";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -11,8 +12,8 @@ import Products from "@/pages/Products";
 import Inventory from "@/pages/Inventory";
 import Users from "@/pages/Users";
 import Reports from "@/pages/Reports";
+import Notifications from "@/pages/Notifications";
 import Settings from "@/pages/Settings";
-import Notifications from "./pages/Notifications";
 
 function App() {
   const { isAuthenticated, theme } = useAuthStore();
@@ -29,6 +30,7 @@ function App() {
   if (!isAuthenticated) {
     return (
       <>
+        <SettingsApplier />
         <Toaster position="top-right" richColors />
         <LoginPage />
       </>
@@ -37,6 +39,7 @@ function App() {
 
   return (
     <>
+      <SettingsApplier />
       <Toaster position="top-right" richColors />
       <DashboardLayout>
         <Routes>
