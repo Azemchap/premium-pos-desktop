@@ -397,97 +397,127 @@ export default function Sales() {
     loadProducts();
   };
 
-  const printReceipt = () => {
+  const printReceipt = async () => {
     if (!completedSaleData) {
       toast.error("❌ No sale data available");
       return;
     }
 
-    toast.success("🖨️ Preparing receipt...");
+    try {
+      toast.success("🖨️ Preparing receipt...");
 
-    // Create a hidden print container
-    const printContainer = document.createElement("div");
-    printContainer.style.position = "absolute";
-    printContainer.style.left = "-9999px";
-    document.body.appendChild(printContainer);
+      // Create a hidden print container
+      const printContainer = document.createElement("div");
+      printContainer.style.position = "absolute";
+      printContainer.style.left = "-9999px";
+      printContainer.style.top = "0";
+      document.body.appendChild(printContainer);
 
-    // Render the receipt
-    const root = createRoot(printContainer);
-    root.render(
-      <ReceiptTemplate
-        saleNumber={completedSaleData.sale_number}
-        date={completedSaleData.created_at}
-        items={completedSaleData.items}
-        subtotal={completedSaleData.subtotal}
-        tax={completedSaleData.tax_amount}
-        discount={completedSaleData.discount_amount}
-        total={completedSaleData.total_amount}
-        paymentMethod={completedSaleData.payment_method}
-        amountReceived={completedSaleData.amount_received}
-        change={completedSaleData.change}
-        customerName={completedSaleData.customer_name}
-        customerPhone={completedSaleData.customer_phone}
-        cashierName={completedSaleData.cashier_name}
-      />
-    );
+      // Render the receipt
+      const root = createRoot(printContainer);
+      root.render(
+        <ReceiptTemplate
+          saleNumber={completedSaleData.sale_number}
+          date={completedSaleData.created_at}
+          items={completedSaleData.items}
+          subtotal={completedSaleData.subtotal}
+          tax={completedSaleData.tax_amount}
+          discount={completedSaleData.discount_amount}
+          total={completedSaleData.total_amount}
+          paymentMethod={completedSaleData.payment_method}
+          amountReceived={completedSaleData.amount_received}
+          change={completedSaleData.change}
+          customerName={completedSaleData.customer_name}
+          customerPhone={completedSaleData.customer_phone}
+          cashierName={completedSaleData.cashier_name}
+        />
+      );
 
-    // Wait for render and print
-    setTimeout(() => {
-      const receiptContent = printContainer.innerHTML;
-      const printWindow = window.open("", "_blank");
+      // Wait for render
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (printWindow) {
-        printWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Receipt - ${completedSaleData.sale_number}</title>
-              <style>
-                @media print {
-                  @page {
-                    size: 80mm auto;
-                    margin: 0;
-                  }
-                  body {
-                    margin: 0;
-                    padding: 0;
-                  }
+      const receiptContent = printContainer.innerHTML;
+
+      // Create print content
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Receipt - ${completedSaleData.sale_number}</title>
+            <style>
+              @media print {
+                @page {
+                  size: 80mm auto;
+                  margin: 0;
                 }
                 body {
-                  font-family: 'Courier New', monospace;
-                  padding: 10px;
-                  max-width: 80mm;
-                  margin: 0 auto;
+                  margin: 0;
+                  padding: 0;
                 }
-                * {
-                  box-sizing: border-box;
-                }
-              </style>
-            </head>
-            <body>
-              ${receiptContent}
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
+              }
+              body {
+                font-family: 'Courier New', monospace;
+                padding: 10px;
+                max-width: 80mm;
+                margin: 0 auto;
+                font-size: 12px;
+              }
+              * {
+                box-sizing: border-box;
+              }
+              .receipt-container {
+                width: 100%;
+              }
+            </style>
+          </head>
+          <body onload="window.print(); setTimeout(function(){ window.close(); }, 500);">
+            ${receiptContent}
+          </body>
+        </html>
+      `;
+
+      // Try opening in new window
+      try {
+        const printWindow = window.open("", "_blank", "width=300,height=600");
         
-        // Trigger print dialog
-        printWindow.onload = () => {
-          printWindow.print();
-          toast.success("✅ Receipt sent to printer!");
-          
-          // Close print window after printing or cancelling
-          setTimeout(() => {
-            printWindow.close();
-          }, 100);
-        };
-      } else {
-        toast.error("❌ Failed to open print window");
+        if (printWindow) {
+          printWindow.document.open();
+          printWindow.document.write(printContent);
+          printWindow.document.close();
+          toast.success("✅ Receipt opened!");
+        } else {
+          // Fallback: create blob and download
+          const blob = new Blob([printContent], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `receipt-${completedSaleData.sale_number}.html`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast.success("✅ Receipt downloaded! Open to print.");
+        }
+      } catch (err) {
+        console.error("Print error:", err);
+        // Fallback: create blob and download
+        const blob = new Blob([printContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `receipt-${completedSaleData.sale_number}.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("✅ Receipt downloaded! Open to print.");
       }
 
       // Clean up
-      document.body.removeChild(printContainer);
-    }, 500);
+      setTimeout(() => {
+        document.body.removeChild(printContainer);
+      }, 1500);
+    } catch (error) {
+      console.error("Failed to print receipt:", error);
+      toast.error("❌ Failed to print receipt");
+    }
   };
 
   const filteredProducts = products.filter((product) => {

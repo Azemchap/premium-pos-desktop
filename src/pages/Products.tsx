@@ -173,11 +173,13 @@ export default function Products() {
       if (editingProduct) {
         await invoke("update_product", {
           productId: editingProduct.id,
-          ...formData
+          request: formData
         });
         toast.success(`✅ Product "${formData.name}" updated successfully!`);
       } else {
-        await invoke("create_product", formData);
+        await invoke("create_product", {
+          request: formData
+        });
         toast.success(`✅ Product "${formData.name}" created successfully!`);
       }
 

@@ -204,95 +204,122 @@ export default function SalesRecords() {
     }
   };
 
-  const printSaleReceipt = () => {
+  const printSaleReceipt = async () => {
     if (!selectedSale || saleItems.length === 0) {
       toast.error("❌ No sale data available");
       return;
     }
 
-    toast.success("🖨️ Preparing receipt...");
+    try {
+      toast.success("🖨️ Preparing receipt...");
 
-    const printContainer = document.createElement("div");
-    printContainer.style.position = "absolute";
-    printContainer.style.left = "-9999px";
-    document.body.appendChild(printContainer);
+      const printContainer = document.createElement("div");
+      printContainer.style.position = "absolute";
+      printContainer.style.left = "-9999px";
+      printContainer.style.top = "0";
+      document.body.appendChild(printContainer);
 
-    const root = createRoot(printContainer);
-    root.render(
-      <ReceiptTemplate
-        saleNumber={selectedSale.sale_number}
-        date={selectedSale.created_at}
-        items={saleItems.map(item => ({
-          product_id: item.product_id,
-          product_name: item.product?.name,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          line_total: item.line_total,
-        }))}
-        subtotal={selectedSale.subtotal}
-        tax={selectedSale.tax_amount}
-        discount={selectedSale.discount_amount}
-        total={selectedSale.total_amount}
-        paymentMethod={selectedSale.payment_method}
-        customerName={selectedSale.customer_name}
-        customerPhone={selectedSale.customer_phone}
-        cashierName={selectedSaleDetails?.cashier_name}
-      />
-    );
+      const root = createRoot(printContainer);
+      root.render(
+        <ReceiptTemplate
+          saleNumber={selectedSale.sale_number}
+          date={selectedSale.created_at}
+          items={saleItems.map(item => ({
+            product_id: item.product_id,
+            product_name: item.product?.name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            line_total: item.line_total,
+          }))}
+          subtotal={selectedSale.subtotal}
+          tax={selectedSale.tax_amount}
+          discount={selectedSale.discount_amount}
+          total={selectedSale.total_amount}
+          paymentMethod={selectedSale.payment_method}
+          customerName={selectedSale.customer_name}
+          customerPhone={selectedSale.customer_phone}
+          cashierName={selectedSaleDetails?.cashier_name}
+        />
+      );
 
-    setTimeout(() => {
-      const receiptContent = printContainer.innerHTML;
-      const printWindow = window.open("", "_blank");
+      // Wait for render
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (printWindow) {
-        printWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Receipt - ${selectedSale.sale_number}</title>
-              <style>
-                @media print {
-                  @page {
-                    size: 80mm auto;
-                    margin: 0;
-                  }
-                  body {
-                    margin: 0;
-                    padding: 0;
-                  }
+      const receiptContent = printContainer.innerHTML;
+
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Receipt - ${selectedSale.sale_number}</title>
+            <style>
+              @media print {
+                @page {
+                  size: 80mm auto;
+                  margin: 0;
                 }
                 body {
-                  font-family: 'Courier New', monospace;
-                  padding: 10px;
-                  max-width: 80mm;
-                  margin: 0 auto;
+                  margin: 0;
+                  padding: 0;
                 }
-                * {
-                  box-sizing: border-box;
-                }
-              </style>
-            </head>
-            <body>
-              ${receiptContent}
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
+              }
+              body {
+                font-family: 'Courier New', monospace;
+                padding: 10px;
+                max-width: 80mm;
+                margin: 0 auto;
+                font-size: 12px;
+              }
+              * {
+                box-sizing: border-box;
+              }
+            </style>
+          </head>
+          <body onload="window.print(); setTimeout(function(){ window.close(); }, 500);">
+            ${receiptContent}
+          </body>
+        </html>
+      `;
+
+      try {
+        const printWindow = window.open("", "_blank", "width=300,height=600");
         
-        printWindow.onload = () => {
-          printWindow.print();
-          toast.success("✅ Receipt sent to printer!");
-          
-          setTimeout(() => {
-            printWindow.close();
-          }, 100);
-        };
-      } else {
-        toast.error("❌ Failed to open print window");
+        if (printWindow) {
+          printWindow.document.open();
+          printWindow.document.write(printContent);
+          printWindow.document.close();
+          toast.success("✅ Receipt opened!");
+        } else {
+          // Fallback: download HTML file
+          const blob = new Blob([printContent], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `receipt-${selectedSale.sale_number}.html`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast.success("✅ Receipt downloaded! Open to print.");
+        }
+      } catch (err) {
+        console.error("Print error:", err);
+        const blob = new Blob([printContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `receipt-${selectedSale.sale_number}.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("✅ Receipt downloaded! Open to print.");
       }
 
-      document.body.removeChild(printContainer);
-    }, 500);
+      setTimeout(() => {
+        document.body.removeChild(printContainer);
+      }, 1500);
+    } catch (error) {
+      console.error("Failed to print receipt:", error);
+      toast.error("❌ Failed to print receipt");
+    }
   };
 
   const filteredSales = sales.filter((sale) => {
