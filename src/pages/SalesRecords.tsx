@@ -28,9 +28,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCurrency } from "@/hooks/useCurrency";
 import { currencyFormatter, formatCurrency } from "@/lib/currency";
 import { invoke } from "@tauri-apps/api/core";
-import { format, startOfMonth, startOfQuarter, startOfWeek, startOfYear } from "date-fns";
+import { format as formatDate, startOfMonth, startOfQuarter, startOfWeek, startOfYear } from "date-fns";
 import {
   Calendar,
   CreditCard,
@@ -318,7 +319,7 @@ export default function SalesRecords() {
             
             <div class="info">
               <p><strong>Receipt #:</strong> ${selectedSale.sale_number}</p>
-              <p><strong>Date:</strong> ${format(new Date(selectedSale.created_at), "MMM dd, yyyy hh:mm a")}</p>
+              <p><strong>Date:</strong> ${formatDate(new Date(selectedSale.created_at), "MMM dd, yyyy hh:mm a")}</p>
               ${selectedSaleDetails?.cashier_name ? `<p><strong>Cashier:</strong> ${selectedSaleDetails.cashier_name}</p>` : ''}
               ${selectedSale.customer_name ? `<p><strong>Customer:</strong> ${selectedSale.customer_name}</p>` : ''}
               ${selectedSale.customer_phone ? `<p><strong>Phone:</strong> ${selectedSale.customer_phone}</p>` : ''}
@@ -617,10 +618,10 @@ export default function SalesRecords() {
                     <TableCell>
                       <div>
                         <div className="font-medium">
-                          {format(new Date(sale.created_at), "MMM dd, yyyy")}
+                          {formatDate(new Date(sale.created_at), "MMM dd, yyyy")}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {format(new Date(sale.created_at), "hh:mm a")}
+                          {formatDate(new Date(sale.created_at), "hh:mm a")}
                         </div>
                       </div>
                     </TableCell>
@@ -721,7 +722,7 @@ export default function SalesRecords() {
                 <div>
                   <Label className="text-muted-foreground">Date & Time</Label>
                   <p className="font-medium">
-                    {format(new Date(selectedSale.created_at), "MMM dd, yyyy hh:mm a")}
+                    {formatDate(new Date(selectedSale.created_at), "MMM dd, yyyy hh:mm a")}
                   </p>
                 </div>
                 <div>
@@ -818,7 +819,7 @@ export default function SalesRecords() {
                   <p className="text-red-700 mt-1">{selectedSale.void_reason}</p>
                   {selectedSale.voided_at && (
                     <p className="text-sm text-red-600 mt-1">
-                      Voided on {format(new Date(selectedSale.voided_at), "MMM dd, yyyy hh:mm a")}
+                      Voided on {formatDate(new Date(selectedSale.voided_at), "MMM dd, yyyy hh:mm a")}
                     </p>
                   )}
                 </div>

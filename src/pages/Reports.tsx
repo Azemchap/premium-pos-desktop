@@ -302,7 +302,7 @@ export default function Reports() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <MetricCard
                 title="Total Sales"
-                value={format(salesReport?.total_sales || 0)}
+                value={salesReport ? format(salesReport.total_sales) : '0'}
                 subtitle={`${salesReport?.total_transactions || 0} transactions`}
                 icon={DollarSign}
               />
@@ -406,7 +406,7 @@ export default function Reports() {
                     {dailySales.slice(0, 10).map((day) => (
                       <TableRow key={day.date}>
                         <TableCell className="font-medium">
-                          {format(new Date(day.date), "MMM dd, yyyy")}
+                          {formatDate(new Date(day.date), "MMM dd, yyyy")}
                         </TableCell>
                         <TableCell>{format(day.total_sales)}</TableCell>
                         <TableCell>
@@ -689,6 +689,13 @@ export default function Reports() {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
+  );
+}
+d>
           </TabsContent>
         </Tabs>
       )}

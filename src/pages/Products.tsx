@@ -37,6 +37,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, Search, Edit, Trash2, MoreHorizontal, Package, CheckCircle, XCircle } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { useCurrency } from "@/hooks/useCurrency";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { z } from "zod";

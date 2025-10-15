@@ -49,6 +49,7 @@ import {
   RefreshCw,
   FileText,
 } from "lucide-react";
+import { useCurrency } from "@/hooks/useCurrency";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
