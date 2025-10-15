@@ -259,6 +259,14 @@ async fn main() {
             commands::reports::get_category_performance,
             commands::reports::get_financial_metrics,
             commands::reports::get_cash_flow_summary,
+            // Notification commands
+            commands::notifications::get_notifications,
+            commands::notifications::get_notification_stats,
+            commands::notifications::mark_notification_read,
+            commands::notifications::mark_all_notifications_read,
+            commands::notifications::create_notification,
+            commands::notifications::check_low_stock_alerts,
+            commands::notifications::delete_notification,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

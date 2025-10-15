@@ -9,3 +9,4 @@ pub mod cash_drawer;
 pub mod receipts;
 pub mod dashboard;
 pub mod reports;
+pub mod notifications;

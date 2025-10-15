@@ -1,7 +1,8 @@
 use tauri_plugin_sql::{Migration, MigrationKind};
 
 pub fn get_migrations() -> Vec<Migration> {
-    vec![Migration {
+    vec![
+        Migration {
         version: 1,
         description: "create_initial_tables",
         sql: r#"
@@ -243,6 +244,32 @@ pub fn get_migrations() -> Vec<Migration> {
                 VALUES 
                 ('Default Sale Receipt', 'sale', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nSALE #{{sale_number}}\nDate: {{sale_date}}\nCashier: {{cashier_name}}\n\n{{items}}\n\nSubtotal: {{subtotal}}\nTax: {{tax_amount}}\nTotal: {{total_amount}}\n\nThank you for your business!', 1, 80, 12),
                 ('Default Return Receipt', 'return', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nRETURN #{{return_number}}\nDate: {{return_date}}\nProcessed by: {{user_name}}\n\n{{items}}\n\nTotal Refund: {{total_amount}}\n\nThank you!', 1, 80, 12);
+            "#,
+        kind: MigrationKind::Up,
+    },
+    Migration {
+        version: 2,
+        description: "create_notifications_table",
+        sql: r#"
+                -- Notifications table for alerts and notifications
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    notification_type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    severity TEXT NOT NULL DEFAULT 'info',
+                    is_read BOOLEAN NOT NULL DEFAULT 0,
+                    user_id INTEGER,
+                    reference_id INTEGER,
+                    reference_type TEXT,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+                CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(notification_type);
+                CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
+                CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
             "#,
         kind: MigrationKind::Up,
     }]

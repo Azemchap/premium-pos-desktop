@@ -30,7 +30,8 @@ import {
   User,
   Users
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { useLocation, useNavigate } from "react-router-dom";
 
 interface NavigationItem {
@@ -216,8 +217,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex justify-end  flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
-              <Button variant="ghost" size="sm" >
+              <Button variant="ghost" size="sm" onClick={() => navigate("/notifications")} className="relative">
                 <Bell className="w-5 h-5" />
+                {notificationCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 bg-red-500 text-white px-1.5 min-w-[20px] h-5 flex items-center justify-center text-xs">
+                    {notificationCount > 99 ? '99+' : notificationCount}
+                  </Badge>
+                )}
               </Button>
 
               <DropdownMenu>
@@ -248,6 +254,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="w-4 h-4 mr-2" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+
+        {/* Page content */}
+        <main className="py-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}   <LogOut className="w-4 h-4 mr-2" />
                     Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
