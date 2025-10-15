@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,25 +13,25 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import { useAuthStore } from "@/store/authStore";
-import { useNavigate, useLocation } from "react-router-dom";
 import {
-  Menu,
-  Search,
-  Bell,
-  Settings,
-  LogOut,
-  User,
-  Sun,
-  Moon,
-  ChevronDown,
-  Home,
-  ShoppingCart,
-  Package,
   BarChart3,
-  Users,
+  Bell,
+  ChevronDown,
   Database,
-  Receipt
+  Home,
+  LogOut,
+  Menu,
+  Moon,
+  Package,
+  Receipt,
+  Settings,
+  ShoppingCart,
+  Sun,
+  User,
+  Users
 } from "lucide-react";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface NavigationItem {
   name: string;
@@ -55,7 +53,6 @@ const navigation: NavigationItem[] = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const { user, logout, theme, setTheme } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -96,7 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="space-y-6">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">P</span>
+                <span className="text-primary-foreground font-bold text-sm">P0S</span>
               </div>
               <span className="font-bold text-xl">Premium POS</span>
             </div>
@@ -127,7 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex h-16 shrink-0 items-center">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">P</span>
+                <span className="text-primary-foreground font-bold text-sm px-1">POS</span>
               </div>
               <span className="font-bold text-xl">Premium POS</span>
             </div>
@@ -216,19 +213,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Separator */}
           <div className="h-6 w-px bg-border lg:hidden" />
 
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="relative flex flex-1">
-              <Search className="pointer-events-none absolute inset-y-0 left-0 flex w-5 h-5 items-center pl-3 text-muted-foreground" />
-              <Input
-                className="block h-full w-full border-0 py-0 pl-10 pr-0 text-sm placeholder:text-muted-foreground focus:ring-0"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
+          <div className="flex justify-end  flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" >
                 <Bell className="w-5 h-5" />
               </Button>
 
