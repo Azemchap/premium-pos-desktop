@@ -36,9 +36,33 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Edit, Trash2, MoreHorizontal, Filter, Package } from "lucide-react";
+import { Plus, Search, Edit, Trash2, MoreHorizontal, Package, CheckCircle, XCircle } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
+import { z } from "zod";
+
+// Zod validation schema
+const productSchema = z.object({
+  name: z.string().min(1, "Product name is required").max(255, "Name is too long"),
+  sku: z.string().min(1, "SKU is required").max(100, "SKU is too long"),
+  barcode: z.string().max(100, "Barcode is too long").optional(),
+  description: z.string().max(1000, "Description is too long").optional(),
+  category: z.string().max(100, "Category is too long").optional(),
+  subcategory: z.string().max(100, "Subcategory is too long").optional(),
+  brand: z.string().max(100, "Brand is too long").optional(),
+  selling_price: z.number().min(0, "Price must be positive"),
+  wholesale_price: z.number().min(0, "Wholesale price must be positive"),
+  cost_price: z.number().min(0, "Cost price must be positive"),
+  tax_rate: z.number().min(0, "Tax rate must be positive").max(100, "Tax rate cannot exceed 100%"),
+  is_taxable: z.boolean(),
+  unit_of_measure: z.string().min(1, "Unit of measure is required"),
+  weight: z.number().min(0, "Weight must be positive"),
+  dimensions: z.string().max(100, "Dimensions is too long").optional(),
+  supplier_info: z.string().max(500, "Supplier info is too long").optional(),
+  reorder_point: z.number().min(0, "Reorder point must be positive").int("Must be a whole number"),
+});
+
+type ProductFormData = z.infer<typeof productSchema>;
 
 interface Product {
   id: number;
@@ -64,47 +88,16 @@ interface Product {
   updated_at: string;
 }
 
-interface CreateProductRequest {
-  name: string;
-  sku: string;
-  barcode?: string;
-  description?: string;
-  category?: string;
-  subcategory?: string;
-  brand?: string;
-  selling_price: number;
-  wholesale_price: number;
-  cost_price: number;
-  tax_rate: number;
-  is_taxable: boolean;
-  unit_of_measure: string;
-  weight: number;
-  dimensions?: string;
-  supplier_info?: string;
-  reorder_point: number;
-}
-
-interface ProductSearchRequest {
-  search_term?: string;
-  category?: string;
-  brand?: string;
-  min_price?: number;
-  max_price?: number;
-  is_active?: boolean;
-  limit?: number;
-  offset?: number;
-}
-
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedBrand, setSelectedBrand] = useState<string>("all");
-  const [activeOnly, setActiveOnly] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedBrand, setSelectedBrand] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState<CreateProductRequest>({
+  const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     sku: "",
     barcode: "",
@@ -117,12 +110,13 @@ export default function Products() {
     cost_price: 0,
     tax_rate: 0,
     is_taxable: false,
-    unit_of_measure: "",
+    unit_of_measure: "Each",
     weight: 0,
     dimensions: "",
     supplier_info: "",
     reorder_point: 0,
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const categories = [
     "Electronics", "Clothing", "Home & Garden", "Sports", "Books",
@@ -139,14 +133,8 @@ export default function Products() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const searchRequest: ProductSearchRequest = {
-        search_term: searchQuery || undefined,
-        category: (selectedCategory && selectedCategory !== "all") ? selectedCategory : undefined,
-        brand: (selectedBrand && selectedBrand !== "all") ? selectedBrand : undefined,
-        is_active: activeOnly ? true : undefined,
-      };
-
-      const result = await invoke<Product[]>("search_products", { request: searchRequest });
+      // Load ALL products (active and inactive)
+      const result = await invoke<Product[]>("get_products");
       setProducts(result);
     } catch (error) {
       console.error("Failed to load products:", error);
@@ -156,21 +144,41 @@ export default function Products() {
     }
   };
 
-  const handleSearch = () => {
-    loadProducts();
+  const validateForm = (): boolean => {
+    try {
+      productSchema.parse(formData);
+      setValidationErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            errors[err.path[0].toString()] = err.message;
+          }
+        });
+        setValidationErrors(errors);
+        toast.error("Please fix validation errors");
+      }
+      return false;
+    }
   };
 
   const handleCreateProduct = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       if (editingProduct) {
         await invoke("update_product", {
-          id: editingProduct.id,
+          productId: editingProduct.id,
           ...formData
         });
-        toast.success("Product updated successfully");
+        toast.success(`✅ Product "${formData.name}" updated successfully!`);
       } else {
         await invoke("create_product", formData);
-        toast.success("Product created successfully");
+        toast.success(`✅ Product "${formData.name}" created successfully!`);
       }
 
       setIsDialogOpen(false);
@@ -178,7 +186,7 @@ export default function Products() {
       loadProducts();
     } catch (error) {
       console.error("Failed to save product:", error);
-      toast.error("Failed to save product");
+      toast.error(`❌ Failed to save product: ${error}`);
     }
   };
 
@@ -203,19 +211,20 @@ export default function Products() {
       supplier_info: product.supplier_info || "",
       reorder_point: product.reorder_point,
     });
+    setValidationErrors({});
     setIsDialogOpen(true);
   };
 
-  const handleDeleteProduct = async (productId: number) => {
-    if (!confirm("Are you sure you want to deactivate this product?")) return;
+  const handleDeleteProduct = async (productId: number, productName: string) => {
+    if (!confirm(`Are you sure you want to deactivate "${productName}"?`)) return;
 
     try {
       await invoke("delete_product", { productId });
-      toast.success("Product deactivated successfully");
+      toast.success(`Product "${productName}" deactivated successfully!`);
       loadProducts();
     } catch (error) {
       console.error("Failed to delete product:", error);
-      toast.error("Failed to delete product");
+      toast.error(`Failed to deactivate product: ${error}`);
     }
   };
 
@@ -233,13 +242,14 @@ export default function Products() {
       cost_price: 0,
       tax_rate: 0,
       is_taxable: false,
-      unit_of_measure: "",
+      unit_of_measure: "Each",
       weight: 0,
       dimensions: "",
       supplier_info: "",
       reorder_point: 0,
     });
     setEditingProduct(null);
+    setValidationErrors({});
   };
 
   const openCreateDialog = () => {
@@ -247,9 +257,32 @@ export default function Products() {
     setIsDialogOpen(true);
   };
 
+  // Auto-filter products (no button needed)
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
+      !searchQuery ||
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+    const matchesBrand = selectedBrand === "all" || product.brand === selectedBrand;
+    const matchesStatus = 
+      statusFilter === "all" || 
+      (statusFilter === "active" && product.is_active) || 
+      (statusFilter === "inactive" && !product.is_active);
+
+    return matchesSearch && matchesCategory && matchesBrand && matchesStatus;
+  });
+
   useEffect(() => {
     loadProducts();
   }, []);
+
+  // Statistics
+  const totalProducts = products.length;
+  const activeProducts = products.filter(p => p.is_active).length;
+  const inactiveProducts = products.filter(p => !p.is_active).length;
 
   return (
     <div className="space-y-6">
@@ -257,7 +290,7 @@ export default function Products() {
         <div>
           <h1 className="text-3xl font-bold">Products</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your product catalog and inventory
+            Manage your product catalog and pricing
           </p>
         </div>
         <Button onClick={openCreateDialog}>
@@ -266,10 +299,49 @@ export default function Products() {
         </Button>
       </div>
 
-      {/* Search and Filters */}
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Products</p>
+                <p className="text-2xl font-bold">{totalProducts}</p>
+              </div>
+              <Package className="w-8 h-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Active</p>
+                <p className="text-2xl font-bold text-green-600">{activeProducts}</p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Inactive</p>
+                <p className="text-2xl font-bold text-red-600">{inactiveProducts}</p>
+              </div>
+              <XCircle className="w-8 h-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters - Auto-filtering */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="search">Search</Label>
               <div className="relative">
@@ -320,23 +392,20 @@ export default function Products() {
 
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={activeOnly ? "active" : "all"} onValueChange={(value) => setActiveOnly(value === "active")}>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active Only</SelectItem>
                   <SelectItem value="all">All Products</SelectItem>
+                  <SelectItem value="active">Active Only</SelectItem>
+                  <SelectItem value="inactive">Inactive Only</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-
-          <div className="flex justify-end mt-4">
-            <Button onClick={handleSearch} className="flex items-center">
-              <Filter className="w-4 h-4 mr-2" />
-              Apply Filters
-            </Button>
+          <div className="mt-2 text-sm text-muted-foreground">
+            Showing {filteredProducts.length} of {totalProducts} products
           </div>
         </CardContent>
       </Card>
@@ -350,15 +419,7 @@ export default function Products() {
           {loading ? (
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-12 rounded" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-[250px]" />
-                    <Skeleton className="h-4 w-[200px]" />
-                  </div>
-                  <Skeleton className="h-4 w-[100px]" />
-                  <Skeleton className="h-10 w-[100px]" />
-                </div>
+                <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
           ) : (
@@ -374,8 +435,8 @@ export default function Products() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id}>
+                {filteredProducts.map((product) => (
+                  <TableRow key={product.id} className={!product.is_active ? "opacity-60" : ""}>
                     <TableCell>
                       <div>
                         <div className="font-medium">{product.name}</div>
@@ -398,14 +459,18 @@ export default function Products() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <Badge variant="outline">{product.category}</Badge>
-                        {product.subcategory && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            {product.subcategory}
-                          </div>
-                        )}
-                      </div>
+                      {product.category ? (
+                        <div>
+                          <Badge variant="outline">{product.category}</Badge>
+                          {product.subcategory && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {product.subcategory}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div>
@@ -437,7 +502,7 @@ export default function Products() {
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDeleteProduct(product.id)}
+                            onClick={() => handleDeleteProduct(product.id, product.name)}
                             className="text-destructive"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
@@ -452,16 +517,16 @@ export default function Products() {
             </Table>
           )}
 
-          {!loading && products.length === 0 && (
+          {!loading && filteredProducts.length === 0 && (
             <div className="text-center py-12">
               <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-medium mb-2">No products found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery || selectedCategory || selectedBrand
+                {searchQuery || selectedCategory !== "all" || selectedBrand !== "all" || statusFilter !== "all"
                   ? "Try adjusting your search criteria"
                   : "Get started by creating your first product"}
               </p>
-              {!searchQuery && !selectedCategory && !selectedBrand && (
+              {!searchQuery && selectedCategory === "all" && selectedBrand === "all" && (
                 <Button onClick={openCreateDialog}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Product
@@ -497,7 +562,11 @@ export default function Products() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Enter product name"
+                  className={validationErrors.name ? "border-red-500" : ""}
                 />
+                {validationErrors.name && (
+                  <p className="text-xs text-red-500">{validationErrors.name}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -507,7 +576,11 @@ export default function Products() {
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                   placeholder="Enter SKU"
+                  className={validationErrors.sku ? "border-red-500" : ""}
                 />
+                {validationErrors.sku && (
+                  <p className="text-xs text-red-500">{validationErrors.sku}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -532,7 +605,7 @@ export default function Products() {
               </div>
             </div>
 
-            {/* Pricing & Inventory */}
+            {/* Pricing */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="selling_price">Selling Price *</Label>
@@ -544,7 +617,11 @@ export default function Products() {
                   value={formData.selling_price}
                   onChange={(e) => setFormData({ ...formData, selling_price: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
+                  className={validationErrors.selling_price ? "border-red-500" : ""}
                 />
+                {validationErrors.selling_price && (
+                  <p className="text-xs text-red-500">{validationErrors.selling_price}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -557,7 +634,11 @@ export default function Products() {
                   value={formData.cost_price}
                   onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
+                  className={validationErrors.cost_price ? "border-red-500" : ""}
                 />
+                {validationErrors.cost_price && (
+                  <p className="text-xs text-red-500">{validationErrors.cost_price}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -574,14 +655,16 @@ export default function Products() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="reorder_point">Reorder Point</Label>
+                <Label htmlFor="tax_rate">Tax Rate (%)</Label>
                 <Input
-                  id="reorder_point"
+                  id="tax_rate"
                   type="number"
+                  step="0.01"
                   min="0"
-                  value={formData.reorder_point}
-                  onChange={(e) => setFormData({ ...formData, reorder_point: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
+                  max="100"
+                  value={formData.tax_rate}
+                  onChange={(e) => setFormData({ ...formData, tax_rate: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.00"
                 />
               </div>
             </div>
@@ -589,12 +672,13 @@ export default function Products() {
             {/* Categories & Brand */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
-                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                <Label htmlFor="category">Category</Label>
+                <Select value={formData.category || "none"} onValueChange={(value) => setFormData({ ...formData, category: value === "none" ? "" : value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">No Category</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
@@ -616,7 +700,7 @@ export default function Products() {
 
               <div className="space-y-2">
                 <Label htmlFor="brand">Brand</Label>
-                <Select value={formData.brand} onValueChange={(value) => setFormData({ ...formData, brand: value })}>
+                <Select value={formData.brand || "none"} onValueChange={(value) => setFormData({ ...formData, brand: value === "none" ? "" : value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select brand" />
                   </SelectTrigger>
@@ -651,20 +735,6 @@ export default function Products() {
             {/* Additional Details */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="tax_rate">Tax Rate (%)</Label>
-                <Input
-                  id="tax_rate"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={formData.tax_rate}
-                  onChange={(e) => setFormData({ ...formData, tax_rate: parseFloat(e.target.value) || 0 })}
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="weight">Weight (kg)</Label>
                 <Input
                   id="weight"
@@ -686,10 +756,19 @@ export default function Products() {
                   placeholder="L x W x H (optional)"
                 />
               </div>
-            </div>
 
-            {/* Tax & Supplier */}
-            <div className="space-y-4 md:col-span-2">
+              <div className="space-y-2">
+                <Label htmlFor="reorder_point">Reorder Point</Label>
+                <Input
+                  id="reorder_point"
+                  type="number"
+                  min="0"
+                  value={formData.reorder_point}
+                  onChange={(e) => setFormData({ ...formData, reorder_point: parseInt(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+
               <div className="flex items-center space-x-2">
                 <input
                   id="is_taxable"
@@ -700,7 +779,10 @@ export default function Products() {
                 />
                 <Label htmlFor="is_taxable">Product is taxable</Label>
               </div>
+            </div>
 
+            {/* Supplier Info */}
+            <div className="space-y-4 md:col-span-2">
               <div className="space-y-2">
                 <Label htmlFor="supplier_info">Supplier Information</Label>
                 <Textarea

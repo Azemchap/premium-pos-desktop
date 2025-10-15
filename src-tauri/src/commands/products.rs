@@ -33,7 +33,7 @@ pub struct ProductWithStock {
 
 #[tauri::command]
 pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, String> {
-    let rows = sqlx::query("SELECT * FROM products WHERE is_active = 1 ORDER BY name")
+    let rows = sqlx::query("SELECT * FROM products ORDER BY is_active DESC, name ASC")
         .fetch_all(pool.inner())
         .await
         .map_err(|e| e.to_string())?;

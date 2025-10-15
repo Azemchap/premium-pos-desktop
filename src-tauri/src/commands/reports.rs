@@ -55,15 +55,15 @@ pub async fn get_sales_report(
 
     let mut query = String::from(
         "SELECT 
-            COALESCE(SUM(total_amount), 0) as total_sales,
+            COALESCE(SUM(total_amount), 0.0) as total_sales,
             COUNT(*) as total_transactions,
-            COALESCE(AVG(total_amount), 0) as average_transaction,
-            COALESCE(SUM(tax_amount), 0) as total_tax,
-            COALESCE(SUM(discount_amount), 0) as total_discount,
-            COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN total_amount ELSE 0 END), 0) as cash_sales,
-            COALESCE(SUM(CASE WHEN payment_method = 'card' THEN total_amount ELSE 0 END), 0) as card_sales,
-            COALESCE(SUM(CASE WHEN payment_method = 'mobile' THEN total_amount ELSE 0 END), 0) as mobile_sales,
-            COALESCE(SUM(CASE WHEN payment_method = 'check' THEN total_amount ELSE 0 END), 0) as check_sales
+            COALESCE(AVG(total_amount), 0.0) as average_transaction,
+            COALESCE(SUM(tax_amount), 0.0) as total_tax,
+            COALESCE(SUM(discount_amount), 0.0) as total_discount,
+            COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN total_amount ELSE 0.0 END), 0.0) as cash_sales,
+            COALESCE(SUM(CASE WHEN payment_method = 'card' THEN total_amount ELSE 0.0 END), 0.0) as card_sales,
+            COALESCE(SUM(CASE WHEN payment_method = 'mobile' THEN total_amount ELSE 0.0 END), 0.0) as mobile_sales,
+            COALESCE(SUM(CASE WHEN payment_method = 'check' THEN total_amount ELSE 0.0 END), 0.0) as check_sales
          FROM sales
          WHERE is_voided = 0",
     );
@@ -96,7 +96,7 @@ pub async fn get_sales_report(
 
     // Calculate total profit
     let mut profit_query = String::from(
-        "SELECT COALESCE(SUM((si.unit_price - si.cost_price) * si.quantity), 0) as total_profit
+        "SELECT COALESCE(SUM((si.unit_price - si.cost_price) * si.quantity), 0.0) as total_profit
          FROM sale_items si
          JOIN sales s ON si.sale_id = s.id
          WHERE s.is_voided = 0",
@@ -160,8 +160,8 @@ pub async fn get_product_performance(
             p.sku,
             p.category,
             COALESCE(SUM(si.quantity), 0) as total_quantity_sold,
-            COALESCE(SUM(si.line_total), 0) as total_revenue,
-            COALESCE(SUM((si.unit_price - si.cost_price) * si.quantity), 0) as total_profit,
+            COALESCE(SUM(si.line_total), 0.0) as total_revenue,
+            COALESCE(SUM((si.unit_price - si.cost_price) * si.quantity), 0.0) as total_profit,
             COUNT(DISTINCT s.id) as transaction_count
          FROM products p
          LEFT JOIN sale_items si ON p.id = si.product_id
@@ -230,9 +230,9 @@ pub async fn get_daily_sales(
     let mut query = String::from(
         "SELECT 
             DATE(created_at) as date,
-            COALESCE(SUM(total_amount), 0) as total_sales,
+            COALESCE(SUM(total_amount), 0.0) as total_sales,
             COUNT(*) as transaction_count,
-            COALESCE(AVG(total_amount), 0) as average_transaction
+            COALESCE(AVG(total_amount), 0.0) as average_transaction
          FROM sales
          WHERE is_voided = 0",
     );
@@ -290,8 +290,8 @@ pub async fn get_category_performance(
     let mut query = String::from(
         "SELECT 
             COALESCE(p.category, 'Uncategorized') as category,
-            COALESCE(SUM(si.line_total), 0) as total_revenue,
-            COALESCE(SUM((si.unit_price - si.cost_price) * si.quantity), 0) as total_profit,
+            COALESCE(SUM(si.line_total), 0.0) as total_revenue,
+            COALESCE(SUM((si.unit_price - si.cost_price) * si.quantity), 0.0) as total_profit,
             COALESCE(SUM(si.quantity), 0) as total_items_sold,
             COUNT(DISTINCT p.id) as product_count
          FROM products p
