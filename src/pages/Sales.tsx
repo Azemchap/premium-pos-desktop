@@ -361,7 +361,7 @@ export default function Sales() {
         })),
         customer_name: customerInfo.name,
         customer_phone: customerInfo.phone,
-        cashier_name: user?.full_name || `${user?.first_name} ${user?.last_name}`,
+        cashier_name: `${user?.first_name} ${user?.last_name}`,
         amount_received: paymentInfo.amountReceived,
         change: change,
       });

@@ -1,11 +1,8 @@
 // src/pages/SalesRecords.tsx
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import ReceiptTemplate from "@/components/ReceiptTemplate";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -28,22 +28,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { invoke } from "@tauri-apps/api/core";
+import { format, startOfMonth, startOfQuarter, startOfWeek, startOfYear } from "date-fns";
 import {
-  Search,
   Calendar,
-  DollarSign,
-  TrendingUp,
   CreditCard,
+  DollarSign,
   Eye,
-  X,
   Filter,
   Printer,
+  Search,
+  TrendingUp
 } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
-import { toast } from "sonner";
-import { format, subDays, startOfWeek, startOfMonth, startOfQuarter, startOfYear } from "date-fns";
-import ReceiptTemplate from "@/components/ReceiptTemplate";
+import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { toast } from "sonner";
 
 interface SaleWithDetails {
   id: number;
