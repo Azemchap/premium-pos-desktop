@@ -1,4 +1,4 @@
-// src/pages/Reports.tsx
+// src/pages/Reports.tsx - World-Class Financial Analytics & Accounting Insights
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,19 +28,26 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import {
-  FileText,
   TrendingUp,
+  TrendingDown,
   DollarSign,
   ShoppingCart,
   Package,
   BarChart3,
   Calendar,
-  Download,
   RefreshCw,
   CreditCard,
+  Wallet,
+  PieChart,
+  Activity,
+  Target,
+  Percent,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
+import { format, subDays, startOfWeek, startOfMonth, startOfQuarter, startOfYear } from "date-fns";
 
 interface SalesReport {
   total_sales: number;
@@ -53,6 +60,28 @@ interface SalesReport {
   card_sales: number;
   mobile_sales: number;
   check_sales: number;
+}
+
+interface FinancialMetrics {
+  gross_profit: number;
+  gross_profit_margin: number;
+  net_profit: number;
+  net_profit_margin: number;
+  revenue_growth_rate: number;
+  average_basket_size: number;
+  inventory_turnover_ratio: number;
+  return_on_investment: number;
+  total_cogs: number;
+  operating_expenses: number;
+}
+
+interface CashFlowSummary {
+  cash_inflow: number;
+  cash_outflow: number;
+  net_cash_flow: number;
+  cash_from_operations: number;
+  opening_balance: number;
+  closing_balance: number;
 }
 
 interface ProductPerformance {
@@ -81,77 +110,85 @@ interface CategoryPerformance {
   product_count: number;
 }
 
+type DateRange = "today" | "week" | "month" | "quarter" | "year" | "custom";
+
 export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
+  const [financialMetrics, setFinancialMetrics] = useState<FinancialMetrics | null>(null);
+  const [cashFlow, setCashFlow] = useState<CashFlowSummary | null>(null);
   const [productPerformance, setProductPerformance] = useState<ProductPerformance[]>([]);
   const [dailySales, setDailySales] = useState<DailySales[]>([]);
   const [categoryPerformance, setCategoryPerformance] = useState<CategoryPerformance[]>([]);
-  const [dateRange, setDateRange] = useState("today");
+  const [dateRange, setDateRange] = useState<DateRange>("month");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const getDateRange = () => {
+  const getDateRangeDates = (): { start: string; end: string } => {
     const today = new Date();
-    const formatDate = (d: Date) => d.toISOString().split("T")[0];
+    const formatDate = (d: Date) => format(d, "yyyy-MM-dd");
 
     switch (dateRange) {
       case "today":
         return { start: formatDate(today), end: formatDate(today) };
-      case "week": {
-        const weekAgo = new Date(today);
-        weekAgo.setDate(today.getDate() - 7);
-        return { start: formatDate(weekAgo), end: formatDate(today) };
-      }
-      case "month": {
-        const monthAgo = new Date(today);
-        monthAgo.setMonth(today.getMonth() - 1);
-        return { start: formatDate(monthAgo), end: formatDate(today) };
-      }
-      case "year": {
-        const yearAgo = new Date(today);
-        yearAgo.setFullYear(today.getFullYear() - 1);
-        return { start: formatDate(yearAgo), end: formatDate(today) };
-      }
+      case "week":
+        return { start: formatDate(startOfWeek(today)), end: formatDate(today) };
+      case "month":
+        return { start: formatDate(startOfMonth(today)), end: formatDate(today) };
+      case "quarter":
+        return { start: formatDate(startOfQuarter(today)), end: formatDate(today) };
+      case "year":
+        return { start: formatDate(startOfYear(today)), end: formatDate(today) };
       case "custom":
         return { start: startDate, end: endDate };
       default:
-        return { start: undefined, end: undefined };
+        return { start: formatDate(startOfMonth(today)), end: formatDate(today) };
     }
   };
 
   const loadReports = async () => {
     try {
       setLoading(true);
-      const range = getDateRange();
+      const { start, end } = getDateRangeDates();
 
-      const [salesData, productsData, dailyData, categoriesData] = await Promise.all([
+      const [sales, metrics, cash, products, daily, categories] = await Promise.all([
         invoke<SalesReport>("get_sales_report", {
-          startDate: range.start,
-          endDate: range.end,
+          startDate: start || undefined,
+          endDate: end || undefined,
+        }),
+        invoke<FinancialMetrics>("get_financial_metrics", {
+          startDate: start || undefined,
+          endDate: end || undefined,
+        }),
+        invoke<CashFlowSummary>("get_cash_flow_summary", {
+          startDate: start || undefined,
+          endDate: end || undefined,
         }),
         invoke<ProductPerformance[]>("get_product_performance", {
-          startDate: range.start,
-          endDate: range.end,
+          startDate: start || undefined,
+          endDate: end || undefined,
           limit: 10,
         }),
         invoke<DailySales[]>("get_daily_sales", {
-          startDate: range.start,
-          endDate: range.end,
+          startDate: start || undefined,
+          endDate: end || undefined,
         }),
         invoke<CategoryPerformance[]>("get_category_performance", {
-          startDate: range.start,
-          endDate: range.end,
+          startDate: start || undefined,
+          endDate: end || undefined,
         }),
       ]);
 
-      setSalesReport(salesData);
-      setProductPerformance(productsData);
-      setDailySales(dailyData);
-      setCategoryPerformance(categoriesData);
+      setSalesReport(sales);
+      setFinancialMetrics(metrics);
+      setCashFlow(cash);
+      setProductPerformance(products);
+      setDailySales(daily);
+      setCategoryPerformance(categories);
+      toast.success("✅ Reports loaded successfully!");
     } catch (error) {
       console.error("Failed to load reports:", error);
-      toast.error("Failed to load reports");
+      toast.error(`❌ Failed to load reports: ${error}`);
     } finally {
       setLoading(false);
     }
@@ -161,63 +198,59 @@ export default function Reports() {
     loadReports();
   }, [dateRange, startDate, endDate]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const profitMargin = salesReport
-    ? salesReport.total_sales > 0
-      ? (salesReport.total_profit / salesReport.total_sales) * 100
-      : 0
-    : 0;
+  const MetricCard = ({ title, value, subtitle, icon: Icon, trend, trendValue }: any) => (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold mt-1">{value}</p>
+            {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+            {trend !== undefined && (
+              <div className={`flex items-center mt-2 text-sm ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {trend >= 0 ? <ArrowUpRight className="w-4 h-4 mr-1" /> : <ArrowDownRight className="w-4 h-4 mr-1" />}
+                <span className="font-medium">{Math.abs(trend).toFixed(1)}%</span>
+                {trendValue && <span className="ml-1 text-muted-foreground">({trendValue})</span>}
+              </div>
+            )}
+          </div>
+          <Icon className="w-8 h-8 text-primary opacity-50" />
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Reports & Analytics</h1>
+          <h1 className="text-3xl font-bold">Financial Reports & Analytics</h1>
           <p className="text-muted-foreground mt-1">
-            Comprehensive insights into your business performance
+            Comprehensive business insights and accounting metrics
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={loadReports}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-        </div>
+        <Button onClick={loadReports} variant="outline">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      {/* Date Range Filter */}
+      {/* Date Range Selector */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date-range">Date Range</Label>
-              <Select value={dateRange} onValueChange={setDateRange}>
+              <Label>Date Range</Label>
+              <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">Last 7 Days</SelectItem>
-                  <SelectItem value="month">Last 30 Days</SelectItem>
-                  <SelectItem value="year">Last Year</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="quarter">This Quarter</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
                   <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
@@ -226,18 +259,16 @@ export default function Reports() {
             {dateRange === "custom" && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="start-date">Start Date</Label>
+                  <Label>Start Date</Label>
                   <Input
-                    id="start-date"
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="end-date">End Date</Label>
+                  <Label>End Date</Label>
                   <Input
-                    id="end-date"
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
@@ -249,288 +280,334 @@ export default function Reports() {
         </CardContent>
       </Card>
 
-      {/* Summary Stats */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <Skeleton className="h-20 w-full" />
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-32" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Sales
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(salesReport?.total_sales || 0)}
-                  </p>
-                  <p className="text-sm text-green-600">
-                    {salesReport?.total_transactions || 0} transactions
-                  </p>
-                </div>
-                <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/20">
-                  <DollarSign className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="financial">Financial</TabsTrigger>
+            <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="categories">Categories</TabsTrigger>
+          </TabsList>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Profit
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(salesReport?.total_profit || 0)}
-                  </p>
-                  <p className="text-sm text-blue-600">
-                    {profitMargin.toFixed(1)}% margin
-                  </p>
-                </div>
-                <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                  <TrendingUp className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Key Revenue Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <MetricCard
+                title="Total Sales"
+                value={`$${salesReport?.total_sales.toFixed(2) || '0.00'}`}
+                subtitle={`${salesReport?.total_transactions || 0} transactions`}
+                icon={DollarSign}
+              />
+              <MetricCard
+                title="Gross Profit"
+                value={`$${financialMetrics?.gross_profit.toFixed(2) || '0.00'}`}
+                subtitle={`${financialMetrics?.gross_profit_margin.toFixed(1) || 0}% margin`}
+                icon={TrendingUp}
+              />
+              <MetricCard
+                title="Net Profit"
+                value={`$${financialMetrics?.net_profit.toFixed(2) || '0.00'}`}
+                subtitle={`${financialMetrics?.net_profit_margin.toFixed(1) || 0}% margin`}
+                icon={Target}
+              />
+              <MetricCard
+                title="Avg Transaction"
+                value={`$${salesReport?.average_transaction.toFixed(2) || '0.00'}`}
+                subtitle={`${financialMetrics?.average_basket_size.toFixed(1) || 0} items/sale`}
+                icon={ShoppingCart}
+              />
+            </div>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Avg Transaction
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(salesReport?.average_transaction || 0)}
-                  </p>
-                  <p className="text-sm text-purple-600">Per sale</p>
-                </div>
-                <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                  <ShoppingCart className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Tax
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(salesReport?.total_tax || 0)}
-                  </p>
-                  <p className="text-sm text-orange-600">Collected</p>
-                </div>
-                <div className="p-3 rounded-lg bg-orange-100 dark:bg-orange-900/20">
-                  <FileText className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="products">
-            <Package className="w-4 h-4 mr-2" />
-            Products
-          </TabsTrigger>
-          <TabsTrigger value="categories">
-            <FileText className="w-4 h-4 mr-2" />
-            Categories
-          </TabsTrigger>
-          <TabsTrigger value="daily">
-            <Calendar className="w-4 h-4 mr-2" />
-            Daily Sales
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Payment Methods */}
             <Card>
               <CardHeader>
-                <CardTitle>Payment Methods</CardTitle>
+                <CardTitle className="flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  Payment Method Breakdown
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <DollarSign className="w-4 h-4 mr-2 text-green-600" />
-                      <span className="text-sm">Cash</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold">
-                        {formatCurrency(salesReport?.cash_sales || 0)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {salesReport?.total_sales
-                          ? (
-                              ((salesReport.cash_sales || 0) /
-                                salesReport.total_sales) *
-                              100
-                            ).toFixed(1)
-                          : 0}
-                        %
-                      </div>
-                    </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <p className="text-sm text-green-800 font-medium">Cash</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      ${salesReport?.cash_sales.toFixed(2) || '0.00'}
+                    </p>
+                    <p className="text-xs text-green-700 mt-1">
+                      {salesReport && salesReport.total_sales > 0
+                        ? ((salesReport.cash_sales / salesReport.total_sales) * 100).toFixed(1)
+                        : 0}%
+                    </p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <CreditCard className="w-4 h-4 mr-2 text-blue-600" />
-                      <span className="text-sm">Card</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold">
-                        {formatCurrency(salesReport?.card_sales || 0)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {salesReport?.total_sales
-                          ? (
-                              ((salesReport.card_sales || 0) /
-                                salesReport.total_sales) *
-                              100
-                            ).toFixed(1)
-                          : 0}
-                        %
-                      </div>
-                    </div>
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800 font-medium">Card</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      ${salesReport?.card_sales.toFixed(2) || '0.00'}
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      {salesReport && salesReport.total_sales > 0
+                        ? ((salesReport.card_sales / salesReport.total_sales) * 100).toFixed(1)
+                        : 0}%
+                    </p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="text-sm">Mobile Payment</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold">
-                        {formatCurrency(salesReport?.mobile_sales || 0)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {salesReport?.total_sales
-                          ? (
-                              ((salesReport.mobile_sales || 0) /
-                                salesReport.total_sales) *
-                              100
-                            ).toFixed(1)
-                          : 0}
-                        %
-                      </div>
-                    </div>
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <p className="text-sm text-purple-800 font-medium">Mobile</p>
+                    <p className="text-2xl font-bold text-purple-600">
+                      ${salesReport?.mobile_sales.toFixed(2) || '0.00'}
+                    </p>
+                    <p className="text-xs text-purple-700 mt-1">
+                      {salesReport && salesReport.total_sales > 0
+                        ? ((salesReport.mobile_sales / salesReport.total_sales) * 100).toFixed(1)
+                        : 0}%
+                    </p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="text-sm">Check</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold">
-                        {formatCurrency(salesReport?.check_sales || 0)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {salesReport?.total_sales
-                          ? (
-                              ((salesReport.check_sales || 0) /
-                                salesReport.total_sales) *
-                              100
-                            ).toFixed(1)
-                          : 0}
-                        %
-                      </div>
-                    </div>
+                  <div className="p-4 bg-orange-50 rounded-lg">
+                    <p className="text-sm text-orange-800 font-medium">Check</p>
+                    <p className="text-2xl font-bold text-orange-600">
+                      ${salesReport?.check_sales.toFixed(2) || '0.00'}
+                    </p>
+                    <p className="text-xs text-orange-700 mt-1">
+                      {salesReport && salesReport.total_sales > 0
+                        ? ((salesReport.check_sales / salesReport.total_sales) * 100).toFixed(1)
+                        : 0}%
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Financial Summary */}
+            {/* Daily Sales Trend */}
             <Card>
               <CardHeader>
-                <CardTitle>Financial Summary</CardTitle>
+                <CardTitle className="flex items-center">
+                  <Activity className="w-5 h-5 mr-2" />
+                  Daily Sales Trend
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Sales</TableHead>
+                      <TableHead>Transactions</TableHead>
+                      <TableHead className="text-right">Avg/Transaction</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dailySales.slice(0, 10).map((day) => (
+                      <TableRow key={day.date}>
+                        <TableCell className="font-medium">
+                          {format(new Date(day.date), "MMM dd, yyyy")}
+                        </TableCell>
+                        <TableCell>${day.total_sales.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{day.transaction_count}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ${day.average_transaction.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Financial Tab */}
+          <TabsContent value="financial" className="space-y-6">
+            {/* Financial Health Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <MetricCard
+                title="Gross Profit Margin"
+                value={`${financialMetrics?.gross_profit_margin.toFixed(1) || 0}%`}
+                subtitle="Industry avg: 30-40%"
+                icon={Percent}
+              />
+              <MetricCard
+                title="Net Profit Margin"
+                value={`${financialMetrics?.net_profit_margin.toFixed(1) || 0}%`}
+                subtitle="Industry avg: 10-15%"
+                icon={Target}
+              />
+              <MetricCard
+                title="Return on Investment"
+                value={`${financialMetrics?.return_on_investment.toFixed(1) || 0}%`}
+                subtitle="ROI percentage"
+                icon={TrendingUp}
+              />
+            </div>
+
+            {/* Profit & Loss Statement */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Profit & Loss Statement</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                      Gross Sales
-                    </span>
-                    <span className="font-semibold">
-                      {formatCurrency(salesReport?.total_sales || 0)}
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="font-medium">Revenue</span>
+                    <span className="text-lg font-bold text-green-600">
+                      ${salesReport?.total_sales.toFixed(2) || '0.00'}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                      Discounts
-                    </span>
-                    <span className="font-semibold text-red-600">
-                      -{formatCurrency(salesReport?.total_discount || 0)}
+                  <div className="flex justify-between items-center pl-4">
+                    <span className="text-muted-foreground">Cost of Goods Sold</span>
+                    <span className="text-red-600">
+                      -${financialMetrics?.total_cogs.toFixed(2) || '0.00'}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Tax</span>
-                    <span className="font-semibold">
-                      {formatCurrency(salesReport?.total_tax || 0)}
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="font-medium">Gross Profit</span>
+                    <span className="text-lg font-bold">
+                      ${financialMetrics?.gross_profit.toFixed(2) || '0.00'}
                     </span>
                   </div>
-                  <div className="border-t pt-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">Net Sales</span>
-                      <span className="font-bold text-lg">
-                        {formatCurrency(
-                          (salesReport?.total_sales || 0) -
-                            (salesReport?.total_discount || 0)
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-green-600">
-                      Total Profit
+                  <div className="flex justify-between items-center pl-4">
+                    <span className="text-muted-foreground">Operating Expenses</span>
+                    <span className="text-red-600">
+                      -${financialMetrics?.operating_expenses.toFixed(2) || '0.00'}
                     </span>
-                    <span className="font-bold text-lg text-green-600">
-                      {formatCurrency(salesReport?.total_profit || 0)}
+                  </div>
+                  <div className="flex justify-between items-center pl-4">
+                    <span className="text-muted-foreground">Tax</span>
+                    <span className="text-red-600">
+                      -${salesReport?.total_tax.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t-2">
+                    <span className="text-lg font-bold">Net Profit</span>
+                    <span className={`text-2xl font-bold ${(financialMetrics?.net_profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${financialMetrics?.net_profit.toFixed(2) || '0.00'}
                     </span>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
 
-        <TabsContent value="products">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Performing Products</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <Skeleton className="h-96 w-full" />
-              ) : (
+            {/* Key Performance Indicators */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Performance Indicators (KPIs)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-4 bg-muted rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Inventory Turnover Ratio</span>
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <p className="text-3xl font-bold">{financialMetrics?.inventory_turnover_ratio.toFixed(2) || '0.00'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Times inventory sold & replaced
+                    </p>
+                  </div>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Average Basket Size</span>
+                      <ShoppingCart className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <p className="text-3xl font-bold">{financialMetrics?.average_basket_size.toFixed(1) || '0.0'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Items per transaction
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Cash Flow Tab */}
+          <TabsContent value="cashflow" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <MetricCard
+                title="Cash Inflow"
+                value={`$${cashFlow?.cash_inflow.toFixed(2) || '0.00'}`}
+                subtitle="From sales"
+                icon={TrendingUp}
+              />
+              <MetricCard
+                title="Cash Outflow"
+                value={`$${cashFlow?.cash_outflow.toFixed(2) || '0.00'}`}
+                subtitle="COGS + expenses"
+                icon={TrendingDown}
+              />
+              <MetricCard
+                title="Net Cash Flow"
+                value={`$${cashFlow?.net_cash_flow.toFixed(2) || '0.00'}`}
+                subtitle={`${(cashFlow?.net_cash_flow || 0) >= 0 ? 'Positive' : 'Negative'} flow`}
+                icon={(cashFlow?.net_cash_flow || 0) >= 0 ? ArrowUpRight : ArrowDownRight}
+              />
+            </div>
+
+            {/* Cash Flow Statement */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Wallet className="w-5 h-5 mr-2" />
+                  Cash Flow Statement
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Opening Balance</span>
+                    <span className="text-lg font-bold">
+                      ${cashFlow?.opening_balance.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pl-4 text-green-600">
+                    <span>Cash Inflow</span>
+                    <span className="font-medium">
+                      +${cashFlow?.cash_inflow.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pl-4 text-red-600">
+                    <span>Cash Outflow</span>
+                    <span className="font-medium">
+                      -${cashFlow?.cash_outflow.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="font-medium">Net Cash from Operations</span>
+                    <span className={`font-bold ${(cashFlow?.cash_from_operations || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${cashFlow?.cash_from_operations.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t-2">
+                    <span className="text-lg font-bold">Closing Balance</span>
+                    <span className="text-2xl font-bold text-primary">
+                      ${cashFlow?.closing_balance.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Products Tab */}
+          <TabsContent value="products" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Package className="w-5 h-5 mr-2" />
+                  Top Performing Products
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead className="text-right">Qty Sold</TableHead>
                       <TableHead className="text-right">Revenue</TableHead>
@@ -539,78 +616,45 @@ export default function Reports() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {productPerformance.map((product) => {
-                      const margin =
-                        product.total_revenue > 0
-                          ? (product.total_profit / product.total_revenue) * 100
-                          : 0;
-                      return (
-                        <TableRow key={product.product_id}>
-                          <TableCell>
-                            <div className="font-medium">
-                              {product.product_name}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {product.transaction_count} transactions
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-mono text-sm">
-                              {product.sku}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {product.category || "Uncategorized"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {product.total_quantity_sold}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(product.total_revenue)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="text-green-600">
-                              {formatCurrency(product.total_profit)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge
-                              variant={margin > 30 ? "default" : "secondary"}
-                            >
-                              {margin.toFixed(1)}%
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                    {productPerformance.map((product) => (
+                      <TableRow key={product.product_id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{product.product_name}</div>
+                            <div className="text-sm text-muted-foreground">{product.sku}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {product.category && <Badge variant="secondary">{product.category}</Badge>}
+                        </TableCell>
+                        <TableCell className="text-right">{product.total_quantity_sold}</TableCell>
+                        <TableCell className="text-right">${product.total_revenue.toFixed(2)}</TableCell>
+                        <TableCell className="text-right text-green-600 font-medium">
+                          ${product.total_profit.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {product.total_revenue > 0 
+                            ? ((product.total_profit / product.total_revenue) * 100).toFixed(1)
+                            : 0}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
-              )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              {!loading && productPerformance.length === 0 && (
-                <div className="text-center py-12">
-                  <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No sales data</h3>
-                  <p className="text-muted-foreground">
-                    No products sold in the selected period
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="categories">
-          <Card>
-            <CardHeader>
-              <CardTitle>Category Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <Skeleton className="h-96 w-full" />
-              ) : (
+          {/* Categories Tab */}
+          <TabsContent value="categories" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <PieChart className="w-5 h-5 mr-2" />
+                  Category Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -623,122 +667,31 @@ export default function Reports() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {categoryPerformance.map((category) => {
-                      const margin =
-                        category.total_revenue > 0
-                          ? (category.total_profit / category.total_revenue) *
-                            100
-                          : 0;
-                      return (
-                        <TableRow key={category.category}>
-                          <TableCell>
-                            <div className="font-medium">
-                              {category.category}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {category.product_count}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {category.total_items_sold}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(category.total_revenue)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="text-green-600">
-                              {formatCurrency(category.total_profit)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge
-                              variant={margin > 30 ? "default" : "secondary"}
-                            >
-                              {margin.toFixed(1)}%
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-
-              {!loading && categoryPerformance.length === 0 && (
-                <div className="text-center py-12">
-                  <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">
-                    No category data
-                  </h3>
-                  <p className="text-muted-foreground">
-                    No sales recorded in the selected period
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="daily">
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Sales Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <Skeleton className="h-96 w-full" />
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">
-                        Transactions
-                      </TableHead>
-                      <TableHead className="text-right">Total Sales</TableHead>
-                      <TableHead className="text-right">
-                        Avg Transaction
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dailySales.map((day) => (
-                      <TableRow key={day.date}>
-                        <TableCell>
-                          <div className="font-medium">
-                            {formatDate(day.date)}
-                          </div>
+                    {categoryPerformance.map((category) => (
+                      <TableRow key={category.category}>
+                        <TableCell className="font-medium">{category.category}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="outline">{category.product_count}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{category.total_items_sold}</TableCell>
+                        <TableCell className="text-right">${category.total_revenue.toFixed(2)}</TableCell>
+                        <TableCell className="text-right text-green-600 font-medium">
+                          ${category.total_profit.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {day.transaction_count}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <span className="font-semibold">
-                            {formatCurrency(day.total_sales)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(day.average_transaction)}
+                          {category.total_revenue > 0
+                            ? ((category.total_profit / category.total_revenue) * 100).toFixed(1)
+                            : 0}%
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              )}
-
-              {!loading && dailySales.length === 0 && (
-                <div className="text-center py-12">
-                  <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No sales data</h3>
-                  <p className="text-muted-foreground">
-                    No sales recorded in the selected period
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
