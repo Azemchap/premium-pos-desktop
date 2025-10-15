@@ -585,11 +585,14 @@ pub async fn get_sale_details(
         created_at: sale_row.try_get("created_at").map_err(|e| e.to_string())?,
     };
 
-    // Get sale items
+    // Get sale items with product names
     let items_rows = sqlx::query(
-        "SELECT id, sale_id, product_id, quantity, unit_price, discount_amount,
-                line_total, tax_amount, cost_price, created_at
-         FROM sale_items WHERE sale_id = ?1",
+        "SELECT si.id, si.sale_id, si.product_id, si.quantity, si.unit_price, si.discount_amount,
+                si.line_total, si.tax_amount, si.cost_price, si.created_at,
+                p.name as product_name
+         FROM sale_items si
+         LEFT JOIN products p ON si.product_id = p.id
+         WHERE si.sale_id = ?1",
     )
     .bind(sale_id)
     .fetch_all(pool_ref)
@@ -598,6 +601,7 @@ pub async fn get_sale_details(
 
     let mut items = Vec::new();
     for row in items_rows {
+        let product_name: Option<String> = row.try_get("product_name").ok();
         let item = SaleItem {
             id: row.try_get("id").map_err(|e| e.to_string())?,
             sale_id: row.try_get("sale_id").map_err(|e| e.to_string())?,
@@ -609,7 +613,29 @@ pub async fn get_sale_details(
             tax_amount: row.try_get("tax_amount").map_err(|e| e.to_string())?,
             cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
-            product: None, // Could be populated if needed
+            product: product_name.map(|name| crate::models::Product {
+                id: row.try_get("product_id").unwrap_or(0),
+                sku: String::new(),
+                barcode: None,
+                name,
+                description: None,
+                category: None,
+                subcategory: None,
+                brand: None,
+                unit_of_measure: String::new(),
+                cost_price: 0.0,
+                selling_price: 0.0,
+                wholesale_price: 0.0,
+                tax_rate: 0.0,
+                is_active: true,
+                is_taxable: false,
+                weight: 0.0,
+                dimensions: None,
+                supplier_info: None,
+                reorder_point: 0,
+                created_at: String::new(),
+                updated_at: String::new(),
+            }),
         };
         items.push(item);
     }

@@ -371,8 +371,13 @@ export default function Sales() {
       setIsCompletionDialogOpen(true);
       
       toast.success(`🎉 Sale ${saleNumber} completed successfully!`, {
-        duration: 5000,
+        duration: 3000,
       });
+      
+      // Auto-print receipt after a short delay
+      setTimeout(() => {
+        printReceipt();
+      }, 500);
     } catch (error) {
       console.error("Failed to complete sale:", error);
       toast.error(`❌ Failed to complete sale: ${error}`);
@@ -380,10 +385,16 @@ export default function Sales() {
   };
 
   const startNewSale = () => {
-    clearCart();
     setIsCompletionDialogOpen(false);
+    clearCart();
     loadProducts();
     toast.success("✨ Ready for new sale");
+  };
+
+  const handleCloseCompletion = () => {
+    setIsCompletionDialogOpen(false);
+    clearCart();
+    loadProducts();
   };
 
   const printReceipt = () => {
@@ -892,7 +903,7 @@ export default function Sales() {
               )}
             </div>
 
-            {change >= 0 && paymentInfo.amountReceived > 0 && (
+            {change > 0 && paymentInfo.amountReceived > 0 && (
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-green-800">Change</span>
@@ -916,7 +927,7 @@ export default function Sales() {
       </Dialog>
 
       {/* Sale Completion Dialog */}
-      <Dialog open={isCompletionDialogOpen} onOpenChange={setIsCompletionDialogOpen}>
+      <Dialog open={isCompletionDialogOpen} onOpenChange={handleCloseCompletion}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center text-green-600">

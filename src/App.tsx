@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
+import { Toaster } from "sonner";
 import LoginPage from "@/pages/LoginPage";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -25,23 +26,31 @@ function App() {
   }, [theme]);
 
   if (!isAuthenticated) {
-    return <LoginPage />;
+    return (
+      <>
+        <Toaster position="top-right" richColors />
+        <LoginPage />
+      </>
+    );
   }
 
   return (
-    <DashboardLayout>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/sales" element={<Sales />} />
-        <Route path="/sales-records" element={<SalesRecords />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/inventory" element={<Inventory />} />
-        <Route path="/users" element={<Users />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/settings" element={<Settings />} />
-      </Routes>
-    </DashboardLayout>
+    <>
+      <Toaster position="top-right" richColors />
+      <DashboardLayout>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/sales" element={<Sales />} />
+          <Route path="/sales-records" element={<SalesRecords />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
+      </DashboardLayout>
+    </>
   );
 }
 

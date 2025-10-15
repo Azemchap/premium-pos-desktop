@@ -92,6 +92,9 @@ interface SaleItem {
   tax_amount: number;
   cost_price: number;
   created_at: string;
+  product?: {
+    name: string;
+  };
 }
 
 interface Sale {
@@ -221,6 +224,7 @@ export default function SalesRecords() {
         date={selectedSale.created_at}
         items={saleItems.map(item => ({
           product_id: item.product_id,
+          product_name: item.product?.name,
           quantity: item.quantity,
           unit_price: item.unit_price,
           line_total: item.line_total,
@@ -655,7 +659,7 @@ export default function SalesRecords() {
                 <Table className="mt-2">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Product ID</TableHead>
+                      <TableHead>Product</TableHead>
                       <TableHead>Quantity</TableHead>
                       <TableHead>Unit Price</TableHead>
                       <TableHead className="text-right">Line Total</TableHead>
@@ -664,7 +668,9 @@ export default function SalesRecords() {
                   <TableBody>
                     {saleItems.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell>Product #{item.product_id}</TableCell>
+                        <TableCell>
+                          {item.product?.name || `Product #${item.product_id}`}
+                        </TableCell>
                         <TableCell>{item.quantity}</TableCell>
                         <TableCell>${item.unit_price.toFixed(2)}</TableCell>
                         <TableCell className="text-right font-medium">
