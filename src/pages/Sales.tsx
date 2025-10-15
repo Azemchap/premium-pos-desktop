@@ -525,8 +525,8 @@ export default function Sales() {
                   <span>${item.product_name || 'Product #' + item.product_id}</span>
                 </div>
                 <div class="item">
-                  <span>&nbsp;&nbsp;${item.quantity} x $${item.unit_price.toFixed(2)}</span>
-                  <span>$${item.line_total.toFixed(2)}</span>
+                  <span>&nbsp;&nbsp;${item.quantity} x ${currencyFormatter.formatReceipt(item.unit_price)}</span>
+                  <span>${currencyFormatter.formatReceipt(item.line_total)}</span>
                 </div>
               `).join('')}
             </div>
@@ -534,28 +534,28 @@ export default function Sales() {
             <div class="totals">
               <div class="total-row">
                 <span>Subtotal:</span>
-                <span>$${saleData.subtotal.toFixed(2)}</span>
+                <span>${currencyFormatter.formatReceipt(saleData.subtotal)}</span>
               </div>
               <div class="total-row">
                 <span>Tax:</span>
-                <span>$${saleData.tax_amount.toFixed(2)}</span>
+                <span>${currencyFormatter.formatReceipt(saleData.tax_amount)}</span>
               </div>
               ${saleData.discount_amount > 0 ? `
                 <div class="total-row">
                   <span>Discount:</span>
-                  <span>-$${saleData.discount_amount.toFixed(2)}</span>
+                  <span>-${currencyFormatter.formatReceipt(saleData.discount_amount)}</span>
                 </div>
               ` : ''}
               <div class="total-row grand-total">
                 <span>TOTAL:</span>
-                <span>$${saleData.total_amount.toFixed(2)}</span>
+                <span>${currencyFormatter.formatReceipt(saleData.total_amount)}</span>
               </div>
             </div>
             
             <div class="info">
               <p><strong>Payment:</strong> ${saleData.payment_method.toUpperCase()}</p>
-              ${saleData.amount_received ? `<p><strong>Received:</strong> $${saleData.amount_received.toFixed(2)}</p>` : ''}
-              ${saleData.change && saleData.change > 0 ? `<p><strong>Change:</strong> $${saleData.change.toFixed(2)}</p>` : ''}
+              ${saleData.amount_received ? `<p><strong>Received:</strong> ${currencyFormatter.formatReceipt(saleData.amount_received)}</p>` : ''}
+              ${saleData.change && saleData.change > 0 ? `<p><strong>Change:</strong> ${currencyFormatter.formatReceipt(saleData.change)}</p>` : ''}
             </div>
             
             <div class="footer">
@@ -719,7 +719,7 @@ export default function Sales() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-2xl font-bold text-primary">
-                          ${product.selling_price.toFixed(2)}
+                          {format(product.selling_price)}
                         </span>
                         <Badge variant="outline">{product.available_stock} in stock</Badge>
                       </div>
@@ -765,7 +765,7 @@ export default function Sales() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        ${product.selling_price.toFixed(2)}
+                        {format(product.selling_price)}
                       </TableCell>
                       <TableCell>
                         <Button size="sm" onClick={() => addToCart(product)}>
@@ -818,7 +818,7 @@ export default function Sales() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{item.product.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          ${item.price.toFixed(2)} each
+                          {format(item.price)} each
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -856,15 +856,15 @@ export default function Sales() {
                   <div className="border-t pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium">${cartSubtotal.toFixed(2)}</span>
+                      <span className="font-medium">{format(cartSubtotal)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Tax</span>
-                      <span className="font-medium">${cartTax.toFixed(2)}</span>
+                      <span className="font-medium">{format(cartTax)}</span>
                     </div>
                     <div className="flex justify-between text-lg font-bold border-t pt-2">
                       <span>Total</span>
-                      <span className="text-primary">${cartTotal.toFixed(2)}</span>
+                      <span className="text-primary">{format(cartTotal)}</span>
                     </div>
                   </div>
 
@@ -1015,7 +1015,7 @@ export default function Sales() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-green-800">Change</span>
                   <span className="text-2xl font-bold text-green-600">
-                    ${change.toFixed(2)}
+                    {format(change)}
                   </span>
                 </div>
               </div>
@@ -1048,7 +1048,7 @@ export default function Sales() {
           <div className="space-y-4 py-4">
             <div className="bg-green-50 p-6 rounded-lg text-center">
               <p className="text-sm text-green-800 mb-2">Total Amount</p>
-              <p className="text-4xl font-bold text-green-600">${cartTotal.toFixed(2)}</p>
+              <p className="text-4xl font-bold text-green-600">{format(cartTotal)}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-muted rounded-lg">
