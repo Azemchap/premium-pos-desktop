@@ -79,31 +79,31 @@ pub async fn get_sales_report(
 
     let mut query = String::from(
         "SELECT 
-            COALESCE(SUM(total_amount), 0.0) as total_sales,
+            COALESCE(SUM(s.total_amount), 0.0) as total_sales,
             COUNT(*) as total_transactions,
-            COALESCE(AVG(total_amount), 0.0) as average_transaction,
-            COALESCE(SUM(tax_amount), 0.0) as total_tax,
-            COALESCE(SUM(discount_amount), 0.0) as total_discount,
-            COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN total_amount ELSE 0.0 END), 0.0) as cash_sales,
-            COALESCE(SUM(CASE WHEN payment_method = 'card' THEN total_amount ELSE 0.0 END), 0.0) as card_sales,
-            COALESCE(SUM(CASE WHEN payment_method = 'mobile' THEN total_amount ELSE 0.0 END), 0.0) as mobile_sales,
-            COALESCE(SUM(CASE WHEN payment_method = 'check' THEN total_amount ELSE 0.0 END), 0.0) as check_sales
-         FROM sales
-         WHERE is_voided = 0",
+            COALESCE(AVG(s.total_amount), 0.0) as average_transaction,
+            COALESCE(SUM(s.tax_amount), 0.0) as total_tax,
+            COALESCE(SUM(s.discount_amount), 0.0) as total_discount,
+            COALESCE(SUM(CASE WHEN s.payment_method = 'cash' THEN s.total_amount ELSE 0.0 END), 0.0) as cash_sales,
+            COALESCE(SUM(CASE WHEN s.payment_method = 'card' THEN s.total_amount ELSE 0.0 END), 0.0) as card_sales,
+            COALESCE(SUM(CASE WHEN s.payment_method = 'mobile' THEN s.total_amount ELSE 0.0 END), 0.0) as mobile_sales,
+            COALESCE(SUM(CASE WHEN s.payment_method = 'check' THEN s.total_amount ELSE 0.0 END), 0.0) as check_sales
+         FROM sales s
+         WHERE s.is_voided = 0",
     );
 
     let mut params: Vec<String> = Vec::new();
 
     if let Some(start) = &start_date {
         if !start.is_empty() {
-            query.push_str(" AND DATE(created_at) >= ?");
+            query.push_str(" AND DATE(s.created_at) >= ?");
             params.push(start.clone());
         }
     }
 
     if let Some(end) = &end_date {
         if !end.is_empty() {
-            query.push_str(" AND DATE(created_at) <= ?");
+            query.push_str(" AND DATE(s.created_at) <= ?");
             params.push(end.clone());
         }
     }
@@ -253,12 +253,12 @@ pub async fn get_daily_sales(
 
     let mut query = String::from(
         "SELECT 
-            DATE(created_at) as date,
-            COALESCE(SUM(total_amount), 0.0) as total_sales,
+            DATE(s.created_at) as date,
+            COALESCE(SUM(s.total_amount), 0.0) as total_sales,
             COUNT(*) as transaction_count,
-            COALESCE(AVG(total_amount), 0.0) as average_transaction
-         FROM sales
-         WHERE is_voided = 0",
+            COALESCE(AVG(s.total_amount), 0.0) as average_transaction
+         FROM sales s
+         WHERE s.is_voided = 0",
     );
 
     let mut params: Vec<String> = Vec::new();
@@ -506,23 +506,23 @@ pub async fn get_cash_flow_summary(
 
     if let Some(start) = &start_date {
         if !start.is_empty() {
-            date_filter.push_str(" AND DATE(created_at) >= ?");
+            date_filter.push_str(" AND DATE(s.created_at) >= ?");
             params.push(start.clone());
         }
     }
 
     if let Some(end) = &end_date {
         if !end.is_empty() {
-            date_filter.push_str(" AND DATE(created_at) <= ?");
+            date_filter.push_str(" AND DATE(s.created_at) <= ?");
             params.push(end.clone());
         }
     }
 
     // Calculate cash inflow from sales
     let inflow_query = format!(
-        "SELECT COALESCE(SUM(total_amount), 0.0) as cash_inflow
-         FROM sales
-         WHERE is_voided = 0{}",
+        "SELECT COALESCE(SUM(s.total_amount), 0.0) as cash_inflow
+         FROM sales s
+         WHERE s.is_voided = 0{}",
         date_filter
     );
 

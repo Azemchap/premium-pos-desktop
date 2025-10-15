@@ -255,7 +255,7 @@ pub async fn get_sales_with_details(
                 s.payment_method, s.payment_status, s.cashier_id, s.customer_name, s.customer_phone,
                 s.customer_email, s.notes, s.is_voided, s.voided_by, s.voided_at, s.void_reason,
                 s.shift_id, s.created_at,
-                u.full_name as cashier_name,
+                (u.first_name || ' ' || u.last_name) as cashier_name,
                 COUNT(si.id) as items_count,
                 COALESCE(SUM((si.unit_price - si.cost_price) * si.quantity), 0.0) as profit
          FROM sales s
