@@ -4,6 +4,7 @@
 mod commands;
 mod database;
 mod models;
+mod seeder;
 
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
@@ -179,6 +180,11 @@ async fn main() {
     // Ensure admin user exists and has a correct default password (dev only)
     if let Err(e) = ensure_admin(&pool).await {
         panic!("Failed to ensure admin user: {}", e);
+    }
+
+    // Seed database with sample data (only runs once)
+    if let Err(e) = seeder::seed_database(&pool).await {
+        eprintln!("Warning: Failed to seed database: {}", e);
     }
 
     // Initialize tauri and manage the pool in state

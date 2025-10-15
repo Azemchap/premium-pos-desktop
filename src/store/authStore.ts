@@ -18,6 +18,7 @@ interface AuthState {
     login: (user: User) => void;
     logout: () => void;
     setTheme: (theme: 'light' | 'dark') => void;
+    toggleTheme: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -29,6 +30,7 @@ export const useAuthStore = create<AuthState>()(
             login: (user: User) => set({ user, isAuthenticated: true }),
             logout: () => set({ user: null, isAuthenticated: false }),
             setTheme: (theme: 'light' | 'dark') => set({ theme }),
+            toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
         }),
         {
             name: 'auth-storage',
