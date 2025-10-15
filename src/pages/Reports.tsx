@@ -45,9 +45,11 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { useCurrency } from "@/hooks/useCurrency";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
-import { format, subDays, startOfWeek, startOfMonth, startOfQuarter, startOfYear } from "date-fns";
+import { format as formatDate, subDays, startOfWeek, startOfMonth, startOfQuarter, startOfYear } from "date-fns";
 
 interface SalesReport {
   total_sales: number;
