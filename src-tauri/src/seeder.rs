@@ -177,12 +177,12 @@ async fn seed_inventory(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), St
     println!("📊 Seeding inventory...");
 
     for &product_id in product_ids {
-        let stock = match product_id % 5 {
-            0 => 5,   // Low stock
-            1 => 50,  // Medium stock
-            2 => 100, // High stock
-            3 => 25,  // Medium-low
-            _ => 75,  // Medium-high
+        let stock = match product_id % 5i64 {
+            0 => 5,
+            1 => 50,
+            2 => 100,
+            3 => 25,
+            _ => 75,
         };
 
         let min_stock = stock / 5;
@@ -216,11 +216,11 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
         .map_err(|e| e.to_string())?;
 
     // Create 20 sample sales
-    for i in 0..20 {
+    for i in 0i32..20i32 {
         let sale_number = format!("SALE-{}", Uuid::new_v4().to_string().split('-').next().unwrap());
         
         let payment_methods = vec!["cash", "card", "mobile"];
-        let payment_method = payment_methods[i % 3];
+        let payment_method = payment_methods[(i % 3) as usize];
 
         let mut subtotal = 0.0;
         let mut tax_amount = 0.0;
@@ -239,7 +239,7 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
         .bind(admin_id)
         .bind(format!("Customer {}", i + 1))
         .bind("Sample transaction")
-        .bind((i % 30) as i32) // Spread over last 30 days
+        .bind(i % 30)
         .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
@@ -248,8 +248,8 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
 
         // Add 2-4 items to each sale
         let num_items = 2 + (i % 3);
-        for j in 0..num_items {
-            let product_idx = ((i * 3 + j) as usize) % product_ids.len();
+        for j in 0i32..num_items {
+            let product_idx = (((i * 3) + j) as usize) % product_ids.len();
             let product_id = product_ids[product_idx];
 
             // Get product details
@@ -262,7 +262,7 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
             .map_err(|e| e.to_string())?;
 
             let (cost_price, selling_price, is_taxable, tax_rate) = product;
-            let quantity: i32 = 1 + ((j % 3) as i32);
+            let quantity: i32 = 1 + (j % 3);
             let line_total = selling_price * (quantity as f64);
             let item_tax = if is_taxable { line_total * tax_rate / 100.0 } else { 0.0 };
 
