@@ -99,8 +99,8 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedBrand, setSelectedBrand] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedBrand, setSelectedBrand] = useState<string>("all");
   const [activeOnly, setActiveOnly] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -141,8 +141,8 @@ export default function Products() {
       setLoading(true);
       const searchRequest: ProductSearchRequest = {
         search_term: searchQuery || undefined,
-        category: selectedCategory || undefined,
-        brand: selectedBrand || undefined,
+        category: (selectedCategory && selectedCategory !== "all") ? selectedCategory : undefined,
+        brand: (selectedBrand && selectedBrand !== "all") ? selectedBrand : undefined,
         is_active: activeOnly ? true : undefined,
       };
 
@@ -291,7 +291,7 @@ export default function Products() {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -308,7 +308,7 @@ export default function Products() {
                   <SelectValue placeholder="All Brands" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Brands</SelectItem>
+                  <SelectItem value="all">All Brands</SelectItem>
                   {brands.map((brand) => (
                     <SelectItem key={brand} value={brand}>
                       {brand}
@@ -621,7 +621,7 @@ export default function Products() {
                     <SelectValue placeholder="Select brand" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Brand</SelectItem>
+                    <SelectItem value="none">No Brand</SelectItem>
                     {brands.map((brand) => (
                       <SelectItem key={brand} value={brand}>
                         {brand}

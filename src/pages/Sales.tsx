@@ -115,7 +115,7 @@ export default function Sales() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
@@ -315,7 +315,7 @@ export default function Sales() {
       product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
 
     return matchesSearch && matchesCategory && product.available_stock > 0;
   });
@@ -357,9 +357,9 @@ export default function Sales() {
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     {categories.map((category) => (
-                      <SelectItem key={category} value={category || ""}>
+                      <SelectItem key={category} value={category || "uncategorized"}>
                         {category}
                       </SelectItem>
                     ))}

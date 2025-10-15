@@ -100,7 +100,7 @@ export default function Inventory() {
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isAdjustmentDialogOpen, setIsAdjustmentDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -204,7 +204,7 @@ export default function Inventory() {
       item.product?.barcode?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory =
-      !filterCategory || item.product?.category === filterCategory;
+      filterCategory === "all" || item.product?.category === filterCategory;
 
     const matchesStatus =
       filterStatus === "all" ||
@@ -374,9 +374,9 @@ export default function Inventory() {
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
+                      <SelectItem value="all">All Categories</SelectItem>
                       {categories.map((category) => (
-                        <SelectItem key={category} value={category || ""}>
+                        <SelectItem key={category} value={category || "uncategorized"}>
                           {category}
                         </SelectItem>
                       ))}
