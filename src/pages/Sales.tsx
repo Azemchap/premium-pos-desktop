@@ -1,12 +1,7 @@
 // src/pages/Sales.tsx
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -22,31 +19,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuthStore } from "@/store/authStore";
+import { invoke } from "@tauri-apps/api/core";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Plus,
-  Minus,
-  Trash2,
-  Search,
-  ShoppingCart,
+  Check,
   CreditCard,
   DollarSign,
-  User,
-  QrCode,
-  Check,
-  X,
+  Minus,
   Package,
+  Plus,
+  QrCode,
+  Search,
+  ShoppingCart,
+  Trash2,
+  User,
+  X,
 } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useAuthStore } from "@/store/authStore";
 
 interface Product {
   id: number;
