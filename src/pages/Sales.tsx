@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -38,28 +39,31 @@ import {
   CreditCard,
   DollarSign,
   User,
-  Receipt,
-  Calculator,
-  Phone,
-  Mail,
   QrCode,
-  Check
+  Check,
+  X,
+  Package,
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/authStore";
 
 interface Product {
   id: number;
   name: string;
   sku: string;
   barcode?: string;
-  price: number;
+  category?: string;
+  brand?: string;
+  selling_price: number;
   cost_price: number;
-  tax_rate?: number;
+  tax_rate: number;
   is_taxable: boolean;
   current_stock: number;
   minimum_stock: number;
+  available_stock: number;
   is_active: boolean;
+  unit_of_measure: string;
 }
 
 interface CartItem {
@@ -82,6 +86,25 @@ interface PaymentInfo {
   reference?: string;
 }
 
+interface CreateSaleRequest {
+  items: Array<{
+    product_id: number;
+    quantity: number;
+    unit_price: number;
+    discount_amount: number;
+    line_total: number;
+  }>;
+  subtotal: number;
+  tax_amount: number;
+  discount_amount: number;
+  total_amount: number;
+  payment_method: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  notes?: string;
+}
+
 interface SaleResult {
   sale_number: string;
   id: number;
@@ -92,6 +115,7 @@ export default function Sales() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
@@ -107,6 +131,7 @@ export default function Sales() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const { user } = useAuthStore();
 
   const paymentMethods = [
     { value: "cash", label: "Cash", icon: DollarSign },
@@ -118,7 +143,7 @@ export default function Sales() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const result = await invoke<Product[]>("get_products");
+      const result = await invoke<Product[]>("get_products_with_stock");
       setProducts(result);
     } catch (error) {
       console.error("Failed to load products:", error);
@@ -129,31 +154,33 @@ export default function Sales() {
   };
 
   const addToCart = (product: Product, quantity: number = 1) => {
+    // Check stock availability
+    const currentCartQuantity = cart.find(item => item.product.id === product.id)?.quantity || 0;
+    if (currentCartQuantity + quantity > product.available_stock) {
+      toast.error(`Not enough stock! Available: ${product.available_stock}`);
+      return;
+    }
+
     const existingItem = cart.find(item => item.product.id === product.id);
 
     if (existingItem) {
-      setCart(cart.map(item =>
-        item.product.id === product.id
-          ? { ...item, quantity: item.quantity + quantity }
-          : item
-      ));
+      updateCartItemQuantity(product.id, existingItem.quantity + quantity);
     } else {
       const taxAmount = product.is_taxable && product.tax_rate
-        ? (product.price * quantity * product.tax_rate) / 100
+        ? (product.selling_price * quantity * product.tax_rate) / 100
         : 0;
 
       const newItem: CartItem = {
         product,
         quantity,
-        price: product.price,
+        price: product.selling_price,
         tax_amount: taxAmount,
-        total: (product.price * quantity) + taxAmount
+        total: (product.selling_price * quantity) + taxAmount
       };
 
       setCart([...cart, newItem]);
     }
 
-    setSearchQuery("");
     toast.success(`${product.name} added to cart`);
   };
 
@@ -163,17 +190,23 @@ export default function Sales() {
       return;
     }
 
+    const product = products.find(p => p.id === productId);
+    if (product && quantity > product.available_stock) {
+      toast.error(`Not enough stock! Available: ${product.available_stock}`);
+      return;
+    }
+
     setCart(cart.map(item => {
       if (item.product.id === productId) {
         const taxAmount = item.product.is_taxable && item.product.tax_rate
-          ? (item.product.price * quantity * item.product.tax_rate) / 100
+          ? (item.product.selling_price * quantity * item.product.tax_rate) / 100
           : 0;
 
         return {
           ...item,
           quantity,
           tax_amount: taxAmount,
-          total: (item.product.price * quantity) + taxAmount
+          total: (item.product.selling_price * quantity) + taxAmount
         };
       }
       return item;
@@ -191,7 +224,7 @@ export default function Sales() {
   };
 
   const getSubtotal = () => {
-    return cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    return cart.reduce((sum, item) => sum + (item.product.selling_price * item.quantity), 0);
   };
 
   const getTaxTotal = () => {
@@ -203,7 +236,7 @@ export default function Sales() {
   };
 
   const getChange = () => {
-    return paymentInfo.amount - getTotal();
+    return Math.max(0, paymentInfo.amount - getTotal());
   };
 
   const handleCheckout = async () => {
@@ -217,50 +250,78 @@ export default function Sales() {
       return;
     }
 
+    if (!user) {
+      toast.error("User not authenticated");
+      return;
+    }
+
     try {
       setProcessing(true);
 
-      const saleData = {
+      const saleData: CreateSaleRequest = {
         customer_name: customerInfo.name || undefined,
         customer_phone: customerInfo.phone || undefined,
         customer_email: customerInfo.email || undefined,
         payment_method: paymentInfo.method,
-        payment_reference: paymentInfo.reference || undefined,
         notes: notes || undefined,
+        subtotal: getSubtotal(),
+        tax_amount: getTaxTotal(),
+        discount_amount: 0,
+        total_amount: getTotal(),
         items: cart.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,
-          price: item.price,
-          tax_amount: item.tax_amount
+          unit_price: item.price,
+          discount_amount: 0,
+          line_total: item.total
         }))
       };
 
-      const result = await invoke<SaleResult>("create_sale", saleData);
+      const result = await invoke<SaleResult>("create_sale", {
+        request: saleData,
+        cashierId: user.id,
+        shiftId: null,
+      });
 
       toast.success(`Sale completed! Sale #${result.sale_number}`);
-
-      // Print receipt (placeholder for now)
-      console.log("Printing receipt for sale:", result);
 
       // Clear cart and reset
       clearCart();
       setPaymentInfo({ method: "cash", amount: 0, reference: "" });
       setIsPaymentDialogOpen(false);
+      loadProducts(); // Reload to get updated stock
 
     } catch (error) {
       console.error("Failed to process sale:", error);
-      toast.error("Failed to process sale");
+      toast.error(`Failed to process sale: ${error}`);
     } finally {
       setProcessing(false);
     }
   };
 
-  const filteredProducts = products.filter(product =>
-    product.is_active &&
-    product.current_stock > 0 &&
-    (product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const openCheckout = () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
+    setPaymentInfo({ ...paymentInfo, amount: getTotal() });
+    setIsPaymentDialogOpen(true);
+  };
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch =
+      !searchQuery ||
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase())))
+      (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+
+    return matchesSearch && matchesCategory && product.available_stock > 0;
+  });
+
+  const categories = Array.from(
+    new Set(products.map(p => p.category).filter(Boolean))
   );
 
   useEffect(() => {
@@ -269,84 +330,125 @@ export default function Sales() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      {/* Left Column - Product Search & Cart */}
+      {/* Left Column - Products Grid */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Product Search */}
+        {/* Search and Filters */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Search className="w-5 h-5 mr-2" />
-              Product Search
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search by name, SKU, or barcode..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="search">Search Products</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    id="search"
+                    placeholder="Search by name, SKU, or barcode..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
 
-              {searchQuery && (
-                <div className="border rounded-lg max-h-60 overflow-y-auto">
-                  {loading ? (
-                    <div className="p-4 space-y-2">
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="flex items-center space-x-3">
-                          <Skeleton className="h-10 w-10 rounded" />
-                          <div className="space-y-1 flex-1">
-                            <Skeleton className="h-4 w-[200px]" />
-                            <Skeleton className="h-3 w-[150px]" />
-                          </div>
-                          <Skeleton className="h-8 w-16" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : filteredProducts.length > 0 ? (
-                    <div className="p-2">
-                      {filteredProducts.slice(0, 10).map((product) => (
-                        <div
-                          key={product.id}
-                          className="flex items-center justify-between p-2 hover:bg-muted rounded cursor-pointer"
-                          onClick={() => addToCart(product)}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center">
-                              <QrCode className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{product.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                SKU: {product.sku} • Stock: {product.current_stock}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold">${product.price.toFixed(2)}</p>
-                            <Button size="sm" className="mt-1">
-                              <Plus className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center text-muted-foreground">
-                      No products found
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category || ""}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Cart */}
-        <Card className="flex-1">
+        {/* Products Grid */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Available Products</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-4">
+                      <Skeleton className="h-32 w-full" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto">
+                {filteredProducts.map((product) => (
+                  <Card
+                    key={product.id}
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => addToCart(product)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="space-y-2">
+                        <div className="font-semibold line-clamp-2 min-h-[2.5rem]">
+                          {product.name}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          SKU: {product.sku}
+                        </div>
+                        {product.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {product.category}
+                          </Badge>
+                        )}
+                        <div className="flex items-center justify-between pt-2">
+                          <div>
+                            <div className="text-lg font-bold text-primary">
+                              ${product.selling_price.toFixed(2)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Stock: {product.available_stock}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addToCart(product);
+                            }}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No products available</h3>
+                <p className="text-muted-foreground">
+                  {searchQuery || selectedCategory
+                    ? "Try adjusting your filters"
+                    : "No products in stock"}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Right Column - Cart */}
+      <div className="space-y-6">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center">
@@ -355,200 +457,128 @@ export default function Sales() {
               </span>
               {cart.length > 0 && (
                 <Button variant="outline" size="sm" onClick={clearCart}>
-                  Clear Cart
+                  <X className="w-4 h-4 mr-2" />
+                  Clear
                 </Button>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {cart.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground">
                 <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p>Your cart is empty</p>
-                <p className="text-sm">Search for products above to get started</p>
+                <p className="text-sm">Click on products to add them</p>
               </div>
             ) : (
               <div className="space-y-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Qty</TableHead>
-                      <TableHead>Tax</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cart.map((item) => (
-                      <TableRow key={item.product.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{item.product.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              SKU: {item.product.sku}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>${item.price.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateCartItemQuantity(item.product.id, item.quantity - 1)}
-                            >
-                              <Minus className="w-3 h-3" />
-                            </Button>
-                            <span className="w-8 text-center">{item.quantity}</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateCartItemQuantity(item.product.id, item.quantity + 1)}
-                            >
-                              <Plus className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                        <TableCell>${item.tax_amount.toFixed(2)}</TableCell>
-                        <TableCell className="font-medium">${item.total.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFromCart(item.product.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="max-h-[400px] overflow-y-auto space-y-3">
+                  {cart.map((item) => (
+                    <div
+                      key={item.product.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">
+                          {item.product.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          ${item.price.toFixed(2)} each
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            updateCartItemQuantity(item.product.id, item.quantity - 1)
+                          }
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="w-8 text-center font-medium">
+                          {item.quantity}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            updateCartItemQuantity(item.product.id, item.quantity + 1)
+                          }
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFromCart(item.product.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* Cart Summary */}
                 <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
                     <span>${getSubtotal().toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span>Tax:</span>
                     <span>${getTaxTotal().toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-lg font-semibold">
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
                     <span>Total:</span>
                     <span>${getTotal().toFixed(2)}</span>
                   </div>
                 </div>
 
-                {/* Customer Info & Notes */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsCustomerDialogOpen(true)}
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      {customerInfo.name ? "Edit Customer" : "Add Customer"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsPaymentDialogOpen(true)}
-                      disabled={cart.length === 0}
-                    >
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Checkout
-                    </Button>
-                  </div>
-
-                  {customerInfo.name && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <p className="font-medium">{customerInfo.name}</p>
-                      {customerInfo.phone && (
-                        <p className="text-sm text-muted-foreground">
-                          <Phone className="w-3 h-3 inline mr-1" />
-                          {customerInfo.phone}
-                        </p>
-                      )}
-                      {customerInfo.email && (
-                        <p className="text-sm text-muted-foreground">
-                          <Mail className="w-3 h-3 inline mr-1" />
-                          {customerInfo.email}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <div>
-                    <Label htmlFor="notes">Notes</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="Add any special instructions or notes..."
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={2}
-                    />
-                  </div>
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes (Optional)</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Add any special instructions..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={2}
+                  />
                 </div>
+
+                {/* Actions */}
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setIsCustomerDialogOpen(true)}
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    {customerInfo.name ? "Edit Customer" : "Add Customer"}
+                  </Button>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={openCheckout}
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Checkout ${getTotal().toFixed(2)}
+                  </Button>
+                </div>
+
+                {customerInfo.name && (
+                  <div className="p-3 bg-muted rounded-lg text-sm">
+                    <div className="font-medium">{customerInfo.name}</div>
+                    {customerInfo.phone && <div>{customerInfo.phone}</div>}
+                    {customerInfo.email && <div>{customerInfo.email}</div>}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Right Column - Quick Actions & Recent Sales */}
-      <div className="space-y-6">
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button variant="outline" className="w-full justify-start">
-              <Receipt className="w-4 h-4 mr-2" />
-              Reprint Receipt
-            </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <Calculator className="w-4 h-4 mr-2" />
-              Calculator
-            </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <QrCode className="w-4 h-4 mr-2" />
-              Scan Barcode
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Payment Summary */}
-        {cart.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between">
-                <span>Items:</span>
-                <span>{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>${getSubtotal().toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Tax:</span>
-                <span>${getTaxTotal().toFixed(2)}</span>
-              </div>
-              <div className="border-t pt-2">
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total:</span>
-                  <span>${getTotal().toFixed(2)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {/* Customer Information Dialog */}
@@ -605,9 +635,9 @@ export default function Sales() {
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Payment</DialogTitle>
+            <DialogTitle>Complete Payment</DialogTitle>
             <DialogDescription>
-              Complete the payment for ${getTotal().toFixed(2)}
+              Total Amount: ${getTotal().toFixed(2)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -655,11 +685,11 @@ export default function Sales() {
                 />
               </div>
             )}
-            {paymentInfo.amount > getTotal() && (
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="flex justify-between font-medium">
+            {paymentInfo.amount >= getTotal() && getChange() > 0 && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="flex justify-between font-medium text-green-700 dark:text-green-400">
                   <span>Change:</span>
-                  <span>${getChange().toFixed(2)}</span>
+                  <span className="text-lg">${getChange().toFixed(2)}</span>
                 </div>
               </div>
             )}

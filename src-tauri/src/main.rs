@@ -204,6 +204,7 @@ async fn main() {
             commands::users::delete_user,
             // Product management commands
             commands::products::get_products,
+            commands::products::get_products_with_stock,
             commands::products::get_product_by_id,
             commands::products::create_product,
             commands::products::update_product,

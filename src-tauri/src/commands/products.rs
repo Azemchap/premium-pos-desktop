@@ -1,6 +1,35 @@
 use crate::models::{CreateProductRequest, Product, ProductSearchRequest};
+use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
 use tauri::State;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProductWithStock {
+    pub id: i64,
+    pub sku: String,
+    pub barcode: Option<String>,
+    pub name: String,
+    pub description: Option<String>,
+    pub category: Option<String>,
+    pub subcategory: Option<String>,
+    pub brand: Option<String>,
+    pub unit_of_measure: String,
+    pub cost_price: f64,
+    pub selling_price: f64,
+    pub wholesale_price: f64,
+    pub tax_rate: f64,
+    pub is_active: bool,
+    pub is_taxable: bool,
+    pub weight: f64,
+    pub dimensions: Option<String>,
+    pub supplier_info: Option<String>,
+    pub reorder_point: i32,
+    pub current_stock: i32,
+    pub minimum_stock: i32,
+    pub available_stock: i32,
+    pub created_at: String,
+    pub updated_at: String,
+}
 
 #[tauri::command]
 pub async fn get_products(pool: State<'_, SqlitePool>) -> Result<Vec<Product>, String> {
@@ -294,6 +323,56 @@ pub async fn search_products(
             dimensions: row.try_get("dimensions").ok().flatten(),
             supplier_info: row.try_get("supplier_info").ok().flatten(),
             reorder_point: row.try_get("reorder_point").map_err(|e| e.to_string())?,
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+            updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
+        };
+        products.push(product);
+    }
+
+    Ok(products)
+}
+
+#[tauri::command]
+pub async fn get_products_with_stock(pool: State<'_, SqlitePool>) -> Result<Vec<ProductWithStock>, String> {
+    let rows = sqlx::query(
+        "SELECT p.*, 
+                COALESCE(i.current_stock, 0) as current_stock,
+                COALESCE(i.minimum_stock, 0) as minimum_stock,
+                COALESCE(i.available_stock, 0) as available_stock
+         FROM products p
+         LEFT JOIN inventory i ON p.id = i.product_id
+         WHERE p.is_active = 1
+         ORDER BY p.name"
+    )
+    .fetch_all(pool.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut products = Vec::new();
+    for row in rows {
+        let product = ProductWithStock {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            sku: row.try_get("sku").map_err(|e| e.to_string())?,
+            barcode: row.try_get("barcode").ok().flatten(),
+            name: row.try_get("name").map_err(|e| e.to_string())?,
+            description: row.try_get("description").ok().flatten(),
+            category: row.try_get("category").ok().flatten(),
+            subcategory: row.try_get("subcategory").ok().flatten(),
+            brand: row.try_get("brand").ok().flatten(),
+            unit_of_measure: row.try_get("unit_of_measure").map_err(|e| e.to_string())?,
+            cost_price: row.try_get("cost_price").map_err(|e| e.to_string())?,
+            selling_price: row.try_get("selling_price").map_err(|e| e.to_string())?,
+            wholesale_price: row.try_get("wholesale_price").map_err(|e| e.to_string())?,
+            tax_rate: row.try_get("tax_rate").map_err(|e| e.to_string())?,
+            is_active: row.try_get("is_active").map_err(|e| e.to_string())?,
+            is_taxable: row.try_get("is_taxable").map_err(|e| e.to_string())?,
+            weight: row.try_get("weight").map_err(|e| e.to_string())?,
+            dimensions: row.try_get("dimensions").ok().flatten(),
+            supplier_info: row.try_get("supplier_info").ok().flatten(),
+            reorder_point: row.try_get("reorder_point").map_err(|e| e.to_string())?,
+            current_stock: row.try_get("current_stock").map_err(|e| e.to_string())?,
+            minimum_stock: row.try_get("minimum_stock").map_err(|e| e.to_string())?,
+            available_stock: row.try_get("available_stock").map_err(|e| e.to_string())?,
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
             updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
         };

@@ -46,19 +46,19 @@ interface Product {
   sku: string;
   barcode?: string;
   description?: string;
-  category: string;
+  category?: string;
   subcategory?: string;
   brand?: string;
-  price: number;
-  wholesale_price?: number;
+  selling_price: number;
+  wholesale_price: number;
   cost_price: number;
-  tax_rate?: number;
+  tax_rate: number;
   is_taxable: boolean;
   unit_of_measure: string;
-  weight?: number;
+  weight: number;
   dimensions?: string;
   supplier_info?: string;
-  reorder_point?: number;
+  reorder_point: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -69,29 +69,30 @@ interface CreateProductRequest {
   sku: string;
   barcode?: string;
   description?: string;
-  category: string;
+  category?: string;
   subcategory?: string;
   brand?: string;
-  price: number;
-  wholesale_price?: number;
+  selling_price: number;
+  wholesale_price: number;
   cost_price: number;
-  tax_rate?: number;
+  tax_rate: number;
   is_taxable: boolean;
   unit_of_measure: string;
-  weight?: number;
+  weight: number;
   dimensions?: string;
   supplier_info?: string;
-  reorder_point?: number;
-  minimum_stock: number;
-  [key: string]: unknown;
+  reorder_point: number;
 }
 
 interface ProductSearchRequest {
-  query?: string;
+  search_term?: string;
   category?: string;
   brand?: string;
-  active_only?: boolean;
-  [key: string]: unknown;
+  min_price?: number;
+  max_price?: number;
+  is_active?: boolean;
+  limit?: number;
+  offset?: number;
 }
 
 export default function Products() {
@@ -111,7 +112,7 @@ export default function Products() {
     category: "",
     subcategory: "",
     brand: "",
-    price: 0,
+    selling_price: 0,
     wholesale_price: 0,
     cost_price: 0,
     tax_rate: 0,
@@ -121,7 +122,6 @@ export default function Products() {
     dimensions: "",
     supplier_info: "",
     reorder_point: 0,
-    minimum_stock: 0,
   });
 
   const categories = [
@@ -140,13 +140,13 @@ export default function Products() {
     try {
       setLoading(true);
       const searchRequest: ProductSearchRequest = {
-        query: searchQuery || undefined,
+        search_term: searchQuery || undefined,
         category: selectedCategory || undefined,
         brand: selectedBrand || undefined,
-        active_only: activeOnly
+        is_active: activeOnly ? true : undefined,
       };
 
-      const result = await invoke<Product[]>("search_products", searchRequest);
+      const result = await invoke<Product[]>("search_products", { request: searchRequest });
       setProducts(result);
     } catch (error) {
       console.error("Failed to load products:", error);
@@ -189,20 +189,19 @@ export default function Products() {
       sku: product.sku,
       barcode: product.barcode || "",
       description: product.description || "",
-      category: product.category,
+      category: product.category || "",
       subcategory: product.subcategory || "",
       brand: product.brand || "",
-      price: product.price,
-      wholesale_price: product.wholesale_price || 0,
+      selling_price: product.selling_price,
+      wholesale_price: product.wholesale_price,
       cost_price: product.cost_price,
-      tax_rate: product.tax_rate || 0,
+      tax_rate: product.tax_rate,
       is_taxable: product.is_taxable,
       unit_of_measure: product.unit_of_measure,
-      weight: product.weight || 0,
+      weight: product.weight,
       dimensions: product.dimensions || "",
       supplier_info: product.supplier_info || "",
-      reorder_point: product.reorder_point || 0,
-      minimum_stock: 0, // This will be set from inventory
+      reorder_point: product.reorder_point,
     });
     setIsDialogOpen(true);
   };
@@ -211,7 +210,7 @@ export default function Products() {
     if (!confirm("Are you sure you want to deactivate this product?")) return;
 
     try {
-      await invoke("delete_product", { id: productId });
+      await invoke("delete_product", { productId });
       toast.success("Product deactivated successfully");
       loadProducts();
     } catch (error) {
@@ -229,7 +228,7 @@ export default function Products() {
       category: "",
       subcategory: "",
       brand: "",
-      price: 0,
+      selling_price: 0,
       wholesale_price: 0,
       cost_price: 0,
       tax_rate: 0,
@@ -239,7 +238,6 @@ export default function Products() {
       dimensions: "",
       supplier_info: "",
       reorder_point: 0,
-      minimum_stock: 0,
     });
     setEditingProduct(null);
   };
@@ -412,7 +410,7 @@ export default function Products() {
                     <TableCell>
                       <div>
                         <div className="font-medium">
-                          ${product.price.toFixed(2)}
+                          ${product.selling_price.toFixed(2)}
                         </div>
                         {product.cost_price > 0 && (
                           <div className="text-sm text-muted-foreground">
@@ -537,14 +535,14 @@ export default function Products() {
             {/* Pricing & Inventory */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Selling Price *</Label>
+                <Label htmlFor="selling_price">Selling Price *</Label>
                 <Input
-                  id="price"
+                  id="selling_price"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                  value={formData.selling_price}
+                  onChange={(e) => setFormData({ ...formData, selling_price: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
                 />
               </div>
@@ -576,13 +574,13 @@ export default function Products() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="minimum_stock">Minimum Stock *</Label>
+                <Label htmlFor="reorder_point">Reorder Point</Label>
                 <Input
-                  id="minimum_stock"
+                  id="reorder_point"
                   type="number"
                   min="0"
-                  value={formData.minimum_stock}
-                  onChange={(e) => setFormData({ ...formData, minimum_stock: parseInt(e.target.value) || 0 })}
+                  value={formData.reorder_point}
+                  onChange={(e) => setFormData({ ...formData, reorder_point: parseInt(e.target.value) || 0 })}
                   placeholder="0"
                 />
               </div>
@@ -686,18 +684,6 @@ export default function Products() {
                   value={formData.dimensions}
                   onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
                   placeholder="L x W x H (optional)"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="reorder_point">Reorder Point</Label>
-                <Input
-                  id="reorder_point"
-                  type="number"
-                  min="0"
-                  value={formData.reorder_point}
-                  onChange={(e) => setFormData({ ...formData, reorder_point: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
                 />
               </div>
             </div>
