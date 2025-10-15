@@ -71,7 +71,7 @@ async fn seed_store_config(pool: &SqlitePool) -> Result<(), String> {
     println!("🏪 Seeding store configuration...");
 
     sqlx::query(
-        "INSERT OR IGNORE INTO store_config (id, name, address, phone, email, tax_rate, currency, timezone)
+        "INSERT OR IGNORE INTO locations (id, name, address, phone, email, tax_rate, currency, timezone)
          VALUES (1, 'Premium POS Store', '123 Main Street, Downtown', '+1-555-0100', 'contact@premiumpos.com', 8.5, 'USD', 'America/New_York')"
     )
     .execute(pool)
@@ -262,8 +262,8 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
             .map_err(|e| e.to_string())?;
 
             let (cost_price, selling_price, is_taxable, tax_rate) = product;
-            let quantity = 1 + ((j % 3) as i32);
-            let line_total = selling_price * quantity as f64;
+            let quantity: i32 = 1 + ((j % 3) as i32);
+            let line_total = selling_price * (quantity as f64);
             let item_tax = if is_taxable { line_total * tax_rate / 100.0 } else { 0.0 };
 
             subtotal += line_total;
