@@ -302,25 +302,25 @@ export default function Reports() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <MetricCard
                 title="Total Sales"
-                value={`$${salesReport?.total_sales.toFixed(2) || '0.00'}`}
+                value={format(salesReport?.total_sales || 0)}
                 subtitle={`${salesReport?.total_transactions || 0} transactions`}
                 icon={DollarSign}
               />
               <MetricCard
                 title="Gross Profit"
-                value={`$${financialMetrics?.gross_profit.toFixed(2) || '0.00'}`}
+                value={format(financialMetrics?.gross_profit || 0)}
                 subtitle={`${financialMetrics?.gross_profit_margin.toFixed(1) || 0}% margin`}
                 icon={TrendingUp}
               />
               <MetricCard
                 title="Net Profit"
-                value={`$${financialMetrics?.net_profit.toFixed(2) || '0.00'}`}
+                value={format(financialMetrics?.net_profit || 0)}
                 subtitle={`${financialMetrics?.net_profit_margin.toFixed(1) || 0}% margin`}
                 icon={Target}
               />
               <MetricCard
                 title="Avg Transaction"
-                value={`$${salesReport?.average_transaction.toFixed(2) || '0.00'}`}
+                value={format(salesReport?.average_transaction || 0)}
                 subtitle={`${financialMetrics?.average_basket_size.toFixed(1) || 0} items/sale`}
                 icon={ShoppingCart}
               />
@@ -339,7 +339,7 @@ export default function Reports() {
                   <div className="p-4 bg-green-50 rounded-lg">
                     <p className="text-sm text-green-800 font-medium">Cash</p>
                     <p className="text-2xl font-bold text-green-600">
-                      ${salesReport?.cash_sales.toFixed(2) || '0.00'}
+                      {format(salesReport?.cash_sales || 0)}
                     </p>
                     <p className="text-xs text-green-700 mt-1">
                       {salesReport && salesReport.total_sales > 0
@@ -350,7 +350,7 @@ export default function Reports() {
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800 font-medium">Card</p>
                     <p className="text-2xl font-bold text-blue-600">
-                      ${salesReport?.card_sales.toFixed(2) || '0.00'}
+                      {format(salesReport?.card_sales || 0)}
                     </p>
                     <p className="text-xs text-blue-700 mt-1">
                       {salesReport && salesReport.total_sales > 0
@@ -361,7 +361,7 @@ export default function Reports() {
                   <div className="p-4 bg-purple-50 rounded-lg">
                     <p className="text-sm text-purple-800 font-medium">Mobile</p>
                     <p className="text-2xl font-bold text-purple-600">
-                      ${salesReport?.mobile_sales.toFixed(2) || '0.00'}
+                      {format(salesReport?.mobile_sales || 0)}
                     </p>
                     <p className="text-xs text-purple-700 mt-1">
                       {salesReport && salesReport.total_sales > 0
@@ -372,7 +372,7 @@ export default function Reports() {
                   <div className="p-4 bg-orange-50 rounded-lg">
                     <p className="text-sm text-orange-800 font-medium">Check</p>
                     <p className="text-2xl font-bold text-orange-600">
-                      ${salesReport?.check_sales.toFixed(2) || '0.00'}
+                      {format(salesReport?.check_sales || 0)}
                     </p>
                     <p className="text-xs text-orange-700 mt-1">
                       {salesReport && salesReport.total_sales > 0
@@ -408,12 +408,12 @@ export default function Reports() {
                         <TableCell className="font-medium">
                           {format(new Date(day.date), "MMM dd, yyyy")}
                         </TableCell>
-                        <TableCell>${day.total_sales.toFixed(2)}</TableCell>
+                        <TableCell>{format(day.total_sales)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{day.transaction_count}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          ${day.average_transaction.toFixed(2)}
+                          {format(day.average_transaction)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -457,37 +457,37 @@ export default function Reports() {
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">Revenue</span>
                     <span className="text-lg font-bold text-green-600">
-                      ${salesReport?.total_sales.toFixed(2) || '0.00'}
+                      {format(salesReport?.total_sales || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pl-4">
                     <span className="text-muted-foreground">Cost of Goods Sold</span>
                     <span className="text-red-600">
-                      -${financialMetrics?.total_cogs.toFixed(2) || '0.00'}
+                      -{format(financialMetrics?.total_cogs || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">Gross Profit</span>
                     <span className="text-lg font-bold">
-                      ${financialMetrics?.gross_profit.toFixed(2) || '0.00'}
+                      {format(financialMetrics?.gross_profit || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pl-4">
                     <span className="text-muted-foreground">Operating Expenses</span>
                     <span className="text-red-600">
-                      -${financialMetrics?.operating_expenses.toFixed(2) || '0.00'}
+                      -{format(financialMetrics?.operating_expenses || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pl-4">
                     <span className="text-muted-foreground">Tax</span>
                     <span className="text-red-600">
-                      -${salesReport?.total_tax.toFixed(2) || '0.00'}
+                      -{format(salesReport?.total_tax || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t-2">
                     <span className="text-lg font-bold">Net Profit</span>
                     <span className={`text-2xl font-bold ${(financialMetrics?.net_profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ${financialMetrics?.net_profit.toFixed(2) || '0.00'}
+                      {format(financialMetrics?.net_profit || 0)}
                     </span>
                   </div>
                 </div>
@@ -531,19 +531,19 @@ export default function Reports() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <MetricCard
                 title="Cash Inflow"
-                value={`$${cashFlow?.cash_inflow.toFixed(2) || '0.00'}`}
+                value={format(cashFlow?.cash_inflow || 0)}
                 subtitle="From sales"
                 icon={TrendingUp}
               />
               <MetricCard
                 title="Cash Outflow"
-                value={`$${cashFlow?.cash_outflow.toFixed(2) || '0.00'}`}
+                value={format(cashFlow?.cash_outflow || 0)}
                 subtitle="COGS + expenses"
                 icon={TrendingDown}
               />
               <MetricCard
                 title="Net Cash Flow"
-                value={`$${cashFlow?.net_cash_flow.toFixed(2) || '0.00'}`}
+                value={format(cashFlow?.net_cash_flow || 0)}
                 subtitle={`${(cashFlow?.net_cash_flow || 0) >= 0 ? 'Positive' : 'Negative'} flow`}
                 icon={(cashFlow?.net_cash_flow || 0) >= 0 ? ArrowUpRight : ArrowDownRight}
               />
@@ -562,31 +562,31 @@ export default function Reports() {
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Opening Balance</span>
                     <span className="text-lg font-bold">
-                      ${cashFlow?.opening_balance.toFixed(2) || '0.00'}
+                      {format(cashFlow?.opening_balance || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pl-4 text-green-600">
                     <span>Cash Inflow</span>
                     <span className="font-medium">
-                      +${cashFlow?.cash_inflow.toFixed(2) || '0.00'}
+                      +{format(cashFlow?.cash_inflow || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pl-4 text-red-600">
                     <span>Cash Outflow</span>
                     <span className="font-medium">
-                      -${cashFlow?.cash_outflow.toFixed(2) || '0.00'}
+                      -{format(cashFlow?.cash_outflow || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">Net Cash from Operations</span>
                     <span className={`font-bold ${(cashFlow?.cash_from_operations || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ${cashFlow?.cash_from_operations.toFixed(2) || '0.00'}
+                      {format(cashFlow?.cash_from_operations || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t-2">
                     <span className="text-lg font-bold">Closing Balance</span>
                     <span className="text-2xl font-bold text-primary">
-                      ${cashFlow?.closing_balance.toFixed(2) || '0.00'}
+                      {format(cashFlow?.closing_balance || 0)}
                     </span>
                   </div>
                 </div>
@@ -628,9 +628,9 @@ export default function Reports() {
                           {product.category && <Badge variant="secondary">{product.category}</Badge>}
                         </TableCell>
                         <TableCell className="text-right">{product.total_quantity_sold}</TableCell>
-                        <TableCell className="text-right">${product.total_revenue.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{format(product.total_revenue)}</TableCell>
                         <TableCell className="text-right text-green-600 font-medium">
-                          ${product.total_profit.toFixed(2)}
+                          {format(product.total_profit)}
                         </TableCell>
                         <TableCell className="text-right">
                           {product.total_revenue > 0 
@@ -674,9 +674,9 @@ export default function Reports() {
                           <Badge variant="outline">{category.product_count}</Badge>
                         </TableCell>
                         <TableCell className="text-right">{category.total_items_sold}</TableCell>
-                        <TableCell className="text-right">${category.total_revenue.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{format(category.total_revenue)}</TableCell>
                         <TableCell className="text-right text-green-600 font-medium">
-                          ${category.total_profit.toFixed(2)}
+                          {format(category.total_profit)}
                         </TableCell>
                         <TableCell className="text-right">
                           {category.total_revenue > 0

@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/authStore";
+import { useCurrency } from "@/hooks/useCurrency";
+import { currencyFormatter } from "@/lib/currency";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Check,
@@ -135,6 +137,7 @@ type ViewMode = "grid" | "list";
 
 export default function Sales() {
   const { user } = useAuthStore();
+  const { format } = useCurrency();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -970,7 +973,7 @@ export default function Sales() {
           <DialogHeader>
             <DialogTitle>Complete Payment</DialogTitle>
             <DialogDescription>
-              Total: ${cartTotal.toFixed(2)}
+              Total: {format(cartTotal)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1086,6 +1089,10 @@ export default function Sales() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+/AlertDialog>
     </div>
   );
 }

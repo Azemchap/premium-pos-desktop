@@ -96,6 +96,7 @@ interface InventoryMovement {
 }
 
 export default function Inventory() {
+  const { format } = useCurrency();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -289,7 +290,7 @@ export default function Inventory() {
                   Total Value
                 </p>
                 <p className="text-2xl font-bold">
-                  ${totalValue.toFixed(2)}
+                  {format(totalValue)}
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/20">
@@ -493,10 +494,10 @@ export default function Inventory() {
                           </TableCell>
                           <TableCell>
                             <div className="font-medium">
-                              ${stockValue.toFixed(2)}
+                              {format(stockValue)}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              @${item.product?.cost_price.toFixed(2)}
+                              @{format(item.product?.cost_price || 0)}
                             </div>
                           </TableCell>
                           <TableCell>

@@ -89,6 +89,7 @@ interface Product {
 }
 
 export default function Products() {
+  const { format } = useCurrency();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -477,11 +478,11 @@ export default function Products() {
                     <TableCell>
                       <div>
                         <div className="font-medium">
-                          ${product.selling_price.toFixed(2)}
+                          {format(product.selling_price)}
                         </div>
                         {product.cost_price > 0 && (
                           <div className="text-sm text-muted-foreground">
-                            Cost: ${product.cost_price.toFixed(2)}
+                            Cost: {format(product.cost_price)}
                           </div>
                         )}
                       </div>

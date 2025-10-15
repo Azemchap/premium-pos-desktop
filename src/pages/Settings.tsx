@@ -33,6 +33,7 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface StoreConfig {
   id: number;
@@ -72,19 +73,14 @@ export default function Settings() {
   });
 
   const { theme, toggleTheme } = useAuthStore();
+  const { currency, changeCurrency, availableCurrencies } = useCurrency();
   const [autoSave, setAutoSave] = useState(true);
   const [lowStockAlerts, setLowStockAlerts] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [soundEffects, setSoundEffects] = useState(true);
 
-  const currencies = [
-    { code: "USD", name: "US Dollar ($)", symbol: "$" },
-    { code: "EUR", name: "Euro (€)", symbol: "€" },
-    { code: "GBP", name: "British Pound (£)", symbol: "£" },
-    { code: "JPY", name: "Japanese Yen (¥)", symbol: "¥" },
-    { code: "CAD", name: "Canadian Dollar (CA$)", symbol: "CA$" },
-    { code: "AUD", name: "Australian Dollar (A$)", symbol: "A$" },
-  ];
+  // Using availableCurrencies from useCurrency hook instead
+  // const currencies = availableCurrencies;
 
   const timezones = [
     "America/New_York",
@@ -292,9 +288,9 @@ export default function Settings() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {currencies.map((currency) => (
-                            <SelectItem key={currency.code} value={currency.code}>
-                              {currency.name}
+                          {availableCurrencies.map((curr) => (
+                            <SelectItem key={curr.code} value={curr.code}>
+                              {curr.name} ({curr.symbol})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -433,6 +429,42 @@ export default function Settings() {
 
         {/* Appearance */}
         <TabsContent value="appearance">
+          {/* Currency Preferences Card */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Currency Preferences</CardTitle>
+              <CardDescription>
+                Select your preferred currency for the entire app
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="app-currency">App Currency</Label>
+                <Select value={currency.code} onValueChange={(value: any) => {
+                  changeCurrency(value);
+                  toast.success(`✅ Currency changed to ${availableCurrencies.find(c => c.code === value)?.name}`);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCurrencies.map((curr) => (
+                      <SelectItem key={curr.code} value={curr.code}>
+                        {curr.name} ({curr.symbol})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Current: <strong>{currency.name}</strong> - Format example: <strong>{currency.code === 'USD' ? '$1,234.56' : '1 234 FCFA'}</strong>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  This affects how all prices are displayed throughout the app, including sales, products, and reports.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Appearance Settings</CardTitle>

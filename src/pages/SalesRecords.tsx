@@ -329,8 +329,8 @@ export default function SalesRecords() {
                   <span>${item.product?.name || 'Product #' + item.product_id}</span>
                 </div>
                 <div class="item">
-                  <span>&nbsp;&nbsp;${item.quantity} x $${item.unit_price.toFixed(2)}</span>
-                  <span>$${item.line_total.toFixed(2)}</span>
+                  <span>&nbsp;&nbsp;${item.quantity} x ${currencyFormatter.format(item.unit_price)}</span>
+                  <span>${currencyFormatter.format(item.line_total)}</span>
                 </div>
               `).join('')}
             </div>
@@ -338,21 +338,21 @@ export default function SalesRecords() {
             <div class="totals">
               <div class="total-row">
                 <span>Subtotal:</span>
-                <span>$${selectedSale.subtotal.toFixed(2)}</span>
+                <span>${currencyFormatter.format(selectedSale.subtotal)}</span>
               </div>
               <div class="total-row">
                 <span>Tax:</span>
-                <span>$${selectedSale.tax_amount.toFixed(2)}</span>
+                <span>${currencyFormatter.format(selectedSale.tax_amount)}</span>
               </div>
               ${selectedSale.discount_amount > 0 ? `
                 <div class="total-row">
                   <span>Discount:</span>
-                  <span>-$${selectedSale.discount_amount.toFixed(2)}</span>
+                  <span>-${currencyFormatter.format(selectedSale.discount_amount)}</span>
                 </div>
               ` : ''}
               <div class="total-row grand-total">
                 <span>TOTAL:</span>
-                <span>$${selectedSale.total_amount.toFixed(2)}</span>
+                <span>${currencyFormatter.format(selectedSale.total_amount)}</span>
               </div>
             </div>
             
@@ -431,7 +431,7 @@ export default function SalesRecords() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Sales</p>
-                  <p className="text-2xl font-bold">${stats.total_sales.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(stats.total_sales)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {stats.total_transactions} transactions
                   </p>
@@ -446,7 +446,7 @@ export default function SalesRecords() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Profit</p>
-                  <p className="text-2xl font-bold text-green-600">${stats.total_profit.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_profit)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {stats.profit_margin.toFixed(1)}% margin
                   </p>
@@ -461,7 +461,7 @@ export default function SalesRecords() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Avg Transaction</p>
-                  <p className="text-2xl font-bold">${stats.average_transaction.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(stats.average_transaction)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     per sale
                   </p>
@@ -657,16 +657,16 @@ export default function SalesRecords() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="font-medium">${sale.total_amount.toFixed(2)}</div>
+                      <div className="font-medium">{formatCurrency(sale.total_amount)}</div>
                       {sale.discount_amount > 0 && (
                         <div className="text-xs text-red-600">
-                          -${sale.discount_amount.toFixed(2)}
+                          -{formatCurrency(sale.discount_amount)}
                         </div>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className={`font-medium ${sale.profit > 0 ? "text-green-600" : "text-red-600"}`}>
-                        ${sale.profit.toFixed(2)}
+                        {formatCurrency(sale.profit)}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {sale.total_amount > 0 ? ((sale.profit / sale.total_amount) * 100).toFixed(1) : 0}% margin
@@ -768,9 +768,9 @@ export default function SalesRecords() {
                           {item.product?.name || `Product #${item.product_id}`}
                         </TableCell>
                         <TableCell>{item.quantity}</TableCell>
-                        <TableCell>${item.unit_price.toFixed(2)}</TableCell>
+                        <TableCell>{formatCurrency(item.unit_price)}</TableCell>
                         <TableCell className="text-right font-medium">
-                          ${item.line_total.toFixed(2)}
+                          {formatCurrency(item.line_total)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -783,21 +783,21 @@ export default function SalesRecords() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">${selectedSale.subtotal.toFixed(2)}</span>
+                    <span className="font-medium">{formatCurrency(selectedSale.subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tax</span>
-                    <span className="font-medium">${selectedSale.tax_amount.toFixed(2)}</span>
+                    <span className="font-medium">{formatCurrency(selectedSale.tax_amount)}</span>
                   </div>
                   {selectedSale.discount_amount > 0 && (
                     <div className="flex justify-between text-red-600">
                       <span>Discount</span>
-                      <span className="font-medium">-${selectedSale.discount_amount.toFixed(2)}</span>
+                      <span className="font-medium">-{formatCurrency(selectedSale.discount_amount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-lg font-bold border-t pt-2">
                     <span>Total</span>
-                    <span>${selectedSale.total_amount.toFixed(2)}</span>
+                    <span>{formatCurrency(selectedSale.total_amount)}</span>
                   </div>
                 </div>
               </div>

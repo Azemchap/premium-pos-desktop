@@ -151,8 +151,8 @@ export default function ReceiptTemplate({
                   {productsMap[item.product_id] || `Product #${item.product_id}`}
                 </td>
                 <td className="text-center">{item.quantity}</td>
-                <td className="text-right">${item.unit_price.toFixed(2)}</td>
-                <td className="text-right font-medium">${item.line_total.toFixed(2)}</td>
+                <td className="text-right">{currencyFormatter.format(item.unit_price)}</td>
+                <td className="text-right font-medium">{currencyFormatter.format(item.line_total)}</td>
               </tr>
             ))}
           </tbody>
@@ -163,21 +163,21 @@ export default function ReceiptTemplate({
       <div className="mb-6 text-xs space-y-1">
         <div className="flex justify-between">
           <span>Subtotal:</span>
-          <span>${subtotal.toFixed(2)}</span>
+          <span>{currencyFormatter.format(subtotal)}</span>
         </div>
         {discount > 0 && (
           <div className="flex justify-between text-red-600">
             <span>Discount:</span>
-            <span>-${discount.toFixed(2)}</span>
+            <span>-{currencyFormatter.format(discount)}</span>
           </div>
         )}
         <div className="flex justify-between">
           <span>Tax:</span>
-          <span>${tax.toFixed(2)}</span>
+          <span>{currencyFormatter.format(tax)}</span>
         </div>
         <div className="flex justify-between text-lg font-bold border-t-2 border-black pt-2 mt-2">
           <span>TOTAL:</span>
-          <span>${total.toFixed(2)}</span>
+          <span>{currencyFormatter.format(total)}</span>
         </div>
       </div>
 
@@ -191,12 +191,12 @@ export default function ReceiptTemplate({
           <>
             <div className="flex justify-between">
               <span>Amount Received:</span>
-              <span>${amountReceived.toFixed(2)}</span>
+              <span>{currencyFormatter.format(amountReceived)}</span>
             </div>
             {change !== undefined && change > 0 && (
               <div className="flex justify-between font-bold">
                 <span>Change:</span>
-                <span>${change.toFixed(2)}</span>
+                <span>{currencyFormatter.format(change)}</span>
               </div>
             )}
           </>

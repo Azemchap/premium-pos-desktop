@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAuthStore } from "@/store/authStore";
+import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 
 interface DashboardStats {
@@ -53,6 +54,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const { user } = useAuthStore();
+    const { format: formatCurrency } = useCurrency();
 
     const loadDashboardData = async () => {
         try {
