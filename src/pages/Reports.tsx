@@ -697,10 +697,3 @@ export default function Reports() {
     </div>
   );
 }
-d>
-          </TabsContent>
-        </Tabs>
-      )}
-    </div>
-  );
-}
