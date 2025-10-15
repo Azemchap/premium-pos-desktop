@@ -39,9 +39,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuthStore } from "@/store/authStore";
 import { useCurrency } from "@/hooks/useCurrency";
 import { currencyFormatter } from "@/lib/currency";
+import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Check,
@@ -60,10 +60,8 @@ import {
   User
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import ReceiptTemplate from "@/components/ReceiptTemplate";
 
 // Zod validation schemas
 const customerSchema = z.object({
@@ -1089,10 +1087,6 @@ export default function Sales() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
-/AlertDialog>
     </div>
   );
 }

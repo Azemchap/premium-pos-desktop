@@ -12,6 +12,7 @@ import Inventory from "@/pages/Inventory";
 import Users from "@/pages/Users";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
+import Notifications from "./pages/Notifications";
 
 function App() {
   const { isAuthenticated, theme } = useAuthStore();

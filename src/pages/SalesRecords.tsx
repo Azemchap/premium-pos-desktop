@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { currencyFormatter, formatCurrency } from "@/lib/currency";
 import { invoke } from "@tauri-apps/api/core";
 import { format, startOfMonth, startOfQuarter, startOfWeek, startOfYear } from "date-fns";
 import {
