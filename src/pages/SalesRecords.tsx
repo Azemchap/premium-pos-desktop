@@ -213,41 +213,25 @@ export default function SalesRecords() {
     try {
       toast.success("🖨️ Preparing receipt...");
 
-      const printContainer = document.createElement("div");
-      printContainer.style.position = "absolute";
-      printContainer.style.left = "-9999px";
-      printContainer.style.top = "0";
-      document.body.appendChild(printContainer);
+      // Create iframe for printing
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'absolute';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
 
-      const root = createRoot(printContainer);
-      root.render(
-        <ReceiptTemplate
-          saleNumber={selectedSale.sale_number}
-          date={selectedSale.created_at}
-          items={saleItems.map(item => ({
-            product_id: item.product_id,
-            product_name: item.product?.name,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            line_total: item.line_total,
-          }))}
-          subtotal={selectedSale.subtotal}
-          tax={selectedSale.tax_amount}
-          discount={selectedSale.discount_amount}
-          total={selectedSale.total_amount}
-          paymentMethod={selectedSale.payment_method}
-          customerName={selectedSale.customer_name}
-          customerPhone={selectedSale.customer_phone}
-          cashierName={selectedSaleDetails?.cashier_name}
-        />
-      );
+      const iframeDoc = iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        toast.error("❌ Failed to create print frame");
+        return;
+      }
 
-      // Wait for render
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get store info
+      const storeInfo = await invoke<any>("get_store_config").catch(() => null);
       
-      const receiptContent = printContainer.innerHTML;
-
-      const printContent = `
+      // Build receipt HTML directly
+      const receiptHTML = `
         <!DOCTYPE html>
         <html>
           <head>
@@ -259,63 +243,148 @@ export default function SalesRecords() {
                   size: 80mm auto;
                   margin: 0;
                 }
-                body {
-                  margin: 0;
-                  padding: 0;
-                }
               }
               body {
                 font-family: 'Courier New', monospace;
-                padding: 10px;
-                max-width: 80mm;
-                margin: 0 auto;
                 font-size: 12px;
+                max-width: 80mm;
+                margin: 0;
+                padding: 10px;
               }
-              * {
-                box-sizing: border-box;
+              .header {
+                text-align: center;
+                border-bottom: 2px dashed #000;
+                padding-bottom: 10px;
+                margin-bottom: 10px;
+              }
+              .header h1 {
+                margin: 0;
+                font-size: 18px;
+              }
+              .header p {
+                margin: 2px 0;
+                font-size: 10px;
+              }
+              .info {
+                margin-bottom: 10px;
+                font-size: 11px;
+              }
+              .items {
+                border-top: 1px solid #000;
+                border-bottom: 1px solid #000;
+                padding: 5px 0;
+                margin: 10px 0;
+              }
+              .item {
+                display: flex;
+                justify-content: space-between;
+                margin: 3px 0;
+              }
+              .totals {
+                margin-top: 10px;
+              }
+              .total-row {
+                display: flex;
+                justify-content: space-between;
+                margin: 2px 0;
+              }
+              .grand-total {
+                font-weight: bold;
+                font-size: 14px;
+                border-top: 2px solid #000;
+                padding-top: 5px;
+                margin-top: 5px;
+              }
+              .footer {
+                text-align: center;
+                margin-top: 15px;
+                border-top: 2px dashed #000;
+                padding-top: 10px;
+                font-size: 10px;
               }
             </style>
           </head>
-          <body onload="window.print(); setTimeout(function(){ window.close(); }, 500);">
-            ${receiptContent}
+          <body>
+            <div class="header">
+              <h1>${storeInfo?.store_name || 'Premium POS'}</h1>
+              ${storeInfo ? `
+                <p>${storeInfo.address}</p>
+                <p>${storeInfo.city}, ${storeInfo.state} ${storeInfo.zip_code}</p>
+                <p>Tel: ${storeInfo.phone}</p>
+                ${storeInfo.email ? `<p>${storeInfo.email}</p>` : ''}
+              ` : ''}
+            </div>
+            
+            <div class="info">
+              <p><strong>Receipt #:</strong> ${selectedSale.sale_number}</p>
+              <p><strong>Date:</strong> ${format(new Date(selectedSale.created_at), "MMM dd, yyyy hh:mm a")}</p>
+              ${selectedSaleDetails?.cashier_name ? `<p><strong>Cashier:</strong> ${selectedSaleDetails.cashier_name}</p>` : ''}
+              ${selectedSale.customer_name ? `<p><strong>Customer:</strong> ${selectedSale.customer_name}</p>` : ''}
+              ${selectedSale.customer_phone ? `<p><strong>Phone:</strong> ${selectedSale.customer_phone}</p>` : ''}
+            </div>
+            
+            <div class="items">
+              ${saleItems.map((item) => `
+                <div class="item">
+                  <span>${item.product?.name || 'Product #' + item.product_id}</span>
+                </div>
+                <div class="item">
+                  <span>&nbsp;&nbsp;${item.quantity} x $${item.unit_price.toFixed(2)}</span>
+                  <span>$${item.line_total.toFixed(2)}</span>
+                </div>
+              `).join('')}
+            </div>
+            
+            <div class="totals">
+              <div class="total-row">
+                <span>Subtotal:</span>
+                <span>$${selectedSale.subtotal.toFixed(2)}</span>
+              </div>
+              <div class="total-row">
+                <span>Tax:</span>
+                <span>$${selectedSale.tax_amount.toFixed(2)}</span>
+              </div>
+              ${selectedSale.discount_amount > 0 ? `
+                <div class="total-row">
+                  <span>Discount:</span>
+                  <span>-$${selectedSale.discount_amount.toFixed(2)}</span>
+                </div>
+              ` : ''}
+              <div class="total-row grand-total">
+                <span>TOTAL:</span>
+                <span>$${selectedSale.total_amount.toFixed(2)}</span>
+              </div>
+            </div>
+            
+            <div class="info">
+              <p><strong>Payment:</strong> ${selectedSale.payment_method.toUpperCase()}</p>
+            </div>
+            
+            <div class="footer">
+              <p><strong>Thank you for your purchase!</strong></p>
+              <p>Please keep this receipt for your records</p>
+              <p style="font-size: 9px;">Powered by Premium POS System</p>
+            </div>
           </body>
         </html>
       `;
 
-      try {
-        const printWindow = window.open("", "_blank", "width=300,height=600");
-        
-        if (printWindow) {
-          printWindow.document.open();
-          printWindow.document.write(printContent);
-          printWindow.document.close();
-          toast.success("✅ Receipt opened!");
-        } else {
-          // Fallback: download HTML file
-          const blob = new Blob([printContent], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `receipt-${selectedSale.sale_number}.html`;
-          a.click();
-          URL.revokeObjectURL(url);
-          toast.success("✅ Receipt downloaded! Open to print.");
-        }
-      } catch (err) {
-        console.error("Print error:", err);
-        const blob = new Blob([printContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `receipt-${selectedSale.sale_number}.html`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success("✅ Receipt downloaded! Open to print.");
-      }
+      iframeDoc.open();
+      iframeDoc.write(receiptHTML);
+      iframeDoc.close();
 
+      // Wait for content to load, then print
       setTimeout(() => {
-        document.body.removeChild(printContainer);
-      }, 1500);
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        toast.success("✅ Receipt sent to printer!");
+        
+        // Clean up after printing
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      }, 500);
+
     } catch (error) {
       console.error("Failed to print receipt:", error);
       toast.error("❌ Failed to print receipt");
