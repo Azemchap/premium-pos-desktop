@@ -113,6 +113,8 @@ interface CategoryPerformance {
 type DateRange = "today" | "week" | "month" | "quarter" | "year" | "custom";
 
 export default function Reports() {
+  const { user } = useAuthStore();
+  const { format: formatCurrency } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
   const [financialMetrics, setFinancialMetrics] = useState<FinancialMetrics | null>(null);
@@ -126,7 +128,7 @@ export default function Reports() {
 
   const getDateRangeDates = (): { start: string; end: string } => {
     const today = new Date();
-    const formatDate = (d: Date) => format(d, "yyyy-MM-dd");
+    const formatDate = (d: Date) => formatCurrency(d, "yyyy-MM-dd");
 
     switch (dateRange) {
       case "today":
@@ -302,25 +304,25 @@ export default function Reports() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <MetricCard
                 title="Total Sales"
-                value={salesReport ? format(salesReport.total_sales) : '0'}
+                value={salesReport ? formatCurrency(salesReport.total_sales) : '0'}
                 subtitle={`${salesReport?.total_transactions || 0} transactions`}
                 icon={DollarSign}
               />
               <MetricCard
                 title="Gross Profit"
-                value={format(financialMetrics?.gross_profit || 0)}
+                value={formatCurrency(financialMetrics?.gross_profit || 0)}
                 subtitle={`${financialMetrics?.gross_profit_margin.toFixed(1) || 0}% margin`}
                 icon={TrendingUp}
               />
               <MetricCard
                 title="Net Profit"
-                value={format(financialMetrics?.net_profit || 0)}
+                value={formatCurrency(financialMetrics?.net_profit || 0)}
                 subtitle={`${financialMetrics?.net_profit_margin.toFixed(1) || 0}% margin`}
                 icon={Target}
               />
               <MetricCard
                 title="Avg Transaction"
-                value={format(salesReport?.average_transaction || 0)}
+                value={formatCurrency(salesReport?.average_transaction || 0)}
                 subtitle={`${financialMetrics?.average_basket_size.toFixed(1) || 0} items/sale`}
                 icon={ShoppingCart}
               />
@@ -339,7 +341,7 @@ export default function Reports() {
                   <div className="p-4 bg-green-50 rounded-lg">
                     <p className="text-sm text-green-800 font-medium">Cash</p>
                     <p className="text-2xl font-bold text-green-600">
-                      {format(salesReport?.cash_sales || 0)}
+                      {formatCurrency(salesReport?.cash_sales || 0)}
                     </p>
                     <p className="text-xs text-green-700 mt-1">
                       {salesReport && salesReport.total_sales > 0
@@ -350,7 +352,7 @@ export default function Reports() {
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800 font-medium">Card</p>
                     <p className="text-2xl font-bold text-blue-600">
-                      {format(salesReport?.card_sales || 0)}
+                      {formatCurrency(salesReport?.card_sales || 0)}
                     </p>
                     <p className="text-xs text-blue-700 mt-1">
                       {salesReport && salesReport.total_sales > 0
@@ -361,7 +363,7 @@ export default function Reports() {
                   <div className="p-4 bg-purple-50 rounded-lg">
                     <p className="text-sm text-purple-800 font-medium">Mobile</p>
                     <p className="text-2xl font-bold text-purple-600">
-                      {format(salesReport?.mobile_sales || 0)}
+                      {formatCurrency(salesReport?.mobile_sales || 0)}
                     </p>
                     <p className="text-xs text-purple-700 mt-1">
                       {salesReport && salesReport.total_sales > 0
@@ -372,7 +374,7 @@ export default function Reports() {
                   <div className="p-4 bg-orange-50 rounded-lg">
                     <p className="text-sm text-orange-800 font-medium">Check</p>
                     <p className="text-2xl font-bold text-orange-600">
-                      {format(salesReport?.check_sales || 0)}
+                      {formatCurrency(salesReport?.check_sales || 0)}
                     </p>
                     <p className="text-xs text-orange-700 mt-1">
                       {salesReport && salesReport.total_sales > 0
@@ -408,12 +410,12 @@ export default function Reports() {
                         <TableCell className="font-medium">
                           {formatDate(new Date(day.date), "MMM dd, yyyy")}
                         </TableCell>
-                        <TableCell>{format(day.total_sales)}</TableCell>
+                        <TableCell>{formatCurrency(day.total_sales)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{day.transaction_count}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          {format(day.average_transaction)}
+                          {formatCurrency(day.average_transaction)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -457,37 +459,37 @@ export default function Reports() {
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">Revenue</span>
                     <span className="text-lg font-bold text-green-600">
-                      {format(salesReport?.total_sales || 0)}
+                      {formatCurrency(salesReport?.total_sales || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pl-4">
                     <span className="text-muted-foreground">Cost of Goods Sold</span>
                     <span className="text-red-600">
-                      -{format(financialMetrics?.total_cogs || 0)}
+                      -{formatCurrency(financialMetrics?.total_cogs || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">Gross Profit</span>
                     <span className="text-lg font-bold">
-                      {format(financialMetrics?.gross_profit || 0)}
+                      {formatCurrency(financialMetrics?.gross_profit || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pl-4">
                     <span className="text-muted-foreground">Operating Expenses</span>
                     <span className="text-red-600">
-                      -{format(financialMetrics?.operating_expenses || 0)}
+                      -{formatCurrency(financialMetrics?.operating_expenses || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pl-4">
                     <span className="text-muted-foreground">Tax</span>
                     <span className="text-red-600">
-                      -{format(salesReport?.total_tax || 0)}
+                      -{formatCurrency(salesReport?.total_tax || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t-2">
                     <span className="text-lg font-bold">Net Profit</span>
                     <span className={`text-2xl font-bold ${(financialMetrics?.net_profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {format(financialMetrics?.net_profit || 0)}
+                      {formatCurrency(financialMetrics?.net_profit || 0)}
                     </span>
                   </div>
                 </div>
@@ -531,19 +533,19 @@ export default function Reports() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <MetricCard
                 title="Cash Inflow"
-                value={format(cashFlow?.cash_inflow || 0)}
+                value={formatCurrency(cashFlow?.cash_inflow || 0)}
                 subtitle="From sales"
                 icon={TrendingUp}
               />
               <MetricCard
                 title="Cash Outflow"
-                value={format(cashFlow?.cash_outflow || 0)}
+                value={formatCurrency(cashFlow?.cash_outflow || 0)}
                 subtitle="COGS + expenses"
                 icon={TrendingDown}
               />
               <MetricCard
                 title="Net Cash Flow"
-                value={format(cashFlow?.net_cash_flow || 0)}
+                value={formatCurrency(cashFlow?.net_cash_flow || 0)}
                 subtitle={`${(cashFlow?.net_cash_flow || 0) >= 0 ? 'Positive' : 'Negative'} flow`}
                 icon={(cashFlow?.net_cash_flow || 0) >= 0 ? ArrowUpRight : ArrowDownRight}
               />
@@ -562,31 +564,31 @@ export default function Reports() {
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Opening Balance</span>
                     <span className="text-lg font-bold">
-                      {format(cashFlow?.opening_balance || 0)}
+                      {formatCurrency(cashFlow?.opening_balance || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pl-4 text-green-600">
                     <span>Cash Inflow</span>
                     <span className="font-medium">
-                      +{format(cashFlow?.cash_inflow || 0)}
+                      +{formatCurrency(cashFlow?.cash_inflow || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pl-4 text-red-600">
                     <span>Cash Outflow</span>
                     <span className="font-medium">
-                      -{format(cashFlow?.cash_outflow || 0)}
+                      -{formatCurrency(cashFlow?.cash_outflow || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">Net Cash from Operations</span>
                     <span className={`font-bold ${(cashFlow?.cash_from_operations || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {format(cashFlow?.cash_from_operations || 0)}
+                      {formatCurrency(cashFlow?.cash_from_operations || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t-2">
                     <span className="text-lg font-bold">Closing Balance</span>
                     <span className="text-2xl font-bold text-primary">
-                      {format(cashFlow?.closing_balance || 0)}
+                      {formatCurrency(cashFlow?.closing_balance || 0)}
                     </span>
                   </div>
                 </div>
@@ -628,9 +630,9 @@ export default function Reports() {
                           {product.category && <Badge variant="secondary">{product.category}</Badge>}
                         </TableCell>
                         <TableCell className="text-right">{product.total_quantity_sold}</TableCell>
-                        <TableCell className="text-right">{format(product.total_revenue)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(product.total_revenue)}</TableCell>
                         <TableCell className="text-right text-green-600 font-medium">
-                          {format(product.total_profit)}
+                          {formatCurrency(product.total_profit)}
                         </TableCell>
                         <TableCell className="text-right">
                           {product.total_revenue > 0 
@@ -674,9 +676,9 @@ export default function Reports() {
                           <Badge variant="outline">{category.product_count}</Badge>
                         </TableCell>
                         <TableCell className="text-right">{category.total_items_sold}</TableCell>
-                        <TableCell className="text-right">{format(category.total_revenue)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(category.total_revenue)}</TableCell>
                         <TableCell className="text-right text-green-600 font-medium">
-                          {format(category.total_profit)}
+                          {formatCurrency(category.total_profit)}
                         </TableCell>
                         <TableCell className="text-right">
                           {category.total_revenue > 0

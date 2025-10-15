@@ -139,23 +139,23 @@ export default function SalesRecords() {
 
   const getDateRangeDates = (range: DateRange): { start: string; end: string } => {
     const today = new Date();
-    const formatDate = (date: Date) => format(date, "yyyy-MM-dd");
+    const formatDateString = (date: Date) => formatDate(date, "yyyy-MM-dd");
 
     switch (range) {
       case "today":
-        return { start: formatDate(today), end: formatDate(today) };
+        return { start: formatDateString(today), end: formatDateString(today) };
       case "week":
-        return { start: formatDate(startOfWeek(today)), end: formatDate(today) };
+        return { start: formatDateString(startOfWeek(today)), end: formatDateString(today) };
       case "month":
-        return { start: formatDate(startOfMonth(today)), end: formatDate(today) };
+        return { start: formatDateString(startOfMonth(today)), end: formatDateString(today) };
       case "quarter":
-        return { start: formatDate(startOfQuarter(today)), end: formatDate(today) };
+        return { start: formatDateString(startOfQuarter(today)), end: formatDateString(today) };
       case "year":
-        return { start: formatDate(startOfYear(today)), end: formatDate(today) };
+        return { start: formatDateString(startOfYear(today)), end: formatDateString(today) };
       case "custom":
         return { start: startDate, end: endDate };
       default:
-        return { start: formatDate(today), end: formatDate(today) };
+        return { start: formatDateString(today), end: formatDateString(today) };
     }
   };
 
@@ -480,15 +480,15 @@ export default function SalesRecords() {
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span>Cash</span>
-                    <span className="font-medium">${stats.cash_sales.toFixed(0)}</span>
+                    <span className="font-medium">{formatCurrency(stats.cash_sales)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span>Card</span>
-                    <span className="font-medium">${stats.card_sales.toFixed(0)}</span>
+                    <span className="font-medium">{formatCurrency(stats.card_sales)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span>Mobile</span>
-                    <span className="font-medium">${stats.mobile_sales.toFixed(0)}</span>
+                    <span className="font-medium">{formatCurrency(stats.mobile_sales)}</span>
                   </div>
                 </div>
               </div>
