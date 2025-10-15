@@ -154,6 +154,8 @@ export default function Sales() {
   const [notes, setNotes] = useState("");
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [completedSaleNumber, setCompletedSaleNumber] = useState("");
+  const [completedSaleData, setCompletedSaleData] = useState<any>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   // View mode with localStorage persistence
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -342,13 +344,31 @@ export default function Sales() {
         shiftId: null,
       });
 
-      // Extract sale number from result
-      const saleNumber = (result as any).sale_number || "SALE-000";
+      // Extract sale data from result
+      const saleData = result as any;
+      const saleNumber = saleData.sale_number || "SALE-000";
       setCompletedSaleNumber(saleNumber);
-
+      
+      // Store complete sale data for receipt
+      setCompletedSaleData({
+        ...saleData,
+        items: cart.map((item) => ({
+          product_id: item.product.id,
+          product_name: item.product.name,
+          quantity: item.quantity,
+          unit_price: item.price,
+          line_total: item.price * item.quantity,
+        })),
+        customer_name: customerInfo.name,
+        customer_phone: customerInfo.phone,
+        cashier_name: user?.full_name || `${user?.first_name} ${user?.last_name}`,
+        amount_received: paymentInfo.amountReceived,
+        change: change,
+      });
+      
       setIsPaymentDialogOpen(false);
       setIsCompletionDialogOpen(true);
-
+      
       toast.success(`🎉 Sale ${saleNumber} completed successfully!`, {
         duration: 5000,
       });
@@ -366,12 +386,96 @@ export default function Sales() {
   };
 
   const printReceipt = () => {
-    toast.success("🖨️ Printing receipt...");
-    // TODO: Implement actual receipt printing
+    if (!completedSaleData) {
+      toast.error("❌ No sale data available");
+      return;
+    }
+
+    toast.success("🖨️ Preparing receipt...");
+
+    // Create a hidden print container
+    const printContainer = document.createElement("div");
+    printContainer.style.position = "absolute";
+    printContainer.style.left = "-9999px";
+    document.body.appendChild(printContainer);
+
+    // Render the receipt
+    const root = createRoot(printContainer);
+    root.render(
+      <ReceiptTemplate
+        saleNumber={completedSaleData.sale_number}
+        date={completedSaleData.created_at}
+        items={completedSaleData.items}
+        subtotal={completedSaleData.subtotal}
+        tax={completedSaleData.tax_amount}
+        discount={completedSaleData.discount_amount}
+        total={completedSaleData.total_amount}
+        paymentMethod={completedSaleData.payment_method}
+        amountReceived={completedSaleData.amount_received}
+        change={completedSaleData.change}
+        customerName={completedSaleData.customer_name}
+        customerPhone={completedSaleData.customer_phone}
+        cashierName={completedSaleData.cashier_name}
+      />
+    );
+
+    // Wait for render and print
     setTimeout(() => {
-      toast.success("✅ Receipt printed!");
-      setIsCompletionDialogOpen(false);
-    }, 1500);
+      const receiptContent = printContainer.innerHTML;
+      const printWindow = window.open("", "_blank");
+      
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Receipt - ${completedSaleData.sale_number}</title>
+              <style>
+                @media print {
+                  @page {
+                    size: 80mm auto;
+                    margin: 0;
+                  }
+                  body {
+                    margin: 0;
+                    padding: 0;
+                  }
+                }
+                body {
+                  font-family: 'Courier New', monospace;
+                  padding: 10px;
+                  max-width: 80mm;
+                  margin: 0 auto;
+                }
+                * {
+                  box-sizing: border-box;
+                }
+              </style>
+            </head>
+            <body>
+              ${receiptContent}
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        
+        // Trigger print dialog
+        printWindow.onload = () => {
+          printWindow.print();
+          toast.success("✅ Receipt sent to printer!");
+          
+          // Close print window after printing or cancelling
+          setTimeout(() => {
+            printWindow.close();
+          }, 100);
+        };
+      } else {
+        toast.error("❌ Failed to open print window");
+      }
+
+      // Clean up
+      document.body.removeChild(printContainer);
+    }, 500);
   };
 
   const filteredProducts = products.filter((product) => {

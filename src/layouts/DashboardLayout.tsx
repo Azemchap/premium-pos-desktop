@@ -80,9 +80,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isActive = (href: string) => {
     if (href === "/") {
-      return location.pathname === "/";
+      return location.pathname === "/" || location.pathname === "/dashboard";
     }
-    return location.pathname.startsWith(href);
+    // Exact match for paths to avoid overlap (e.g., /sales vs /sales-records)
+    return location.pathname === href;
   };
 
   return (

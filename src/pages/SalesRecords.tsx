@@ -37,10 +37,13 @@ import {
   Eye,
   X,
   Filter,
+  Printer,
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { format, subDays, startOfWeek, startOfMonth, startOfQuarter, startOfYear } from "date-fns";
+import ReceiptTemplate from "@/components/ReceiptTemplate";
+import { createRoot } from "react-dom/client";
 
 interface SaleWithDetails {
   id: number;
@@ -121,13 +124,14 @@ export default function SalesRecords() {
   const [stats, setStats] = useState<SalesStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [dateRange, setDateRange] = useState<DateRange>("today");
+  const [dateRange, setDateRange] = useState<DateRange>("month");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("all");
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedSaleDetails, setSelectedSaleDetails] = useState<SaleWithDetails | null>(null);
 
   const getDateRangeDates = (range: DateRange): { start: string; end: string } => {
     const today = new Date();
@@ -185,11 +189,107 @@ export default function SalesRecords() {
       const [sale, items] = await invoke<[Sale, SaleItem[]]>("get_sale_details", { saleId });
       setSelectedSale(sale);
       setSaleItems(items);
+      
+      // Find the sale with details for printing
+      const saleWithDetails = sales.find(s => s.id === saleId);
+      setSelectedSaleDetails(saleWithDetails || null);
+      
       setIsDetailsOpen(true);
+      toast.success("✅ Sale details loaded");
     } catch (error) {
       console.error("Failed to load sale details:", error);
-      toast.error("Failed to load sale details");
+      toast.error("❌ Failed to load sale details");
     }
+  };
+
+  const printSaleReceipt = () => {
+    if (!selectedSale || saleItems.length === 0) {
+      toast.error("❌ No sale data available");
+      return;
+    }
+
+    toast.success("🖨️ Preparing receipt...");
+
+    const printContainer = document.createElement("div");
+    printContainer.style.position = "absolute";
+    printContainer.style.left = "-9999px";
+    document.body.appendChild(printContainer);
+
+    const root = createRoot(printContainer);
+    root.render(
+      <ReceiptTemplate
+        saleNumber={selectedSale.sale_number}
+        date={selectedSale.created_at}
+        items={saleItems.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          line_total: item.line_total,
+        }))}
+        subtotal={selectedSale.subtotal}
+        tax={selectedSale.tax_amount}
+        discount={selectedSale.discount_amount}
+        total={selectedSale.total_amount}
+        paymentMethod={selectedSale.payment_method}
+        customerName={selectedSale.customer_name}
+        customerPhone={selectedSale.customer_phone}
+        cashierName={selectedSaleDetails?.cashier_name}
+      />
+    );
+
+    setTimeout(() => {
+      const receiptContent = printContainer.innerHTML;
+      const printWindow = window.open("", "_blank");
+      
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Receipt - ${selectedSale.sale_number}</title>
+              <style>
+                @media print {
+                  @page {
+                    size: 80mm auto;
+                    margin: 0;
+                  }
+                  body {
+                    margin: 0;
+                    padding: 0;
+                  }
+                }
+                body {
+                  font-family: 'Courier New', monospace;
+                  padding: 10px;
+                  max-width: 80mm;
+                  margin: 0 auto;
+                }
+                * {
+                  box-sizing: border-box;
+                }
+              </style>
+            </head>
+            <body>
+              ${receiptContent}
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        
+        printWindow.onload = () => {
+          printWindow.print();
+          toast.success("✅ Receipt sent to printer!");
+          
+          setTimeout(() => {
+            printWindow.close();
+          }, 100);
+        };
+      } else {
+        toast.error("❌ Failed to open print window");
+      }
+
+      document.body.removeChild(printContainer);
+    }, 500);
   };
 
   const filteredSales = sales.filter((sale) => {
@@ -624,9 +724,15 @@ export default function SalesRecords() {
             </div>
           )}
 
-          <Button variant="outline" onClick={() => setIsDetailsOpen(false)} className="w-full">
-            Close
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsDetailsOpen(false)} className="flex-1">
+              Close
+            </Button>
+            <Button onClick={printSaleReceipt} className="flex-1">
+              <Printer className="w-4 h-4 mr-2" />
+              Print Receipt
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
