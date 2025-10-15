@@ -1,4 +1,14 @@
 // src/pages/Sales.tsx - Enhanced with List/Grid Toggle, Validation, Toasts, and Completion Modal
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,16 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,7 +30,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -39,26 +38,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Check,
-  CreditCard,
+  CheckCircle2,
   DollarSign,
+  GridIcon,
+  List,
   Minus,
   Package,
   Plus,
-  QrCode,
+  Printer,
+  ReceiptIcon,
   Search,
   ShoppingCart,
   Trash2,
-  User,
-  X,
-  Grid3x3,
-  List,
-  Printer,
-  ReceiptText,
-  CheckCircle2,
+  User
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -235,10 +232,10 @@ export default function Sales() {
       cart.map((item) =>
         item.product.id === productId
           ? {
-              ...item,
-              quantity: newQuantity,
-              total: item.price * newQuantity + item.tax_amount * newQuantity,
-            }
+            ...item,
+            quantity: newQuantity,
+            total: item.price * newQuantity + item.tax_amount * newQuantity,
+          }
           : item
       )
     );
@@ -348,10 +345,10 @@ export default function Sales() {
       // Extract sale number from result
       const saleNumber = (result as any).sale_number || "SALE-000";
       setCompletedSaleNumber(saleNumber);
-      
+
       setIsPaymentDialogOpen(false);
       setIsCompletionDialogOpen(true);
-      
+
       toast.success(`🎉 Sale ${saleNumber} completed successfully!`, {
         duration: 5000,
       });
@@ -422,7 +419,7 @@ export default function Sales() {
               </>
             ) : (
               <>
-                <Grid3x3 className="w-4 h-4 mr-2" />
+                <GridIcon className="w-4 h-4 mr-2" />
                 Grid View
               </>
             )}
@@ -847,7 +844,7 @@ export default function Sales() {
               Print Receipt
             </Button>
             <Button onClick={startNewSale} className="w-full">
-              <ReceiptText className="w-4 h-4 mr-2" />
+              <ReceiptIcon className="w-4 h-4 mr-2" />
               New Sale
             </Button>
           </DialogFooter>
