@@ -243,6 +243,11 @@ async fn main() {
             // Dashboard commands
             commands::dashboard::get_stats,
             commands::dashboard::get_recent_activity,
+            // Report commands
+            commands::reports::get_sales_report,
+            commands::reports::get_product_performance,
+            commands::reports::get_daily_sales,
+            commands::reports::get_category_performance,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
