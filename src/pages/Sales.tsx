@@ -58,8 +58,10 @@ import {
   User
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createRoot } from "react-dom/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import ReceiptTemplate from "@/components/ReceiptTemplate";
 
 // Zod validation schemas
 const customerSchema = z.object({
@@ -155,7 +157,6 @@ export default function Sales() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [completedSaleNumber, setCompletedSaleNumber] = useState("");
   const [completedSaleData, setCompletedSaleData] = useState<any>(null);
-  const printRef = useRef<HTMLDivElement>(null);
 
   // View mode with localStorage persistence
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
