@@ -226,6 +226,8 @@ async fn main() {
             // Sales commands
             commands::sales::create_sale,
             commands::sales::get_sales,
+            commands::sales::get_sales_with_details,
+            commands::sales::get_sales_stats,
             commands::sales::void_sale,
             commands::sales::get_sale_details,
             commands::sales::search_sales,

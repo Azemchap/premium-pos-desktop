@@ -1,7 +1,47 @@
 use crate::models::{CreateSaleRequest, Sale, SaleItem};
+use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
 use tauri::{command, State};
 use uuid::Uuid;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SaleWithDetails {
+    pub id: i64,
+    pub sale_number: String,
+    pub subtotal: f64,
+    pub tax_amount: f64,
+    pub discount_amount: f64,
+    pub total_amount: f64,
+    pub payment_method: String,
+    pub payment_status: String,
+    pub cashier_id: i64,
+    pub cashier_name: Option<String>,
+    pub customer_name: Option<String>,
+    pub customer_phone: Option<String>,
+    pub customer_email: Option<String>,
+    pub notes: Option<String>,
+    pub is_voided: bool,
+    pub voided_by: Option<i64>,
+    pub voided_at: Option<String>,
+    pub void_reason: Option<String>,
+    pub shift_id: Option<i64>,
+    pub created_at: String,
+    pub items_count: i32,
+    pub profit: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SalesStats {
+    pub total_sales: f64,
+    pub total_transactions: i32,
+    pub average_transaction: f64,
+    pub total_profit: f64,
+    pub profit_margin: f64,
+    pub cash_sales: f64,
+    pub card_sales: f64,
+    pub mobile_sales: f64,
+    pub check_sales: f64,
+}
 
 #[command]
 pub async fn create_sale(
@@ -194,6 +234,219 @@ pub async fn create_sale(
     };
 
     Ok(sale)
+}
+
+#[command]
+pub async fn get_sales_with_details(
+    pool: State<'_, SqlitePool>,
+    start_date: Option<String>,
+    end_date: Option<String>,
+    payment_method: Option<String>,
+    limit: Option<i32>,
+    offset: Option<i32>,
+) -> Result<Vec<SaleWithDetails>, String> {
+    let pool_ref = pool.inner();
+
+    let limit = limit.unwrap_or(100);
+    let offset = offset.unwrap_or(0);
+
+    let mut query = String::from(
+        "SELECT s.id, s.sale_number, s.subtotal, s.tax_amount, s.discount_amount, s.total_amount,
+                s.payment_method, s.payment_status, s.cashier_id, s.customer_name, s.customer_phone,
+                s.customer_email, s.notes, s.is_voided, s.voided_by, s.voided_at, s.void_reason,
+                s.shift_id, s.created_at,
+                u.full_name as cashier_name,
+                COUNT(si.id) as items_count,
+                COALESCE(SUM((si.unit_price - si.cost_price) * si.quantity), 0.0) as profit
+         FROM sales s
+         LEFT JOIN users u ON s.cashier_id = u.id
+         LEFT JOIN sale_items si ON s.id = si.sale_id
+         WHERE 1=1",
+    );
+
+    let mut params: Vec<String> = Vec::new();
+    let mut param_count = 0;
+
+    if let Some(start) = start_date {
+        if !start.is_empty() {
+            param_count += 1;
+            query.push_str(&format!(" AND DATE(s.created_at) >= ?{}", param_count));
+            params.push(start);
+        }
+    }
+
+    if let Some(end) = end_date {
+        if !end.is_empty() {
+            param_count += 1;
+            query.push_str(&format!(" AND DATE(s.created_at) <= ?{}", param_count));
+            params.push(end);
+        }
+    }
+
+    if let Some(method) = payment_method {
+        if !method.is_empty() && method != "all" {
+            param_count += 1;
+            query.push_str(&format!(" AND s.payment_method = ?{}", param_count));
+            params.push(method);
+        }
+    }
+
+    query.push_str(" GROUP BY s.id ORDER BY s.created_at DESC");
+    query.push_str(&format!(" LIMIT ?{}", param_count + 1));
+    query.push_str(&format!(" OFFSET ?{}", param_count + 2));
+    params.push(limit.to_string());
+    params.push(offset.to_string());
+
+    let mut sql_query = sqlx::query(&query);
+    for param in &params {
+        sql_query = sql_query.bind(param);
+    }
+
+    let rows = sql_query
+        .fetch_all(pool_ref)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+
+    let mut sales = Vec::new();
+    for row in rows {
+        let sale = SaleWithDetails {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            sale_number: row.try_get("sale_number").map_err(|e| e.to_string())?,
+            subtotal: row.try_get("subtotal").map_err(|e| e.to_string())?,
+            tax_amount: row.try_get("tax_amount").map_err(|e| e.to_string())?,
+            discount_amount: row.try_get("discount_amount").map_err(|e| e.to_string())?,
+            total_amount: row.try_get("total_amount").map_err(|e| e.to_string())?,
+            payment_method: row.try_get("payment_method").map_err(|e| e.to_string())?,
+            payment_status: row.try_get("payment_status").map_err(|e| e.to_string())?,
+            cashier_id: row.try_get("cashier_id").map_err(|e| e.to_string())?,
+            cashier_name: row.try_get("cashier_name").ok(),
+            customer_name: row.try_get("customer_name").ok().flatten(),
+            customer_phone: row.try_get("customer_phone").ok().flatten(),
+            customer_email: row.try_get("customer_email").ok().flatten(),
+            notes: row.try_get("notes").ok().flatten(),
+            is_voided: row.try_get("is_voided").map_err(|e| e.to_string())?,
+            voided_by: row.try_get("voided_by").ok().flatten(),
+            voided_at: row.try_get("voided_at").ok().flatten(),
+            void_reason: row.try_get("void_reason").ok().flatten(),
+            shift_id: row.try_get("shift_id").ok().flatten(),
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+            items_count: row.try_get("items_count").unwrap_or(0),
+            profit: row.try_get("profit").unwrap_or(0.0),
+        };
+        sales.push(sale);
+    }
+
+    Ok(sales)
+}
+
+#[command]
+pub async fn get_sales_stats(
+    pool: State<'_, SqlitePool>,
+    start_date: Option<String>,
+    end_date: Option<String>,
+) -> Result<SalesStats, String> {
+    let pool_ref = pool.inner();
+
+    let mut query = String::from(
+        "SELECT 
+            COALESCE(SUM(total_amount), 0.0) as total_sales,
+            COUNT(*) as total_transactions,
+            COALESCE(AVG(total_amount), 0.0) as average_transaction,
+            COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN total_amount ELSE 0.0 END), 0.0) as cash_sales,
+            COALESCE(SUM(CASE WHEN payment_method = 'card' THEN total_amount ELSE 0.0 END), 0.0) as card_sales,
+            COALESCE(SUM(CASE WHEN payment_method = 'mobile' THEN total_amount ELSE 0.0 END), 0.0) as mobile_sales,
+            COALESCE(SUM(CASE WHEN payment_method = 'check' THEN total_amount ELSE 0.0 END), 0.0) as check_sales
+         FROM sales
+         WHERE is_voided = 0",
+    );
+
+    let mut params: Vec<String> = Vec::new();
+    let mut param_count = 0;
+
+    if let Some(start) = start_date {
+        if !start.is_empty() {
+            param_count += 1;
+            query.push_str(&format!(" AND DATE(created_at) >= ?{}", param_count));
+            params.push(start);
+        }
+    }
+
+    if let Some(end) = end_date {
+        if !end.is_empty() {
+            param_count += 1;
+            query.push_str(&format!(" AND DATE(created_at) <= ?{}", param_count));
+            params.push(end);
+        }
+    }
+
+    let mut sql_query = sqlx::query(&query);
+    for param in &params {
+        sql_query = sql_query.bind(param);
+    }
+
+    let row = sql_query
+        .fetch_one(pool_ref)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+
+    // Calculate profit
+    let mut profit_query = String::from(
+        "SELECT COALESCE(SUM((si.unit_price - si.cost_price) * si.quantity), 0.0) as total_profit
+         FROM sale_items si
+         JOIN sales s ON si.sale_id = s.id
+         WHERE s.is_voided = 0",
+    );
+
+    let mut profit_params: Vec<String> = Vec::new();
+    let mut profit_param_count = 0;
+
+    if let Some(start) = start_date {
+        if !start.is_empty() {
+            profit_param_count += 1;
+            profit_query.push_str(&format!(" AND DATE(s.created_at) >= ?{}", profit_param_count));
+            profit_params.push(start);
+        }
+    }
+
+    if let Some(end) = end_date {
+        if !end.is_empty() {
+            profit_param_count += 1;
+            profit_query.push_str(&format!(" AND DATE(s.created_at) <= ?{}", profit_param_count));
+            profit_params.push(end);
+        }
+    }
+
+    let mut profit_sql_query = sqlx::query(&profit_query);
+    for param in &profit_params {
+        profit_sql_query = profit_sql_query.bind(param);
+    }
+
+    let profit_row = profit_sql_query
+        .fetch_one(pool_ref)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+
+    let total_sales: f64 = row.try_get("total_sales").unwrap_or(0.0);
+    let total_profit: f64 = profit_row.try_get("total_profit").unwrap_or(0.0);
+    let profit_margin = if total_sales > 0.0 {
+        (total_profit / total_sales) * 100.0
+    } else {
+        0.0
+    };
+
+    let stats = SalesStats {
+        total_sales,
+        total_transactions: row.try_get("total_transactions").unwrap_or(0),
+        average_transaction: row.try_get("average_transaction").unwrap_or(0.0),
+        total_profit,
+        profit_margin,
+        cash_sales: row.try_get("cash_sales").unwrap_or(0.0),
+        card_sales: row.try_get("card_sales").unwrap_or(0.0),
+        mobile_sales: row.try_get("mobile_sales").unwrap_or(0.0),
+        check_sales: row.try_get("check_sales").unwrap_or(0.0),
+    };
+
+    Ok(stats)
 }
 
 #[command]

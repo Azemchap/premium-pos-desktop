@@ -5,6 +5,7 @@ import LoginPage from "@/pages/LoginPage";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import Dashboard from "@/pages/Dashboard";
 import Sales from "@/pages/Sales";
+import SalesRecords from "@/pages/SalesRecords";
 import Products from "@/pages/Products";
 import Inventory from "@/pages/Inventory";
 import Users from "@/pages/Users";
@@ -33,6 +34,7 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/sales" element={<Sales />} />
+        <Route path="/sales-records" element={<SalesRecords />} />
         <Route path="/products" element={<Products />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/users" element={<Users />} />

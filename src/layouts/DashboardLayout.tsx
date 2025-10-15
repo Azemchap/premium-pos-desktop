@@ -31,7 +31,8 @@ import {
   Package,
   BarChart3,
   Users,
-  Database
+  Database,
+  Receipt
 } from "lucide-react";
 
 interface NavigationItem {
@@ -44,6 +45,7 @@ interface NavigationItem {
 const navigation: NavigationItem[] = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Sales", href: "/sales", icon: ShoppingCart },
+  { name: "Sales Records", href: "/sales-records", icon: Receipt },
   { name: "Products", href: "/products", icon: Package },
   { name: "Inventory", href: "/inventory", icon: Database },
   { name: "Reports", href: "/reports", icon: BarChart3 },

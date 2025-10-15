@@ -1,4 +1,4 @@
-// src/pages/Sales.tsx
+// src/pages/Sales.tsx - Enhanced with List/Grid Toggle, Validation, Toasts, and Completion Modal
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,6 +31,14 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -36,9 +54,27 @@ import {
   Trash2,
   User,
   X,
+  Grid3x3,
+  List,
+  Printer,
+  ReceiptText,
+  CheckCircle2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
+
+// Zod validation schemas
+const customerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(100).optional().or(z.literal("")),
+  phone: z.string().regex(/^\+?[\d\s-()]*$/, "Invalid phone number").max(20).optional().or(z.literal("")),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+});
+
+const paymentSchema = z.object({
+  method: z.enum(["cash", "card", "mobile", "check"], { errorMap: () => ({ message: "Select a payment method" }) }),
+  amountReceived: z.number().min(0, "Amount must be positive"),
+});
 
 interface Product {
   id: number;
@@ -74,8 +110,7 @@ interface CustomerInfo {
 
 interface PaymentInfo {
   method: string;
-  amount: number;
-  reference?: string;
+  amountReceived: number;
 }
 
 interface CreateSaleRequest {
@@ -97,210 +132,252 @@ interface CreateSaleRequest {
   notes?: string;
 }
 
-interface SaleResult {
-  sale_number: string;
-  id: number;
-  [key: string]: unknown;
-}
+type ViewMode = "grid" | "list";
 
 export default function Sales() {
+  const { user } = useAuthStore();
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
+  const [isClearCartDialogOpen, setIsClearCartDialogOpen] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: "",
     phone: "",
-    email: ""
+    email: "",
   });
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
     method: "cash",
-    amount: 0,
-    reference: ""
+    amountReceived: 0,
   });
   const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
-  const { user } = useAuthStore();
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [completedSaleNumber, setCompletedSaleNumber] = useState("");
 
-  const paymentMethods = [
-    { value: "cash", label: "Cash", icon: DollarSign },
-    { value: "card", label: "Card", icon: CreditCard },
-    { value: "mobile", label: "Mobile Payment", icon: QrCode },
-    { value: "check", label: "Check", icon: Check }
-  ];
+  // View mode with localStorage persistence
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = localStorage.getItem("salesViewMode");
+    return (saved as ViewMode) || "grid";
+  });
+
+  const toggleViewMode = () => {
+    const newMode = viewMode === "grid" ? "list" : "grid";
+    setViewMode(newMode);
+    localStorage.setItem("salesViewMode", newMode);
+    toast.success(`Switched to ${newMode} view`);
+  };
 
   const loadProducts = async () => {
     try {
       setLoading(true);
       const result = await invoke<Product[]>("get_products_with_stock");
-      setProducts(result);
+      setProducts(result.filter(p => p.is_active && p.available_stock > 0));
+      toast.success(`✅ Loaded ${result.length} products`);
     } catch (error) {
       console.error("Failed to load products:", error);
-      toast.error("Failed to load products");
+      toast.error("❌ Failed to load products");
     } finally {
       setLoading(false);
     }
   };
 
-  const addToCart = (product: Product, quantity: number = 1) => {
-    // Check stock availability
-    const currentCartQuantity = cart.find(item => item.product.id === product.id)?.quantity || 0;
-    if (currentCartQuantity + quantity > product.available_stock) {
-      toast.error(`Not enough stock! Available: ${product.available_stock}`);
+  const addToCart = (product: Product) => {
+    if (product.available_stock <= 0) {
+      toast.error(`❌ ${product.name} is out of stock!`);
       return;
     }
 
-    const existingItem = cart.find(item => item.product.id === product.id);
+    const existingItem = cart.find((item) => item.product.id === product.id);
 
     if (existingItem) {
-      updateCartItemQuantity(product.id, existingItem.quantity + quantity);
+      if (existingItem.quantity >= product.available_stock) {
+        toast.error(`❌ Cannot add more - only ${product.available_stock} in stock`);
+        return;
+      }
+      updateCartItemQuantity(product.id, existingItem.quantity + 1);
     } else {
-      const taxAmount = product.is_taxable && product.tax_rate
-        ? (product.selling_price * quantity * product.tax_rate) / 100
-        : 0;
+      const taxAmount = product.is_taxable ? product.selling_price * (product.tax_rate / 100) : 0;
+      const total = product.selling_price + taxAmount;
 
-      const newItem: CartItem = {
-        product,
-        quantity,
-        price: product.selling_price,
-        tax_amount: taxAmount,
-        total: (product.selling_price * quantity) + taxAmount
-      };
-
-      setCart([...cart, newItem]);
+      setCart([
+        ...cart,
+        {
+          product,
+          quantity: 1,
+          price: product.selling_price,
+          tax_amount: taxAmount,
+          total,
+        },
+      ]);
+      toast.success(`✅ Added ${product.name} to cart`);
     }
-
-    toast.success(`${product.name} added to cart`);
   };
 
-  const updateCartItemQuantity = (productId: number, quantity: number) => {
-    if (quantity <= 0) {
+  const updateCartItemQuantity = (productId: number, newQuantity: number) => {
+    if (newQuantity <= 0) {
       removeFromCart(productId);
       return;
     }
 
-    const product = products.find(p => p.id === productId);
-    if (product && quantity > product.available_stock) {
-      toast.error(`Not enough stock! Available: ${product.available_stock}`);
+    const item = cart.find((item) => item.product.id === productId);
+    if (!item) return;
+
+    if (newQuantity > item.product.available_stock) {
+      toast.error(`❌ Only ${item.product.available_stock} available in stock`);
       return;
     }
 
-    setCart(cart.map(item => {
-      if (item.product.id === productId) {
-        const taxAmount = item.product.is_taxable && item.product.tax_rate
-          ? (item.product.selling_price * quantity * item.product.tax_rate) / 100
-          : 0;
-
-        return {
-          ...item,
-          quantity,
-          tax_amount: taxAmount,
-          total: (item.product.selling_price * quantity) + taxAmount
-        };
-      }
-      return item;
-    }));
+    setCart(
+      cart.map((item) =>
+        item.product.id === productId
+          ? {
+              ...item,
+              quantity: newQuantity,
+              total: item.price * newQuantity + item.tax_amount * newQuantity,
+            }
+          : item
+      )
+    );
+    toast.success("Updated quantity");
   };
 
   const removeFromCart = (productId: number) => {
-    setCart(cart.filter(item => item.product.id !== productId));
+    const item = cart.find((item) => item.product.id === productId);
+    setCart(cart.filter((item) => item.product.id !== productId));
+    toast.success(`🗑️ Removed ${item?.product.name} from cart`);
   };
 
   const clearCart = () => {
     setCart([]);
     setCustomerInfo({ name: "", phone: "", email: "" });
+    setPaymentInfo({ method: "cash", amountReceived: 0 });
     setNotes("");
+    setValidationErrors({});
+    setIsClearCartDialogOpen(false);
+    toast.success("🧹 Cart cleared");
   };
 
-  const getSubtotal = () => {
-    return cart.reduce((sum, item) => sum + (item.product.selling_price * item.quantity), 0);
+  const validateCustomerInfo = (): boolean => {
+    try {
+      customerSchema.parse(customerInfo);
+      setValidationErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            errors[err.path[0].toString()] = err.message;
+          }
+        });
+        setValidationErrors(errors);
+        toast.error("❌ Please fix customer information errors");
+      }
+      return false;
+    }
   };
 
-  const getTaxTotal = () => {
-    return cart.reduce((sum, item) => sum + item.tax_amount, 0);
+  const validatePayment = (): boolean => {
+    try {
+      paymentSchema.parse(paymentInfo);
+      if (paymentInfo.amountReceived < cartTotal) {
+        toast.error("❌ Payment amount is less than total");
+        return false;
+      }
+      setValidationErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            errors[err.path[0].toString()] = err.message;
+          }
+        });
+        setValidationErrors(errors);
+        toast.error("❌ Please fix payment errors");
+      }
+      return false;
+    }
   };
 
-  const getTotal = () => {
-    return getSubtotal() + getTaxTotal();
-  };
-
-  const getChange = () => {
-    return Math.max(0, paymentInfo.amount - getTotal());
-  };
-
-  const handleCheckout = async () => {
+  const proceedToPayment = () => {
     if (cart.length === 0) {
-      toast.error("Cart is empty");
+      toast.error("❌ Cart is empty!");
       return;
     }
+    setIsPaymentDialogOpen(true);
+    setPaymentInfo({ ...paymentInfo, amountReceived: cartTotal });
+  };
 
-    if (paymentInfo.amount < getTotal()) {
-      toast.error("Payment amount is insufficient");
-      return;
-    }
-
-    if (!user) {
-      toast.error("User not authenticated");
+  const completeSale = async () => {
+    if (!validatePayment()) {
       return;
     }
 
     try {
-      setProcessing(true);
-
-      const saleData: CreateSaleRequest = {
-        customer_name: customerInfo.name || undefined,
-        customer_phone: customerInfo.phone || undefined,
-        customer_email: customerInfo.email || undefined,
-        payment_method: paymentInfo.method,
-        notes: notes || undefined,
-        subtotal: getSubtotal(),
-        tax_amount: getTaxTotal(),
-        discount_amount: 0,
-        total_amount: getTotal(),
-        items: cart.map(item => ({
+      const saleRequest: CreateSaleRequest = {
+        items: cart.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
           unit_price: item.price,
           discount_amount: 0,
-          line_total: item.total
-        }))
+          line_total: item.price * item.quantity,
+        })),
+        subtotal: cartSubtotal,
+        tax_amount: cartTax,
+        discount_amount: 0,
+        total_amount: cartTotal,
+        payment_method: paymentInfo.method,
+        customer_name: customerInfo.name || undefined,
+        customer_phone: customerInfo.phone || undefined,
+        customer_email: customerInfo.email || undefined,
+        notes: notes || undefined,
       };
 
-      const result = await invoke<SaleResult>("create_sale", {
-        request: saleData,
-        cashierId: user.id,
+      const result = await invoke("create_sale", {
+        request: saleRequest,
+        cashierId: user?.id,
         shiftId: null,
       });
 
-      toast.success(`Sale completed! Sale #${result.sale_number}`);
-
-      // Clear cart and reset
-      clearCart();
-      setPaymentInfo({ method: "cash", amount: 0, reference: "" });
+      // Extract sale number from result
+      const saleNumber = (result as any).sale_number || "SALE-000";
+      setCompletedSaleNumber(saleNumber);
+      
       setIsPaymentDialogOpen(false);
-      loadProducts(); // Reload to get updated stock
-
+      setIsCompletionDialogOpen(true);
+      
+      toast.success(`🎉 Sale ${saleNumber} completed successfully!`, {
+        duration: 5000,
+      });
     } catch (error) {
-      console.error("Failed to process sale:", error);
-      toast.error(`Failed to process sale: ${error}`);
-    } finally {
-      setProcessing(false);
+      console.error("Failed to complete sale:", error);
+      toast.error(`❌ Failed to complete sale: ${error}`);
     }
   };
 
-  const openCheckout = () => {
-    if (cart.length === 0) {
-      toast.error("Cart is empty");
-      return;
-    }
-    setPaymentInfo({ ...paymentInfo, amount: getTotal() });
-    setIsPaymentDialogOpen(true);
+  const startNewSale = () => {
+    clearCart();
+    setIsCompletionDialogOpen(false);
+    loadProducts();
+    toast.success("✨ Ready for new sale");
   };
 
-  const filteredProducts = products.filter(product => {
+  const printReceipt = () => {
+    toast.success("🖨️ Printing receipt...");
+    // TODO: Implement actual receipt printing
+    setTimeout(() => {
+      toast.success("✅ Receipt printed!");
+      setIsCompletionDialogOpen(false);
+    }, 1500);
+  };
+
+  const filteredProducts = products.filter((product) => {
     const matchesSearch =
       !searchQuery ||
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -309,194 +386,234 @@ export default function Sales() {
 
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
 
-    return matchesSearch && matchesCategory && product.available_stock > 0;
+    return matchesSearch && matchesCategory;
   });
 
-  const categories = Array.from(
-    new Set(products.map(p => p.category).filter(Boolean))
-  );
+  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+
+  const cartSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const cartTax = cart.reduce((sum, item) => sum + item.tax_amount * item.quantity, 0);
+  const cartTotal = cartSubtotal + cartTax;
+  const change = paymentInfo.amountReceived - cartTotal;
 
   useEffect(() => {
     loadProducts();
   }, []);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      {/* Left Column - Products Grid */}
-      <div className="lg:col-span-2 space-y-6">
-        {/* Search and Filters */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="search">Search Products</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    id="search"
-                    placeholder="Search by name, SKU, or barcode..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category || "uncategorized"}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Products Grid */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Available Products</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i}>
-                    <CardContent className="p-4">
-                      <Skeleton className="h-32 w-full" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto">
-                {filteredProducts.map((product) => (
-                  <Card
-                    key={product.id}
-                    className="hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => addToCart(product)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="space-y-2">
-                        <div className="font-semibold line-clamp-2 min-h-[2.5rem]">
-                          {product.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          SKU: {product.sku}
-                        </div>
-                        {product.category && (
-                          <Badge variant="outline" className="text-xs">
-                            {product.category}
-                          </Badge>
-                        )}
-                        <div className="flex items-center justify-between pt-2">
-                          <div>
-                            <div className="text-lg font-bold text-primary">
-                              ${product.selling_price.toFixed(2)}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Stock: {product.available_stock}
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              addToCart(product);
-                            }}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Point of Sale</h1>
+          <p className="text-muted-foreground mt-1">
+            Process sales and manage transactions
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleViewMode}
+          >
+            {viewMode === "grid" ? (
+              <>
+                <List className="w-4 h-4 mr-2" />
+                List View
+              </>
             ) : (
-              <div className="text-center py-12">
-                <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No products available</h3>
-                <p className="text-muted-foreground">
-                  {searchQuery || selectedCategory
-                    ? "Try adjusting your filters"
-                    : "No products in stock"}
-                </p>
-              </div>
+              <>
+                <Grid3x3 className="w-4 h-4 mr-2" />
+                Grid View
+              </>
             )}
-          </CardContent>
-        </Card>
+          </Button>
+          {cart.length > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setIsClearCartDialogOpen(true)}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear Cart
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Right Column - Cart */}
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center">
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Cart ({cart.length})
-              </span>
-              {cart.length > 0 && (
-                <Button variant="outline" size="sm" onClick={clearCart}>
-                  <X className="w-4 h-4 mr-2" />
-                  Clear
-                </Button>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {cart.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Your cart is empty</p>
-                <p className="text-sm">Click on products to add them</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="max-h-[400px] overflow-y-auto space-y-3">
-                  {cart.map((item) => (
-                    <div
-                      key={item.product.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Products Section */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Search and Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category || "uncategorized"}>
+                    {category || "Uncategorized"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Products Grid/List */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-40" />
+              ))}
+            </div>
+          ) : viewMode === "grid" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              {filteredProducts.map((product) => (
+                <Card
+                  key={product.id}
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => addToCart(product)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <div className="font-medium text-sm">
-                          {item.product.name}
+                        <h3 className="font-medium line-clamp-1">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground">{product.sku}</p>
+                      </div>
+                      {product.available_stock <= product.minimum_stock && (
+                        <Badge variant="destructive" className="text-xs">
+                          Low Stock
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-2xl font-bold text-primary">
+                          ${product.selling_price.toFixed(2)}
+                        </span>
+                        <Badge variant="outline">{product.available_stock} in stock</Badge>
+                      </div>
+                      {product.category && (
+                        <Badge variant="secondary" className="text-xs">
+                          {product.category}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="max-h-[calc(100vh-300px)] overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredProducts.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{product.name}</div>
+                          <div className="text-sm text-muted-foreground">{product.sku}</div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                      </TableCell>
+                      <TableCell>
+                        {product.category && (
+                          <Badge variant="secondary">{product.category}</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={product.available_stock <= product.minimum_stock ? "destructive" : "outline"}>
+                          {product.available_stock}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        ${product.selling_price.toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <Button size="sm" onClick={() => addToCart(product)}>
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
+
+          {!loading && filteredProducts.length === 0 && (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No products found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your search criteria
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Cart Section */}
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center">
+                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  Cart
+                </span>
+                <Badge>{cart.length} items</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Cart Items */}
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {cart.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Cart is empty</p>
+                  </div>
+                ) : (
+                  cart.map((item) => (
+                    <div key={item.product.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.product.name}</p>
+                        <p className="text-sm text-muted-foreground">
                           ${item.price.toFixed(2)} each
-                        </div>
+                        </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
-                            updateCartItemQuantity(item.product.id, item.quantity - 1)
-                          }
+                          onClick={() => updateCartItemQuantity(item.product.id, item.quantity - 1)}
                         >
                           <Minus className="w-3 h-3" />
                         </Button>
-                        <span className="w-8 text-center font-medium">
-                          {item.quantity}
-                        </span>
+                        <span className="w-8 text-center font-medium">{item.quantity}</span>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
-                            updateCartItemQuantity(item.product.id, item.quantity + 1)
-                          }
+                          onClick={() => updateCartItemQuantity(item.product.id, item.quantity + 1)}
                         >
                           <Plus className="w-3 h-3" />
                         </Button>
@@ -509,114 +626,121 @@ export default function Sales() {
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
+              </div>
 
-                {/* Cart Summary */}
-                <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Subtotal:</span>
-                    <span>${getSubtotal().toFixed(2)}</span>
+              {/* Cart Totals */}
+              {cart.length > 0 && (
+                <>
+                  <div className="border-t pt-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-medium">${cartSubtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Tax</span>
+                      <span className="font-medium">${cartTax.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold border-t pt-2">
+                      <span>Total</span>
+                      <span className="text-primary">${cartTotal.toFixed(2)}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Tax:</span>
-                    <span>${getTaxTotal().toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold border-t pt-2">
-                    <span>Total:</span>
-                    <span>${getTotal().toFixed(2)}</span>
-                  </div>
-                </div>
 
-                {/* Notes */}
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes (Optional)</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Add any special instructions..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={2}
-                  />
-                </div>
-
-                {/* Actions */}
-                <div className="space-y-2">
+                  {/* Customer Info Button */}
                   <Button
                     variant="outline"
                     className="w-full"
                     onClick={() => setIsCustomerDialogOpen(true)}
                   >
                     <User className="w-4 h-4 mr-2" />
-                    {customerInfo.name ? "Edit Customer" : "Add Customer"}
+                    {customerInfo.name ? customerInfo.name : "Add Customer (Optional)"}
                   </Button>
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    onClick={openCheckout}
-                  >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Checkout ${getTotal().toFixed(2)}
-                  </Button>
-                </div>
 
-                {customerInfo.name && (
-                  <div className="p-3 bg-muted rounded-lg text-sm">
-                    <div className="font-medium">{customerInfo.name}</div>
-                    {customerInfo.phone && <div>{customerInfo.phone}</div>}
-                    {customerInfo.email && <div>{customerInfo.email}</div>}
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  {/* Notes */}
+                  <Textarea
+                    placeholder="Notes (optional)"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={2}
+                  />
+
+                  {/* Checkout Button */}
+                  <Button className="w-full" size="lg" onClick={proceedToPayment}>
+                    <DollarSign className="w-5 h-5 mr-2" />
+                    Proceed to Payment
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Customer Information Dialog */}
+      {/* Customer Info Dialog */}
       <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Customer Information</DialogTitle>
             <DialogDescription>
-              Add customer details for this sale (optional)
+              Add customer details (optional)
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="customer-name">Name</Label>
+            <div className="space-y-2">
+              <Label htmlFor="customerName">Name</Label>
               <Input
-                id="customer-name"
-                placeholder="Customer name"
+                id="customerName"
                 value={customerInfo.name}
                 onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+                placeholder="Customer name"
+                className={validationErrors.name ? "border-red-500" : ""}
               />
+              {validationErrors.name && (
+                <p className="text-xs text-red-500">{validationErrors.name}</p>
+              )}
             </div>
-            <div>
-              <Label htmlFor="customer-phone">Phone</Label>
+            <div className="space-y-2">
+              <Label htmlFor="customerPhone">Phone</Label>
               <Input
-                id="customer-phone"
-                placeholder="Phone number"
+                id="customerPhone"
                 value={customerInfo.phone}
                 onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+                placeholder="Phone number"
+                className={validationErrors.phone ? "border-red-500" : ""}
               />
+              {validationErrors.phone && (
+                <p className="text-xs text-red-500">{validationErrors.phone}</p>
+              )}
             </div>
-            <div>
-              <Label htmlFor="customer-email">Email</Label>
+            <div className="space-y-2">
+              <Label htmlFor="customerEmail">Email</Label>
               <Input
-                id="customer-email"
+                id="customerEmail"
                 type="email"
-                placeholder="Email address"
                 value={customerInfo.email}
                 onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                placeholder="Email address"
+                className={validationErrors.email ? "border-red-500" : ""}
               />
+              {validationErrors.email && (
+                <p className="text-xs text-red-500">{validationErrors.email}</p>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCustomerDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setIsCustomerDialogOpen(false)}>
+            <Button
+              onClick={() => {
+                if (validateCustomerInfo()) {
+                  setIsCustomerDialogOpen(false);
+                  toast.success("✅ Customer info saved");
+                }
+              }}
+            >
               Save
             </Button>
           </DialogFooter>
@@ -629,59 +753,50 @@ export default function Sales() {
           <DialogHeader>
             <DialogTitle>Complete Payment</DialogTitle>
             <DialogDescription>
-              Total Amount: ${getTotal().toFixed(2)}
+              Total: ${cartTotal.toFixed(2)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="payment-method">Payment Method</Label>
+            <div className="space-y-2">
+              <Label htmlFor="paymentMethod">Payment Method</Label>
               <Select value={paymentInfo.method} onValueChange={(value) => setPaymentInfo({ ...paymentInfo, method: value })}>
-                <SelectTrigger>
+                <SelectTrigger className={validationErrors.method ? "border-red-500" : ""}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {paymentMethods.map((method) => {
-                    const Icon = method.icon;
-                    return (
-                      <SelectItem key={method.value} value={method.value}>
-                        <div className="flex items-center">
-                          <Icon className="w-4 h-4 mr-2" />
-                          {method.label}
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Credit/Debit Card</SelectItem>
+                  <SelectItem value="mobile">Mobile Payment</SelectItem>
+                  <SelectItem value="check">Check</SelectItem>
                 </SelectContent>
               </Select>
+              {validationErrors.method && (
+                <p className="text-xs text-red-500">{validationErrors.method}</p>
+              )}
             </div>
-            <div>
-              <Label htmlFor="payment-amount">Amount Received</Label>
+
+            <div className="space-y-2">
+              <Label htmlFor="amountReceived">Amount Received</Label>
               <Input
-                id="payment-amount"
+                id="amountReceived"
                 type="number"
                 step="0.01"
-                min={getTotal()}
-                value={paymentInfo.amount}
-                onChange={(e) => setPaymentInfo({ ...paymentInfo, amount: parseFloat(e.target.value) || 0 })}
-                placeholder="0.00"
+                value={paymentInfo.amountReceived}
+                onChange={(e) => setPaymentInfo({ ...paymentInfo, amountReceived: parseFloat(e.target.value) || 0 })}
+                className={validationErrors.amountReceived ? "border-red-500" : ""}
               />
+              {validationErrors.amountReceived && (
+                <p className="text-xs text-red-500">{validationErrors.amountReceived}</p>
+              )}
             </div>
-            {paymentInfo.method !== "cash" && (
-              <div>
-                <Label htmlFor="payment-reference">Reference</Label>
-                <Input
-                  id="payment-reference"
-                  placeholder="Transaction reference or check number"
-                  value={paymentInfo.reference}
-                  onChange={(e) => setPaymentInfo({ ...paymentInfo, reference: e.target.value })}
-                />
-              </div>
-            )}
-            {paymentInfo.amount >= getTotal() && getChange() > 0 && (
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="flex justify-between font-medium text-green-700 dark:text-green-400">
-                  <span>Change:</span>
-                  <span className="text-lg">${getChange().toFixed(2)}</span>
+
+            {change >= 0 && paymentInfo.amountReceived > 0 && (
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-green-800">Change</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    ${change.toFixed(2)}
+                  </span>
                 </div>
               </div>
             )}
@@ -690,15 +805,70 @@ export default function Sales() {
             <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleCheckout}
-              disabled={processing || paymentInfo.amount < getTotal()}
-            >
-              {processing ? "Processing..." : "Complete Sale"}
+            <Button onClick={completeSale}>
+              <Check className="w-4 h-4 mr-2" />
+              Complete Sale
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Sale Completion Dialog */}
+      <Dialog open={isCompletionDialogOpen} onOpenChange={setIsCompletionDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-green-600">
+              <CheckCircle2 className="w-6 h-6 mr-2" />
+              Sale Completed!
+            </DialogTitle>
+            <DialogDescription>
+              Sale Number: <span className="font-mono font-bold">{completedSaleNumber}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-green-50 p-6 rounded-lg text-center">
+              <p className="text-sm text-green-800 mb-2">Total Amount</p>
+              <p className="text-4xl font-bold text-green-600">${cartTotal.toFixed(2)}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">Payment Method</p>
+                <p className="font-medium capitalize">{paymentInfo.method}</p>
+              </div>
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">Items</p>
+                <p className="font-medium">{cart.length}</p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={printReceipt} className="w-full">
+              <Printer className="w-4 h-4 mr-2" />
+              Print Receipt
+            </Button>
+            <Button onClick={startNewSale} className="w-full">
+              <ReceiptText className="w-4 h-4 mr-2" />
+              New Sale
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear Cart Confirmation Dialog */}
+      <AlertDialog open={isClearCartDialogOpen} onOpenChange={setIsClearCartDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Cart?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove all items from your cart. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={clearCart}>Clear Cart</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
