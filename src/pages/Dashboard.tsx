@@ -1,22 +1,22 @@
 // src/pages/Dashboard.tsx
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-    DollarSign,
-    ShoppingCart,
-    Package,
-    TrendingUp,
-    AlertCircle,
-    RefreshCw,
-    Calendar,
-    BarChart3
-} from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
-import { useAuthStore } from "@/store/authStore";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useAuthStore } from "@/store/authStore";
+import { invoke } from "@tauri-apps/api/core";
+import {
+    AlertCircle,
+    BarChart3,
+    Calendar,
+    DollarSign,
+    Package,
+    RefreshCw,
+    ShoppingCart,
+    TrendingUp
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface DashboardStats {
@@ -91,13 +91,6 @@ export default function Dashboard() {
     useEffect(() => {
         loadDashboardData();
     }, []);
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD'
-        }).format(amount);
-    };
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
