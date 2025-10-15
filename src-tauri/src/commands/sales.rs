@@ -267,27 +267,27 @@ pub async fn get_sales_with_details(
     let mut params: Vec<String> = Vec::new();
     let mut param_count = 0;
 
-    if let Some(start) = start_date {
+    if let Some(ref start) = start_date {
         if !start.is_empty() {
             param_count += 1;
             query.push_str(&format!(" AND DATE(s.created_at) >= ?{}", param_count));
-            params.push(start);
+            params.push(start.clone());
         }
     }
 
-    if let Some(end) = end_date {
+    if let Some(ref end) = end_date {
         if !end.is_empty() {
             param_count += 1;
             query.push_str(&format!(" AND DATE(s.created_at) <= ?{}", param_count));
-            params.push(end);
+            params.push(end.clone());
         }
     }
 
-    if let Some(method) = payment_method {
+    if let Some(ref method) = payment_method {
         if !method.is_empty() && method != "all" {
             param_count += 1;
             query.push_str(&format!(" AND s.payment_method = ?{}", param_count));
-            params.push(method);
+            params.push(method.clone());
         }
     }
 
@@ -474,19 +474,19 @@ pub async fn get_sales(
     let mut params: Vec<String> = Vec::new();
     let mut param_count = 0;
 
-    if let Some(start) = start_date {
+    if let Some(ref start) = start_date {
         if !start.is_empty() {
             param_count += 1;
             query.push_str(&format!(" AND DATE(created_at) >= ?{}", param_count));
-            params.push(start);
+            params.push(start.clone());
         }
     }
 
-    if let Some(end) = end_date {
+    if let Some(ref end) = end_date {
         if !end.is_empty() {
             param_count += 1;
             query.push_str(&format!(" AND DATE(created_at) <= ?{}", param_count));
-            params.push(end);
+            params.push(end.clone());
         }
     }
 
