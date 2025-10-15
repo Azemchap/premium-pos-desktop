@@ -12,6 +12,8 @@
         "tauri": "tauri",
         "tauri:dev": "tauri dev",
         "tauri:build": "tauri build",
+        "seed": "echo Database will be seeded automatically on first run",
+        "reset-db": "node -e \"const fs=require('fs'); const path=require('path'); try { fs.unlinkSync(path.join('src-tauri','target','debug','pos.db')); console.log('Database deleted successfully'); } catch(e) { console.log('Database file not found or already deleted'); }\"",
         "build:all": "pnpm build && pnpm tauri build",
         "build:windows": "pnpm build && pnpm tauri build --target x86_64-pc-windows-msvc",
         "build:linux": "pnpm build && pnpm tauri build --target x86_64-unknown-linux-gnu",

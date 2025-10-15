@@ -239,7 +239,7 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
         .bind(admin_id)
         .bind(format!("Customer {}", i + 1))
         .bind("Sample transaction")
-        .bind(i % 30) // Spread over last 30 days
+        .bind((i % 30) as i32) // Spread over last 30 days
         .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
@@ -249,7 +249,7 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
         // Add 2-4 items to each sale
         let num_items = 2 + (i % 3);
         for j in 0..num_items {
-            let product_idx = ((i * 3 + j) % product_ids.len() as i64) as usize;
+            let product_idx = ((i * 3 + j) as usize) % product_ids.len();
             let product_id = product_ids[product_idx];
 
             // Get product details
@@ -262,7 +262,7 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
             .map_err(|e| e.to_string())?;
 
             let (cost_price, selling_price, is_taxable, tax_rate) = product;
-            let quantity = 1 + (j % 3);
+            let quantity = 1 + ((j % 3) as i32);
             let line_total = selling_price * quantity as f64;
             let item_tax = if is_taxable { line_total * tax_rate / 100.0 } else { 0.0 };
 
