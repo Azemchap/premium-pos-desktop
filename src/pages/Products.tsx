@@ -347,7 +347,7 @@ export default function Products() {
       <Card>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-8 gap-4">
-            <div className="space-y-2 md:col-span-4">
+            <div className="space-y-2 md:col-span-3">
               <Label htmlFor="search">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -361,7 +361,7 @@ export default function Products() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="category">Category</Label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger>
@@ -378,7 +378,7 @@ export default function Products() {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="brand">Brand</Label>
               <Select value={selectedBrand} onValueChange={setSelectedBrand}>
                 <SelectTrigger>
