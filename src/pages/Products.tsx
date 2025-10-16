@@ -258,9 +258,24 @@ export default function Products() {
       await invoke("delete_product", { productId });
       toast.success(`Product "${productName}" deactivated successfully!`);
       loadProducts();
+      loadMasterData();
     } catch (error) {
       console.error("Failed to delete product:", error);
       toast.error(`Failed to deactivate product: ${error}`);
+    }
+  };
+
+  const handleReactivateProduct = async (productId: number, productName: string) => {
+    if (!confirm(`Are you sure you want to reactivate "${productName}"?`)) return;
+
+    try {
+      await invoke("reactivate_product", { productId });
+      toast.success(`✅ Product "${productName}" reactivated successfully!`);
+      loadProducts();
+      loadMasterData();
+    } catch (error) {
+      console.error("Failed to reactivate product:", error);
+      toast.error(`❌ Failed to reactivate product: ${error}`);
     }
   };
 

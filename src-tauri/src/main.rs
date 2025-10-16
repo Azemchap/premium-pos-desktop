@@ -219,6 +219,7 @@ async fn main() {
             commands::products::search_products,
             commands::products::get_product_by_barcode,
             // Inventory management commands
+            commands::inventory::sync_inventory,
             commands::inventory::get_inventory,
             commands::inventory::update_stock,
             commands::inventory::get_inventory_movements,

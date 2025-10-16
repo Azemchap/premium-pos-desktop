@@ -21,19 +21,49 @@ pub struct InventoryMovement {
 }
 
 #[command]
+pub async fn sync_inventory(pool: State<'_, SqlitePool>) -> Result<i32, String> {
+    let pool_ref = pool.inner();
+    
+    // Find products without inventory records and create them
+    let result = sqlx::query(
+        "INSERT INTO inventory (product_id, current_stock, available_stock, minimum_stock, maximum_stock, reserved_stock, stock_take_count)
+         SELECT p.id, 0, 0, p.reorder_point, 1000, 0, 0
+         FROM products p
+         WHERE NOT EXISTS (SELECT 1 FROM inventory i WHERE i.product_id = p.id)"
+    )
+    .execute(pool_ref)
+    .await
+    .map_err(|e| format!("Failed to sync inventory: {}", e))?;
+    
+    Ok(result.rows_affected() as i32)
+}
+
+#[command]
 pub async fn get_inventory(pool: State<'_, SqlitePool>) -> Result<Vec<InventoryItem>, String> {
     let pool_ref = pool.inner();
+    
+    // First, sync to ensure all products have inventory records
+    let _ = sync_inventory(pool.clone()).await;
+
 
     let rows = sqlx::query(
-        "SELECT i.id, i.product_id, i.current_stock, i.minimum_stock, i.maximum_stock,
-                i.reserved_stock, i.available_stock, i.last_updated, i.last_stock_take,
-                i.stock_take_count,
+        "SELECT 
+                i.id, 
+                p.id as product_id, 
+                COALESCE(i.current_stock, 0) as current_stock, 
+                COALESCE(i.minimum_stock, p.reorder_point) as minimum_stock, 
+                COALESCE(i.maximum_stock, 1000) as maximum_stock,
+                COALESCE(i.reserved_stock, 0) as reserved_stock, 
+                COALESCE(i.available_stock, 0) as available_stock, 
+                COALESCE(i.last_updated, p.created_at) as last_updated, 
+                i.last_stock_take,
+                COALESCE(i.stock_take_count, 0) as stock_take_count,
                 p.sku, p.barcode, p.name, p.description, p.category, p.subcategory, p.brand,
                 p.unit_of_measure, p.cost_price, p.selling_price, p.wholesale_price, p.tax_rate,
                 p.is_active, p.is_taxable, p.weight, p.dimensions, p.supplier_info, p.reorder_point,
                 p.created_at, p.updated_at
-         FROM inventory i
-         JOIN products p ON i.product_id = p.id
+         FROM products p
+         LEFT JOIN inventory i ON p.id = i.product_id
          ORDER BY p.name ASC",
     )
     .fetch_all(pool_ref)
