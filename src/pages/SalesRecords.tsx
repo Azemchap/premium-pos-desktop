@@ -243,14 +243,14 @@ export default function SalesRecords() {
               @media print {
                 @page {
                   size: 80mm auto;
-                  margin: 0;
+                  margin: 0 auto;
                 }
               }
               body {
                 font-family: 'Courier New', monospace;
                 font-size: 12px;
                 max-width: 80mm;
-                margin: 0;
+                margin: 0 auto;
                 padding: 10px;
               }
               .header {
@@ -500,8 +500,8 @@ export default function SalesRecords() {
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
+            <div className="space-y-2 col-span-4">
               <Label htmlFor="search">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -515,7 +515,7 @@ export default function SalesRecords() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="dateRange">Date Range</Label>
               <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
                 <SelectTrigger>
@@ -532,7 +532,7 @@ export default function SalesRecords() {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="paymentMethod">Payment Method</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                 <SelectTrigger>
@@ -547,13 +547,12 @@ export default function SalesRecords() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="flex items-end">
+            {/* <div className="flex items-end">
               <Button variant="outline" onClick={loadSales} className="w-full">
                 <Filter className="w-4 h-4 mr-2" />
                 Apply Filters
               </Button>
-            </div>
+            </div> */}
           </div>
 
           {dateRange === "custom" && (
@@ -725,13 +724,13 @@ export default function SalesRecords() {
                     {formatDate(new Date(selectedSale.created_at), "MMM dd, yyyy hh:mm a")}
                   </p>
                 </div>
-                <div>
+                <div className="flex gap-2 items-center">
                   <Label className="text-muted-foreground">Payment Method</Label>
                   <Badge className={`${paymentMethodColors[selectedSale.payment_method] || ""} mt-1`}>
                     {selectedSale.payment_method.charAt(0).toUpperCase() + selectedSale.payment_method.slice(1)}
                   </Badge>
                 </div>
-                <div>
+                <div className="flex gap-2 items-center">
                   <Label className="text-muted-foreground">Status</Label>
                   <Badge variant={selectedSale.is_voided ? "destructive" : "default"} className="mt-1">
                     {selectedSale.is_voided ? "Voided" : "Completed"}

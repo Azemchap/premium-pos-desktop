@@ -350,7 +350,7 @@ export default function Sales() {
       const saleData = result as any;
       const saleNumber = saleData.sale_number || "SALE-000";
       setCompletedSaleNumber(saleNumber);
-      
+
       // Store complete sale data for receipt
       const receiptData = {
         ...saleData,
@@ -367,16 +367,16 @@ export default function Sales() {
         amount_received: paymentInfo.amountReceived,
         change: change,
       };
-      
+
       setCompletedSaleData(receiptData);
-      
+
       setIsPaymentDialogOpen(false);
       setIsCompletionDialogOpen(true);
-      
+
       toast.success(`🎉 Sale ${saleNumber} completed successfully!`, {
         duration: 3000,
       });
-      
+
       // Auto-print receipt immediately with the data
       setTimeout(() => {
         printReceiptWithData(receiptData);
@@ -425,7 +425,7 @@ export default function Sales() {
 
       // Build receipt HTML
       const storeInfo = await invoke<any>("get_store_config").catch(() => null);
-      
+
       const receiptHTML = `
         <!DOCTYPE html>
         <html>
@@ -436,14 +436,14 @@ export default function Sales() {
               @media print {
                 @page {
                   size: 80mm auto;
-                  margin: 0;
+                  margin: 0 auto;
                 }
               }
               body {
                 font-family: 'Courier New', monospace;
                 font-size: 12px;
                 max-width: 80mm;
-                margin: 0;
+                margin: 0 auto;
                 padding: 10px;
               }
               .header {
@@ -574,7 +574,7 @@ export default function Sales() {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
         toast.success("✅ Receipt sent to printer!");
-        
+
         // Clean up after printing
         setTimeout(() => {
           document.body.removeChild(iframe);
@@ -628,23 +628,6 @@ export default function Sales() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleViewMode}
-          >
-            {viewMode === "grid" ? (
-              <>
-                <List className="w-4 h-4 mr-2" />
-                List View
-              </>
-            ) : (
-              <>
-                <GridIcon className="w-4 h-4 mr-2" />
-                Grid View
-              </>
-            )}
-          </Button>
           {cart.length > 0 && (
             <Button
               variant="destructive"
@@ -662,8 +645,8 @@ export default function Sales() {
         {/* Products Section */}
         <div className="lg:col-span-2 space-y-4">
           {/* Search and Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="relative col-span-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="Search products..."
@@ -685,6 +668,24 @@ export default function Sales() {
                 ))}
               </SelectContent>
             </Select>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleViewMode}
+            >
+              {viewMode === "grid" ? (
+                <>
+                  <List className="w-4 h-4 mr-2" />
+                  List View
+                </>
+              ) : (
+                <>
+                  <GridIcon className="w-4 h-4 mr-2" />
+                  Grid View
+                </>
+              )}
+            </Button>
           </div>
 
           {/* Products Grid/List */}
@@ -812,7 +813,7 @@ export default function Sales() {
                   </div>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.product.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div key={item.product.id} className="flex gap-1 flex-col  p-3 bg-muted rounded-lg">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{item.product.name}</p>
                         <p className="text-sm text-muted-foreground">
@@ -990,21 +991,6 @@ export default function Sales() {
               </Select>
               {validationErrors.method && (
                 <p className="text-xs text-red-500">{validationErrors.method}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="amountReceived">Amount Received</Label>
-              <Input
-                id="amountReceived"
-                type="number"
-                step="0.01"
-                value={paymentInfo.amountReceived}
-                onChange={(e) => setPaymentInfo({ ...paymentInfo, amountReceived: parseFloat(e.target.value) || 0 })}
-                className={validationErrors.amountReceived ? "border-red-500" : ""}
-              />
-              {validationErrors.amountReceived && (
-                <p className="text-xs text-red-500">{validationErrors.amountReceived}</p>
               )}
             </div>
 
