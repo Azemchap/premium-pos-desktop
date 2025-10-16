@@ -13,6 +13,7 @@ import Inventory from "@/pages/Inventory";
 import Users from "@/pages/Users";
 import Reports from "@/pages/Reports";
 import Notifications from "@/pages/Notifications";
+import MasterData from "@/pages/MasterData";
 import Settings from "@/pages/Settings";
 
 function App() {

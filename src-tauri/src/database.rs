@@ -247,8 +247,81 @@ pub fn get_migrations() -> Vec<Migration> {
             "#,
         kind: MigrationKind::Up,
     },
-    Migration {
+        Migration {
         version: 2,
+        description: "create_master_data_tables",
+        sql: r#"
+                -- Categories master table
+                CREATE TABLE IF NOT EXISTS categories (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    description TEXT,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+
+                -- Brands master table
+                CREATE TABLE IF NOT EXISTS brands (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    description TEXT,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+
+                -- Units of Measurement master table
+                CREATE TABLE IF NOT EXISTS units (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    abbreviation TEXT,
+                    description TEXT,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+
+                -- Insert default categories
+                INSERT OR IGNORE INTO categories (name, description) VALUES
+                ('Electronics', 'Electronic devices and accessories'),
+                ('Clothing', 'Apparel and fashion items'),
+                ('Home & Garden', 'Home improvement and gardening'),
+                ('Sports', 'Sports equipment and gear'),
+                ('Books', 'Books and publications'),
+                ('Automotive', 'Auto parts and accessories'),
+                ('Health & Beauty', 'Health and beauty products'),
+                ('Toys', 'Toys and games'),
+                ('Food & Beverage', 'Food and drink products'),
+                ('Hardware', 'Tools and hardware'),
+                ('Services', 'Service-based products'),
+                ('Real Estate', 'Property and real estate'),
+                ('Other', 'Miscellaneous items');
+
+                -- Insert default brands
+                INSERT OR IGNORE INTO brands (name) VALUES
+                ('Generic'), ('House Brand'), ('Other');
+
+                -- Insert default units
+                INSERT OR IGNORE INTO units (name, abbreviation, description) VALUES
+                ('Each', 'ea', 'Individual items'),
+                ('Box', 'box', 'Boxed items'),
+                ('Pack', 'pk', 'Packaged items'),
+                ('Kilogram', 'kg', 'Weight in kilograms'),
+                ('Pound', 'lb', 'Weight in pounds'),
+                ('Meter', 'm', 'Length in meters'),
+                ('Liter', 'L', 'Volume in liters'),
+                ('Pair', 'pr', 'Pairs of items'),
+                ('Dozen', 'doz', '12 items'),
+                ('Case', 'cs', 'Cases'),
+                ('Square Meter', 'm²', 'Area measurement'),
+                ('Hour', 'hr', 'Time-based services'),
+                ('Service', 'svc', 'Service units');
+        "#,
+        kind: MigrationKind::Up,
+        },
+        Migration {
+        version: 3,
         description: "create_notifications_table",
         sql: r#"
                 -- Notifications table for alerts and notifications

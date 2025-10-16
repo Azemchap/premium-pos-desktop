@@ -267,6 +267,22 @@ async fn main() {
             commands::notifications::create_notification,
             commands::notifications::check_low_stock_alerts,
             commands::notifications::delete_notification,
+            // Master data commands
+            commands::master_data::get_categories,
+            commands::master_data::get_all_categories,
+            commands::master_data::create_category,
+            commands::master_data::update_category,
+            commands::master_data::delete_category,
+            commands::master_data::get_brands,
+            commands::master_data::get_all_brands,
+            commands::master_data::create_brand,
+            commands::master_data::update_brand,
+            commands::master_data::delete_brand,
+            commands::master_data::get_units,
+            commands::master_data::get_all_units,
+            commands::master_data::create_unit,
+            commands::master_data::update_unit,
+            commands::master_data::delete_unit,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
