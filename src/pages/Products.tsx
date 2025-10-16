@@ -1,12 +1,7 @@
 // src/pages/Products.tsx
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -16,12 +11,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -30,18 +34,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Plus, Search, Edit, Trash2, MoreHorizontal, Package, CheckCircle, XCircle } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
+import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
 import { invoke } from "@tauri-apps/api/core";
+import { ArrowDown, ArrowUp, ArrowUpDown, CheckCircle, Edit, MoreHorizontal, Package, Plus, Search, Trash2, XCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Loader2 } from "lucide-react";
 
 // Zod validation schema
 const productSchema = z.object({
@@ -90,11 +91,20 @@ interface Product {
   updated_at: string;
 }
 
+interface MasterItem {
+  id: number;
+  name: string;
+}
+
+type SortColumn = 'name' | 'sku' | 'category' | 'selling_price' | 'is_active';
+type SortDirection = 'asc' | 'desc';
+
 export default function Products() {
   const { format } = useCurrency();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -120,18 +130,27 @@ export default function Products() {
     reorder_point: 0,
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Master data from database
-  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
-  const [brands, setBrands] = useState<Array<{ id: number; name: string }>>([]);
-  const [units, setUnits] = useState<Array<{ id: number; name: string }>>([]);
+  const [categories, setCategories] = useState<MasterItem[]>([]);
+  const [brands, setBrands] = useState<MasterItem[]>([]);
+  const [units, setUnits] = useState<MasterItem[]>([]);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 20;
+
+  // Sorting
+  const [sortColumn, setSortColumn] = useState<SortColumn>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const loadMasterData = async () => {
     try {
       const [categoriesData, brandsData, unitsData] = await Promise.all([
-        invoke<Array<{ id: number; name: string }>("get_categories"),
-        invoke<Array<{ id: number; name: string }>("get_brands"),
-        invoke<Array<{ id: number; name: string }>("get_units"),
+        invoke<MasterItem[]>("get_categories"),
+        invoke<MasterItem[]>("get_brands"),
+        invoke<MasterItem[]>("get_units"),
       ]);
       setCategories(categoriesData);
       setBrands(brandsData);
@@ -181,6 +200,7 @@ export default function Products() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       if (editingProduct) {
         await invoke("update_product", {
@@ -201,6 +221,8 @@ export default function Products() {
     } catch (error) {
       console.error("Failed to save product:", error);
       toast.error(`❌ Failed to save product: ${error}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -271,27 +293,96 @@ export default function Products() {
     setIsDialogOpen(true);
   };
 
-  // Auto-filter products (no button needed)
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      !searchQuery ||
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
 
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    const matchesBrand = selectedBrand === "all" || product.brand === selectedBrand;
-    const matchesStatus = 
-      statusFilter === "all" || 
-      (statusFilter === "active" && product.is_active) || 
-      (statusFilter === "inactive" && !product.is_active);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
-    return matchesSearch && matchesCategory && matchesBrand && matchesStatus;
-  });
+  // Auto-filter and sort products
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = products.filter((product) => {
+      const matchesSearch =
+        !debouncedSearchQuery ||
+        product.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        product.sku.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        (product.barcode && product.barcode.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
+
+      const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+      const matchesBrand = selectedBrand === "all" || product.brand === selectedBrand;
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && product.is_active) ||
+        (statusFilter === "inactive" && !product.is_active);
+
+      return matchesSearch && matchesCategory && matchesBrand && matchesStatus;
+    });
+
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      switch (sortColumn) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'sku':
+          aValue = a.sku.toLowerCase();
+          bValue = b.sku.toLowerCase();
+          break;
+        case 'category':
+          aValue = (a.category || '').toLowerCase();
+          bValue = (b.category || '').toLowerCase();
+          break;
+        case 'selling_price':
+          aValue = a.selling_price;
+          bValue = b.selling_price;
+          break;
+        case 'is_active':
+          aValue = a.is_active ? 1 : 0;
+          bValue = b.is_active ? 1 : 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [products, debouncedSearchQuery, selectedCategory, selectedBrand, statusFilter, sortColumn, sortDirection]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAndSortedProducts.length / productsPerPage);
+  const paginatedProducts = filteredAndSortedProducts.slice(
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage
+  );
+
+  const handleSort = (column: SortColumn) => {
+    if (column === sortColumn) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   useEffect(() => {
+    loadMasterData();
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    // Reset to first page when filters or sort change
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, selectedCategory, selectedBrand, statusFilter, sortColumn, sortDirection]);
 
   // Statistics
   const totalProducts = products.length;
@@ -379,8 +470,8 @@ export default function Products() {
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                    <SelectItem key={category.id} value={category.name}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -396,8 +487,8 @@ export default function Products() {
                 <SelectContent>
                   <SelectItem value="all">All Brands</SelectItem>
                   {brands.map((brand) => (
-                    <SelectItem key={brand} value={brand}>
-                      {brand}
+                    <SelectItem key={brand.id} value={brand.name}>
+                      {brand.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -419,7 +510,7 @@ export default function Products() {
             </div>
           </div>
           <div className="mt-2 text-sm text-muted-foreground">
-            Showing {filteredProducts.length} of {totalProducts} products
+            Showing {filteredAndSortedProducts.length} of {totalProducts} products
           </div>
         </CardContent>
       </Card>
@@ -437,101 +528,159 @@ export default function Products() {
               ))}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.map((product) => (
-                  <TableRow key={product.id} className={!product.is_active ? "opacity-60" : ""}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {product.brand && `${product.brand} • `}
-                          {product.description && product.description.length > 50
-                            ? `${product.description.substring(0, 50)}...`
-                            : product.description}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-mono text-sm">{product.sku}</div>
-                        {product.barcode && (
-                          <div className="text-xs text-muted-foreground">
-                            {product.barcode}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {product.category ? (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
+                      Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                    </TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('sku')}>
+                      SKU {sortColumn === 'sku' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                    </TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('category')}>
+                      Category {sortColumn === 'category' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                    </TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('selling_price')}>
+                      Price {sortColumn === 'selling_price' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                    </TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('is_active')}>
+                      Status {sortColumn === 'is_active' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                    </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedProducts.map((product) => (
+                    <TableRow key={product.id} className={!product.is_active ? "opacity-60" : ""}>
+                      <TableCell>
                         <div>
-                          <Badge variant="outline">{product.category}</Badge>
-                          {product.subcategory && (
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {product.subcategory}
+                          <div className="font-medium">{product.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {product.brand && `${product.brand} • `}
+                            {product.description && product.description.length > 50
+                              ? `${product.description.substring(0, 50)}...`
+                              : product.description}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-mono text-sm">{product.sku}</div>
+                          {product.barcode && (
+                            <div className="text-xs text-muted-foreground">
+                              {product.barcode}
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {format(product.selling_price)}
-                        </div>
-                        {product.cost_price > 0 && (
-                          <div className="text-sm text-muted-foreground">
-                            Cost: {format(product.cost_price)}
+                      </TableCell>
+                      <TableCell>
+                        {product.category ? (
+                          <div>
+                            <Badge variant="outline">{product.category}</Badge>
+                            {product.subcategory && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {product.subcategory}
+                              </div>
+                            )}
                           </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={product.is_active ? "default" : "secondary"}>
-                        {product.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditProduct(product)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteProduct(product.id, product.name)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Deactivate
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">
+                            {format(product.selling_price)}
+                          </div>
+                          {product.cost_price > 0 && (
+                            <div className="text-sm text-muted-foreground">
+                              Cost: {format(product.cost_price)}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={product.is_active ? "default" : "secondary"}>
+                          {product.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditProduct(product)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteProduct(product.id, product.name)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Deactivate
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-4">
+                  {loading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentPage > 1) setCurrentPage(currentPage - 1);
+                            }}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                          />
+                        </PaginationItem>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === page}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(page);
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                          <PaginationNext
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                            }}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
-          {!loading && filteredProducts.length === 0 && (
+          {!loading && filteredAndSortedProducts.length === 0 && (
             <div className="text-center py-12">
               <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-medium mb-2">No products found</h3>
@@ -721,8 +870,8 @@ export default function Products() {
                   <SelectContent>
                     <SelectItem value="none">No Brand</SelectItem>
                     {brands.map((brand) => (
-                      <SelectItem key={brand} value={brand}>
-                        {brand}
+                      <SelectItem key={brand.id} value={brand.name}>
+                        {brand.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -735,13 +884,13 @@ export default function Products() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select unit" />
                   </SelectTrigger>
-                      <SelectContent>
-                        {units.map((unit) => (
-                          <SelectItem key={unit.id} value={unit.name}>
-                            {unit.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                  <SelectContent>
+                    {units.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.name}>
+                        {unit.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
             </div>
@@ -811,11 +960,11 @@ export default function Products() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={handleCreateProduct}>
-              {editingProduct ? "Update Product" : "Create Product"}
+            <Button onClick={handleCreateProduct} disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : (editingProduct ? "Update Product" : "Create Product")}
             </Button>
           </DialogFooter>
         </DialogContent>
