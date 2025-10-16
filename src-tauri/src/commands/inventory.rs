@@ -34,7 +34,6 @@ pub async fn get_inventory(pool: State<'_, SqlitePool>) -> Result<Vec<InventoryI
                 p.created_at, p.updated_at
          FROM inventory i
          JOIN products p ON i.product_id = p.id
-         WHERE p.is_active = 1
          ORDER BY p.name ASC",
     )
     .fetch_all(pool_ref)

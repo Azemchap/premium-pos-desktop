@@ -617,13 +617,23 @@ export default function Products() {
                               <Edit className="w-4 h-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteProduct(product.id, product.name)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Deactivate
-                            </DropdownMenuItem>
+                            {product.is_active ? (
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteProduct(product.id, product.name)}
+                                className="text-destructive"
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Deactivate
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => handleReactivateProduct(product.id, product.name)}
+                                className="text-green-600"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Reactivate
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

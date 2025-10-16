@@ -273,6 +273,17 @@ pub async fn delete_product(pool: State<'_, SqlitePool>, product_id: i64) -> Res
 }
 
 #[tauri::command]
+pub async fn reactivate_product(pool: State<'_, SqlitePool>, product_id: i64) -> Result<bool, String> {
+    let result = sqlx::query("UPDATE products SET is_active = 1 WHERE id = ?")
+        .bind(product_id)
+        .execute(pool.inner())
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(result.rows_affected() > 0)
+}
+
+#[tauri::command]
 pub async fn search_products(
     pool: State<'_, SqlitePool>,
     request: ProductSearchRequest,
