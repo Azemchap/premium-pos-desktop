@@ -187,18 +187,23 @@ export default function Sales() {
   };
 
   const addToCart = (product: Product) => {
+    // CRITICAL: Check available_stock from inventory (not current_stock)
     if (product.available_stock <= 0) {
       toast.error(`❌ ${product.name} is out of stock!`);
       return;
     }
 
     const existingItem = cart.find((item) => item.product.id === product.id);
+    const currentCartQuantity = existingItem ? existingItem.quantity : 0;
+    const newTotalQuantity = currentCartQuantity + 1;
+
+    // Validate against available_stock (accounting for what's already in cart)
+    if (newTotalQuantity > product.available_stock) {
+      toast.error(`❌ Cannot add more - only ${product.available_stock} available (${currentCartQuantity} already in cart)`);
+      return;
+    }
 
     if (existingItem) {
-      if (existingItem.quantity >= product.available_stock) {
-        toast.error(`❌ Cannot add more - only ${product.available_stock} in stock`);
-        return;
-      }
       updateCartItemQuantity(product.id, existingItem.quantity + 1);
     } else {
       const taxAmount = product.is_taxable ? product.selling_price * (product.tax_rate / 100) : 0;
@@ -227,6 +232,7 @@ export default function Sales() {
     const item = cart.find((item) => item.product.id === productId);
     if (!item) return;
 
+    // CRITICAL: Validate against available_stock from inventory
     if (newQuantity > item.product.available_stock) {
       toast.error(`❌ Only ${item.product.available_stock} available in stock`);
       return;
@@ -236,14 +242,13 @@ export default function Sales() {
       cart.map((item) =>
         item.product.id === productId
           ? {
-            ...item,
-            quantity: newQuantity,
-            total: item.price * newQuantity + item.tax_amount * newQuantity,
-          }
+              ...item,
+              quantity: newQuantity,
+              total: item.price * newQuantity + item.tax_amount * newQuantity,
+            }
           : item
       )
     );
-    toast.success("Updated quantity");
   };
 
   const removeFromCart = (productId: number) => {
