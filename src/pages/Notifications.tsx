@@ -145,6 +145,26 @@ export default function Notifications() {
     }
   };
 
+  const clearAllNotifications = async () => {
+    if (!confirm("Are you sure you want to delete all notifications? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      // Delete all notifications
+      await Promise.all(
+        notifications.map((notification) =>
+          invoke("delete_notification", { notificationId: notification.id })
+        )
+      );
+      toast.success("🗑️ All notifications cleared");
+      loadNotifications();
+    } catch (error) {
+      console.error("Failed to clear all notifications:", error);
+      toast.error("❌ Failed to clear notifications");
+    }
+  };
+
   useEffect(() => {
     loadNotifications();
     
@@ -172,13 +192,13 @@ export default function Notifications() {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "error":
-        return "border-l-4 border-red-500 bg-red-50";
+        return "border-l-4 border-red-500 bg-red-50 dark:bg-red-950 dark:border-red-400";
       case "warning":
-        return "border-l-4 border-yellow-500 bg-yellow-50";
+        return "border-l-4 border-yellow-500 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-400";
       case "success":
-        return "border-l-4 border-green-500 bg-green-50";
+        return "border-l-4 border-green-500 bg-green-50 dark:bg-green-950 dark:border-green-400";
       default:
-        return "border-l-4 border-blue-500 bg-blue-50";
+        return "border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400";
     }
   };
 
@@ -205,14 +225,20 @@ export default function Notifications() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={checkLowStock}>
+          <Button variant="outline" onClick={checkLowStock} size="sm">
             <Package className="w-4 h-4 mr-2" />
             Check Low Stock
           </Button>
           {stats && stats.unread > 0 && (
-            <Button onClick={markAllAsRead}>
+            <Button onClick={markAllAsRead} size="sm">
               <CheckCheck className="w-4 h-4 mr-2" />
-              Mark All Read
+              Mark All Read ({stats.unread})
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button onClick={clearAllNotifications} variant="destructive" size="sm">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear All
             </Button>
           )}
         </div>

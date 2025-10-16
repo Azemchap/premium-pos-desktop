@@ -120,18 +120,27 @@ export default function Products() {
     reorder_point: 0,
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  
+  // Master data from database
+  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
+  const [brands, setBrands] = useState<Array<{ id: number; name: string }>>([]);
+  const [units, setUnits] = useState<Array<{ id: number; name: string }>>([]);
 
-  const categories = [
-    "Electronics", "Clothing", "Home & Garden", "Sports", "Books",
-    "Automotive", "Health & Beauty", "Toys", "Food & Beverage", "Other"
-  ];
-
-  const brands = [
-    "Apple", "Samsung", "Nike", "Adidas", "Sony", "LG", "Canon",
-    "Dell", "HP", "Microsoft", "Generic", "Other"
-  ];
-
-  const units = ["Each", "Box", "Pack", "Kg", "Lb", "Meter", "Liter", "Pair"];
+  const loadMasterData = async () => {
+    try {
+      const [categoriesData, brandsData, unitsData] = await Promise.all([
+        invoke<Array<{ id: number; name: string }>("get_categories"),
+        invoke<Array<{ id: number; name: string }>("get_brands"),
+        invoke<Array<{ id: number; name: string }>("get_units"),
+      ]);
+      setCategories(categoriesData);
+      setBrands(brandsData);
+      setUnits(unitsData);
+    } catch (error) {
+      console.error("Failed to load master data:", error);
+      toast.error("Failed to load categories, brands, and units");
+    }
+  };
 
   const loadProducts = async () => {
     try {
@@ -685,8 +694,8 @@ export default function Products() {
                   <SelectContent>
                     <SelectItem value="none">No Category</SelectItem>
                     {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -726,13 +735,13 @@ export default function Products() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select unit" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                      <SelectContent>
+                        {units.map((unit) => (
+                          <SelectItem key={unit.id} value={unit.name}>
+                            {unit.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                 </Select>
               </div>
             </div>

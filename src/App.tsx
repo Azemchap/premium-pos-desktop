@@ -14,6 +14,7 @@ import Users from "@/pages/Users";
 import Reports from "@/pages/Reports";
 import Notifications from "@/pages/Notifications";
 import MasterData from "@/pages/MasterData";
+import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 
 function App() {
@@ -53,6 +54,8 @@ function App() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/users" element={<Users />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/master-data" element={<MasterData />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </DashboardLayout>
