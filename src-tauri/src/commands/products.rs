@@ -115,6 +115,15 @@ pub async fn create_product(
     pool: State<'_, SqlitePool>,
     request: CreateProductRequest,
 ) -> Result<Product, String> {
+    // Convert empty strings to None for optional fields to avoid UNIQUE constraint issues
+    let barcode = request.barcode.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let description = request.description.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let category = request.category.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let subcategory = request.subcategory.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let brand = request.brand.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let dimensions = request.dimensions.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let supplier_info = request.supplier_info.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+
     let product_id = sqlx::query(
         "INSERT INTO products (sku, barcode, name, description, category, subcategory, brand, 
          unit_of_measure, cost_price, selling_price, wholesale_price, tax_rate, is_taxable, 
@@ -122,12 +131,12 @@ pub async fn create_product(
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)",
     )
     .bind(&request.sku)
-    .bind(&request.barcode)
+    .bind(barcode)
     .bind(&request.name)
-    .bind(&request.description)
-    .bind(&request.category)
-    .bind(&request.subcategory)
-    .bind(&request.brand)
+    .bind(description)
+    .bind(category)
+    .bind(subcategory)
+    .bind(brand)
     .bind(&request.unit_of_measure)
     .bind(request.cost_price)
     .bind(request.selling_price)
@@ -135,8 +144,8 @@ pub async fn create_product(
     .bind(request.tax_rate)
     .bind(request.is_taxable)
     .bind(request.weight)
-    .bind(&request.dimensions)
-    .bind(&request.supplier_info)
+    .bind(dimensions)
+    .bind(supplier_info)
     .bind(request.reorder_point)
     .execute(pool.inner())
     .await
@@ -176,6 +185,15 @@ pub async fn update_product(
     product_id: i64,
     request: CreateProductRequest,
 ) -> Result<Product, String> {
+    // Convert empty strings to None for optional fields to avoid UNIQUE constraint issues
+    let barcode = request.barcode.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let description = request.description.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let category = request.category.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let subcategory = request.subcategory.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let brand = request.brand.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let dimensions = request.dimensions.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+    let supplier_info = request.supplier_info.as_ref().and_then(|s| if s.trim().is_empty() { None } else { Some(s.as_str()) });
+
     sqlx::query(
         "UPDATE products SET sku = ?, barcode = ?, name = ?, description = ?, category = ?, 
          subcategory = ?, brand = ?, unit_of_measure = ?, cost_price = ?, selling_price = ?, 
@@ -183,12 +201,12 @@ pub async fn update_product(
          supplier_info = ?, reorder_point = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
     )
     .bind(&request.sku)
-    .bind(&request.barcode)
+    .bind(barcode)
     .bind(&request.name)
-    .bind(&request.description)
-    .bind(&request.category)
-    .bind(&request.subcategory)
-    .bind(&request.brand)
+    .bind(description)
+    .bind(category)
+    .bind(subcategory)
+    .bind(brand)
     .bind(&request.unit_of_measure)
     .bind(request.cost_price)
     .bind(request.selling_price)
@@ -196,8 +214,8 @@ pub async fn update_product(
     .bind(request.tax_rate)
     .bind(request.is_taxable)
     .bind(request.weight)
-    .bind(&request.dimensions)
-    .bind(&request.supplier_info)
+    .bind(dimensions)
+    .bind(supplier_info)
     .bind(request.reorder_point)
     .bind(product_id)
     .execute(pool.inner())
