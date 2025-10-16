@@ -278,7 +278,7 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Regional Settings</CardTitle>
                 <CardDescription>
@@ -351,9 +351,9 @@ export default function Settings() {
                   </>
                 )}
               </CardContent>
-            </Card>
+            </Card> */}
 
-            <div className="flex justify-end space-x-2">
+            {/* <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={resetStoreConfig} disabled={loading}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Reset
@@ -362,7 +362,7 @@ export default function Settings() {
                 <Save className="w-4 h-4 mr-2" />
                 Save Changes
               </Button>
-            </div>
+            </div> */}
           </div>
         </TabsContent>
 
@@ -472,7 +472,7 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground">
-                  Current: <strong>{currency.name}</strong> - Format example: <strong>{currency.code === 'USD' ? '$1,234.56' : '1 234 FCFA'}</strong>
+                  Current: <strong>{currency.name}</strong> - Format example: <strong>{currency.code === 'USD' ? '$1,234.56' : '1,234 FCFA'}</strong>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   This affects how all prices are displayed throughout the app, including sales, products, and reports.

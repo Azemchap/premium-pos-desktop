@@ -24,12 +24,12 @@ export const CURRENCIES: Record<CurrencyCode, Currency> = {
   },
   XAF: {
     code: 'XAF',
-    symbol: 'FCFA',
+    symbol: 'F',
     name: 'Central African CFA Franc',
     locale: 'fr-CM',
     decimalPlaces: 0, // CFA typically doesn't use decimals
-    thousandsSeparator: ' ',
-    decimalSeparator: ',',
+    thousandsSeparator: ',',
+    decimalSeparator: '.',
   },
 };
 
@@ -71,7 +71,7 @@ class CurrencyFormatter {
       // USD: $1,234.56
       return showSymbol ? `${this.currentCurrency.symbol}${formatted}` : formatted;
     } else {
-      // XAF: 1 234 FCFA (symbol after amount)
+      // XAF: 1,234 FCFA (symbol after amount)
       const result = showSymbol ? `${formatted} ${this.currentCurrency.symbol}` : formatted;
       return showCode ? `${result} (${this.currentCurrency.code})` : result;
     }

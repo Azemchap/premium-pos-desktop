@@ -1,12 +1,7 @@
 // src/pages/Inventory.tsx - Enhanced Stock Management
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -16,12 +11,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -36,33 +40,28 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { useCurrency } from "@/hooks/useCurrency";
+import { useAuthStore } from "@/store/authStore";
+import { invoke } from "@tauri-apps/api/core";
+import { formatDistance } from "date-fns";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Package,
-  TrendingUp,
-  TrendingDown,
   AlertCircle,
-  Search,
-  Plus,
-  Minus,
-  RefreshCw,
-  MoreHorizontal,
-  PackagePlus,
   ClipboardCheck,
   History,
   Lock,
-  Unlock,
+  Minus,
+  MoreHorizontal,
+  Package,
+  PackagePlus,
+  Plus,
+  RefreshCw,
+  Search,
+  TrendingDown,
+  TrendingUp
 } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
-import { useCurrency } from "@/hooks/useCurrency";
-import { invoke } from "@tauri-apps/api/core";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { formatDistance } from "date-fns";
 
 interface Product {
   id: number;
@@ -74,6 +73,7 @@ interface Product {
   unit_of_measure: string;
   selling_price: number;
   cost_price: number;
+  is_active: boolean;
 }
 
 interface InventoryItem {
@@ -122,7 +122,7 @@ export default function Inventory() {
   const [isStockTakeDialogOpen, setIsStockTakeDialogOpen] = useState(false);
   const [isReserveDialogOpen, setIsReserveDialogOpen] = useState(false);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
-  
+
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   // Receive stock form
@@ -634,20 +634,22 @@ export default function Inventory() {
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1">
-                              <Badge
-                                variant={
-                                  status.color === "destructive"
-                                    ? "destructive"
-                                    : status.color === "warning"
-                                    ? "secondary"
-                                    : "default"
-                                }
-                              >
-                                {status.label}
-                              </Badge>
                               {!item.product?.is_active && (
-                                <Badge variant="outline" className="text-xs text-red-600 border-red-600">
-                                  Inactive Product
+                                <Badge variant="outline" className="text-xs  text-red-600 border-red-600">
+                                 <span className="w-full text-center">Inactive Product</span>
+                                </Badge>
+                              )}
+                              {item.product?.is_active && (
+                                <Badge
+                                  variant={
+                                    status.color === "destructive"
+                                      ? "destructive"
+                                      : status.color === "warning"
+                                        ? "secondary"
+                                        : "default"
+                                  }
+                                >
+                                 <span className="w-full text-center"> {status.label}</span>
                                 </Badge>
                               )}
                             </div>
@@ -745,9 +747,8 @@ export default function Inventory() {
                       </TableCell>
                       <TableCell className="text-right">
                         <span
-                          className={`font-bold ${
-                            movement.quantity_change > 0 ? "text-green-600" : "text-red-600"
-                          }`}
+                          className={`font-bold ${movement.quantity_change > 0 ? "text-green-600" : "text-red-600"
+                            }`}
                         >
                           {movement.quantity_change > 0 ? "+" : ""}
                           {movement.quantity_change}
@@ -942,13 +943,12 @@ export default function Inventory() {
                 <div>
                   <p className="text-muted-foreground">Difference</p>
                   <p
-                    className={`text-2xl font-bold ${
-                      stockTakeCount - (selectedItem?.current_stock || 0) > 0
-                        ? "text-green-600"
-                        : stockTakeCount - (selectedItem?.current_stock || 0) < 0
+                    className={`text-2xl font-bold ${stockTakeCount - (selectedItem?.current_stock || 0) > 0
+                      ? "text-green-600"
+                      : stockTakeCount - (selectedItem?.current_stock || 0) < 0
                         ? "text-red-600"
                         : ""
-                    }`}
+                      }`}
                   >
                     {stockTakeCount - (selectedItem?.current_stock || 0) > 0 ? "+" : ""}
                     {stockTakeCount - (selectedItem?.current_stock || 0)}
@@ -1074,9 +1074,8 @@ export default function Inventory() {
                     </TableCell>
                     <TableCell className="text-right">
                       <span
-                        className={`font-bold ${
-                          movement.quantity_change > 0 ? "text-green-600" : "text-red-600"
-                        }`}
+                        className={`font-bold ${movement.quantity_change > 0 ? "text-green-600" : "text-red-600"
+                          }`}
                       >
                         {movement.quantity_change > 0 ? "+" : ""}
                         {movement.quantity_change}
