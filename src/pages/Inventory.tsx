@@ -633,17 +633,24 @@ export default function Inventory() {
                             {item.minimum_stock} / {item.maximum_stock}
                           </TableCell>
                           <TableCell>
-                            <Badge
-                              variant={
-                                status.color === "destructive"
-                                  ? "destructive"
-                                  : status.color === "warning"
-                                  ? "secondary"
-                                  : "default"
-                              }
-                            >
-                              {status.label}
-                            </Badge>
+                            <div className="flex flex-col gap-1">
+                              <Badge
+                                variant={
+                                  status.color === "destructive"
+                                    ? "destructive"
+                                    : status.color === "warning"
+                                    ? "secondary"
+                                    : "default"
+                                }
+                              >
+                                {status.label}
+                              </Badge>
+                              {!item.product?.is_active && (
+                                <Badge variant="outline" className="text-xs text-red-600 border-red-600">
+                                  Inactive Product
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>

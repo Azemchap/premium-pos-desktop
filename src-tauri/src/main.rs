@@ -215,6 +215,7 @@ async fn main() {
             commands::products::create_product,
             commands::products::update_product,
             commands::products::delete_product,
+            commands::products::reactivate_product,
             commands::products::search_products,
             commands::products::get_product_by_barcode,
             // Inventory management commands
