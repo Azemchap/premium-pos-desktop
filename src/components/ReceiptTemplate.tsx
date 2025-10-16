@@ -2,6 +2,7 @@
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { currencyFormatter } from "@/lib/currency";
 
 interface ReceiptProps {
   saleNumber: string;
