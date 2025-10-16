@@ -52,10 +52,10 @@ function App() {
           <Route path="/products" element={<Products />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/notifications" element={<Notifications />} />
-          <Route path="/users" element={<Users />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/master-data" element={<MasterData />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/users" element={<Users />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </DashboardLayout>
