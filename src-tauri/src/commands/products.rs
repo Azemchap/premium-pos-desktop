@@ -152,6 +152,18 @@ pub async fn create_product(
     .map_err(|e| e.to_string())?
     .last_insert_rowid();
 
+    // CRITICAL: Auto-create inventory record for this product
+    sqlx::query(
+        "INSERT INTO inventory (product_id, current_stock, minimum_stock, maximum_stock, 
+         reserved_stock, available_stock, last_updated) 
+         VALUES (?, 0, ?, 1000, 0, 0, CURRENT_TIMESTAMP)",
+    )
+    .bind(product_id)
+    .bind(request.reorder_point)
+    .execute(pool.inner())
+    .await
+    .map_err(|e| format!("Failed to create inventory record: {}", e))?;
+
     let product = Product {
         id: product_id,
         sku: request.sku,

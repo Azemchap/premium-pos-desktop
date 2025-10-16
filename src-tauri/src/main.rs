@@ -283,6 +283,12 @@ async fn main() {
             commands::master_data::create_unit,
             commands::master_data::update_unit,
             commands::master_data::delete_unit,
+            // Stock management commands
+            commands::stock::receive_stock,
+            commands::stock::adjust_stock,
+            commands::stock::reserve_stock,
+            commands::stock::release_reserved_stock,
+            commands::stock::stock_take,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
