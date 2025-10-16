@@ -130,23 +130,23 @@ export default function Reports() {
 
   const getDateRangeDates = (): { start: string; end: string } => {
     const today = new Date();
-    const formatDate = (d: Date) => formatCurrency(d, "yyyy-MM-dd");
+    const formatDateString = (d: Date) => formatDate(d, "yyyy-MM-dd");
 
     switch (dateRange) {
       case "today":
-        return { start: formatDate(today), end: formatDate(today) };
+        return { start: formatDateString(today), end: formatDateString(today) };
       case "week":
-        return { start: formatDate(startOfWeek(today)), end: formatDate(today) };
+        return { start: formatDateString(startOfWeek(today)), end: formatDateString(today) };
       case "month":
-        return { start: formatDate(startOfMonth(today)), end: formatDate(today) };
+        return { start: formatDateString(startOfMonth(today)), end: formatDateString(today) };
       case "quarter":
-        return { start: formatDate(startOfQuarter(today)), end: formatDate(today) };
+        return { start: formatDateString(startOfQuarter(today)), end: formatDateString(today) };
       case "year":
-        return { start: formatDate(startOfYear(today)), end: formatDate(today) };
+        return { start: formatDateString(startOfYear(today)), end: formatDateString(today) };
       case "custom":
         return { start: startDate, end: endDate };
       default:
-        return { start: formatDate(startOfMonth(today)), end: formatDate(today) };
+        return { start: formatDateString(startOfMonth(today)), end: formatDateString(today) };
     }
   };
 
