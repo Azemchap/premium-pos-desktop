@@ -261,7 +261,7 @@ pub async fn release_reserved_stock(
     pool: State<'_, SqlitePool>,
     product_id: i64,
     quantity: i32,
-    user_id: i64,
+    _user_id: i64,
 ) -> Result<String, String> {
     let pool_ref = pool.inner();
 
