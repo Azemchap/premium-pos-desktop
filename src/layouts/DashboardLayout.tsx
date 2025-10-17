@@ -56,9 +56,45 @@ const navigation: NavigationItem[] = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [storeName, setStoreName] = useState<string>("");
   const { user, logout, theme, setTheme } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Load store config and notification count
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        // Load store config
+        const config = await invoke<any>("get_store_config");
+        setStoreName(config.name || "Premium POS");
+        
+        // Load notification count
+        const notifications = await invoke<any[]>("get_notifications", { 
+          isRead: false 
+        });
+        setNotificationCount(notifications.length);
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+      }
+    };
+
+    loadDashboardData();
+    
+    // Refresh notification count every 30 seconds
+    const interval = setInterval(async () => {
+      try {
+        const notifications = await invoke<any[]>("get_notifications", { 
+          isRead: false 
+        });
+        setNotificationCount(notifications.length);
+      } catch (error) {
+        // Silently fail
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const hasPermission = (allowedRoles?: string[]) => {
     if (!allowedRoles || allowedRoles.length === 0) return true;
@@ -96,10 +132,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SheetContent side="left" className="w-60">
           <div className="space-y-6">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">P0S</span>
+              <div className="w-8 h-8 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                <StoreIcon className="text-primary-foreground w-4 h-4" />
               </div>
-              <span className="font-bold text-xl">Premium POS</span>
+              <div className="flex flex-col">
+                <span className="font-bold text-sm leading-none">{storeName}</span>
+                <span className="text-xs text-muted-foreground">POS System</span>
+              </div>
             </div>
 
             <nav className="space-y-2">
