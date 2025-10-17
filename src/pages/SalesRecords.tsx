@@ -33,6 +33,9 @@ import { currencyFormatter, formatCurrency } from "@/lib/currency";
 import { invoke } from "@tauri-apps/api/core";
 import { format as formatDate, startOfMonth, startOfQuarter, startOfWeek, startOfYear } from "date-fns";
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   Calendar,
   CreditCard,
   DollarSign,
@@ -42,9 +45,10 @@ import {
   Search,
   TrendingUp
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { toast } from "sonner";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 interface SaleWithDetails {
   id: number;
@@ -122,12 +126,15 @@ interface Sale {
 }
 
 type DateRange = "today" | "week" | "month" | "quarter" | "year" | "custom";
+type SortColumn = 'created_at' | 'sale_number' | 'total_amount' | 'profit';
+type SortDirection = 'asc' | 'desc';
 
 export default function SalesRecords() {
   const [sales, setSales] = useState<SaleWithDetails[]>([]);
   const [stats, setStats] = useState<SalesStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<DateRange>("month");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -137,7 +144,15 @@ export default function SalesRecords() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedSaleDetails, setSelectedSaleDetails] = useState<SaleWithDetails | null>(null);
 
-  const getDateRangeDates = (range: DateRange): { start: string; end: string } => {
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const salesPerPage = 20;
+
+  // Sorting
+  const [sortColumn, setSortColumn] = useState<SortColumn>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const getDateRangeDatesDates = (range: DateRange): { start: string; end: string } => {
     const today = new Date();
     const formatDateString = (date: Date) => formatDate(date, "yyyy-MM-dd");
 
@@ -162,7 +177,7 @@ export default function SalesRecords() {
   const loadSales = async () => {
     try {
       setLoading(true);
-      const { start, end } = getDateRangeDates(dateRange);
+      const { start, end } = getDateRangeDatesDates(dateRange);
 
       const [salesData, statsData] = await Promise.all([
         invoke<SaleWithDetails[]>("get_sales_with_details", {
@@ -193,11 +208,11 @@ export default function SalesRecords() {
       const [sale, items] = await invoke<[Sale, SaleItem[]]>("get_sale_details", { saleId });
       setSelectedSale(sale);
       setSaleItems(items);
-      
+
       // Find the sale with details for printing
       const saleWithDetails = sales.find(s => s.id === saleId);
       setSelectedSaleDetails(saleWithDetails || null);
-      
+
       setIsDetailsOpen(true);
       toast.success("✅ Sale details loaded");
     } catch (error) {
@@ -231,7 +246,7 @@ export default function SalesRecords() {
 
       // Get store info
       const storeInfo = await invoke<any>("get_store_config").catch(() => null);
-      
+
       // Build receipt HTML directly
       const receiptHTML = `
         <!DOCTYPE html>
@@ -380,7 +395,7 @@ export default function SalesRecords() {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
         toast.success("✅ Receipt sent to printer!");
-        
+
         // Clean up after printing
         setTimeout(() => {
           document.body.removeChild(iframe);
@@ -393,19 +408,84 @@ export default function SalesRecords() {
     }
   };
 
-  const filteredSales = sales.filter((sale) => {
-    const matchesSearch =
-      !searchQuery ||
-      sale.sale_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (sale.customer_name && sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (sale.customer_phone && sale.customer_phone.includes(searchQuery));
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
 
-    return matchesSearch;
-  });
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
+  // Filtered and sorted sales
+  const filteredAndSortedSales = useMemo(() => {
+    let filtered = sales.filter((sale) => {
+      const matchesSearch =
+        !debouncedSearchQuery ||
+        sale.sale_number.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        (sale.customer_name && sale.customer_name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) ||
+        (sale.customer_phone && sale.customer_phone.includes(debouncedSearchQuery));
+
+      return matchesSearch;
+    });
+
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      switch (sortColumn) {
+        case 'created_at':
+          aValue = new Date(a.created_at).getTime();
+          bValue = new Date(b.created_at).getTime();
+          break;
+        case 'sale_number':
+          aValue = a.sale_number;
+          bValue = b.sale_number;
+          break;
+        case 'total_amount':
+          aValue = a.total_amount;
+          bValue = b.total_amount;
+          break;
+        case 'profit':
+          aValue = a.profit;
+          bValue = b.profit;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [sales, debouncedSearchQuery, sortColumn, sortDirection]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAndSortedSales.length / salesPerPage);
+  const paginatedSales = filteredAndSortedSales.slice(
+    (currentPage - 1) * salesPerPage,
+    currentPage * salesPerPage
+  );
+
+  const handleSort = (column: SortColumn) => {
+    if (column === sortColumn) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   useEffect(() => {
     loadSales();
   }, [dateRange, paymentMethod, startDate, endDate]);
+
+  useEffect(() => {
+    // Reset to first page when filters or sort change
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, dateRange, paymentMethod, startDate, endDate, sortColumn, sortDirection]);
 
   const paymentMethodColors: Record<string, string> = {
     cash: "bg-green-100 text-green-800",
@@ -427,7 +507,7 @@ export default function SalesRecords() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -497,93 +577,6 @@ export default function SalesRecords() {
         </div>
       )}
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
-            <div className="space-y-2 col-span-4">
-              <Label htmlFor="search">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  id="search"
-                  placeholder="Sale #, customer..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="dateRange">Date Range</Label>
-              <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                  <SelectItem value="quarter">This Quarter</SelectItem>
-                  <SelectItem value="year">This Year</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="paymentMethod">Payment Method</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Methods</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="mobile">Mobile</SelectItem>
-                  <SelectItem value="check">Check</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {/* <div className="flex items-end">
-              <Button variant="outline" onClick={loadSales} className="w-full">
-                <Filter className="w-4 h-4 mr-2" />
-                Apply Filters
-              </Button>
-            </div> */}
-          </div>
-
-          {dateRange === "custom" && (
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="mt-2 text-sm text-muted-foreground">
-            Showing {filteredSales.length} of {sales.length} sales
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Sales Table */}
       <Card>
         <CardHeader>
@@ -597,103 +590,153 @@ export default function SalesRecords() {
               ))}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Sale #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Cashier</TableHead>
-                  <TableHead>Items</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Profit</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSales.map((sale) => (
-                  <TableRow key={sale.id} className={sale.is_voided ? "opacity-50" : ""}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {formatDate(new Date(sale.created_at), "MMM dd, yyyy")}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {formatDate(new Date(sale.created_at), "hh:mm a")}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-mono text-sm">{sale.sale_number}</div>
-                      {sale.is_voided && (
-                        <Badge variant="destructive" className="mt-1">
-                          Voided
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {sale.customer_name ? (
-                        <div>
-                          <div className="font-medium">{sale.customer_name}</div>
-                          {sale.customer_phone && (
-                            <div className="text-sm text-muted-foreground">
-                              {sale.customer_phone}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Walk-in</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{sale.cashier_name || `Cashier #${sale.cashier_id}`}</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{sale.items_count} items</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={paymentMethodColors[sale.payment_method] || ""}>
-                        {sale.payment_method.charAt(0).toUpperCase() + sale.payment_method.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="font-medium">{formatCurrency(sale.total_amount)}</div>
-                      {sale.discount_amount > 0 && (
-                        <div className="text-xs text-red-600">
-                          -{formatCurrency(sale.discount_amount)}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className={`font-medium ${sale.profit > 0 ? "text-green-600" : "text-red-600"}`}>
-                        {formatCurrency(sale.profit)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {sale.total_amount > 0 ? ((sale.profit / sale.total_amount) * 100).toFixed(1) : 0}% margin
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => loadSaleDetails(sale.id)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('created_at')}>
+                      Date & Time {sortColumn === 'created_at' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                    </TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('sale_number')}>
+                      Sale # {sortColumn === 'sale_number' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                    </TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Cashier</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead className="text-right cursor-pointer" onClick={() => handleSort('total_amount')}>
+                      Total {sortColumn === 'total_amount' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                    </TableHead>
+                    <TableHead className="text-right cursor-pointer" onClick={() => handleSort('profit')}>
+                      Profit {sortColumn === 'profit' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                    </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {paginatedSales.map((sale) => (
+                    <TableRow key={sale.id} className={sale.is_voided ? "opacity-50" : ""}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">
+                            {formatDate(new Date(sale.created_at), "MMM dd, yyyy")}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {formatDate(new Date(sale.created_at), "hh:mm a")}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-sm">{sale.sale_number}</div>
+                        {sale.is_voided && (
+                          <Badge variant="destructive" className="mt-1">
+                            Voided
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {sale.customer_name ? (
+                          <div>
+                            <div className="font-medium">{sale.customer_name}</div>
+                            {sale.customer_phone && (
+                              <div className="text-sm text-muted-foreground">
+                                {sale.customer_phone}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Walk-in</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{sale.cashier_name || `Cashier #${sale.cashier_id}`}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{sale.items_count} items</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={paymentMethodColors[sale.payment_method] || ""}>
+                          {sale.payment_method.charAt(0).toUpperCase() + sale.payment_method.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="font-medium">{formatCurrency(sale.total_amount)}</div>
+                        {sale.discount_amount > 0 && (
+                          <div className="text-xs text-red-600">
+                            -{formatCurrency(sale.discount_amount)}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className={`font-medium ${sale.profit > 0 ? "text-green-600" : "text-red-600"}`}>
+                          {formatCurrency(sale.profit)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {sale.total_amount > 0 ? ((sale.profit / sale.total_amount) * 100).toFixed(1) : 0}% margin
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => loadSaleDetails(sale.id)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {totalPages > 1 && (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) setCurrentPage(currentPage - 1);
+                        }}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={currentPage === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(page);
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                        }}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
 
-          {!loading && filteredSales.length === 0 && (
+          {!loading && filteredAndSortedSales.length === 0 && (
             <div className="text-center py-12">
               <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-medium mb-2">No sales found</h3>
               <p className="text-muted-foreground">
-                {searchQuery ? "Try adjusting your search criteria" : "No sales in this date range"}
+                {debouncedSearchQuery ? "Try adjusting your search criteria" : "No sales in this date range"}
               </p>
             </div>
           )}
@@ -713,7 +756,7 @@ export default function SalesRecords() {
           {selectedSale && (
             <div className="space-y-6">
               {/* Sale Header */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Sale Number</Label>
                   <p className="font-mono font-medium">{selectedSale.sale_number}</p>

@@ -1,4 +1,3 @@
-// src/pages/Inventory.tsx - Enhanced Stock Management
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,12 +40,16 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import { formatDistance } from "date-fns";
 import {
   AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   ClipboardCheck,
   History,
   Lock,
@@ -60,7 +63,7 @@ import {
   TrendingDown,
   TrendingUp
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 interface Product {
@@ -106,6 +109,9 @@ interface InventoryMovement {
   user_name?: string;
 }
 
+type SortColumn = 'name' | 'sku' | 'current_stock' | 'available_stock';
+type SortDirection = 'asc' | 'desc';
+
 export default function Inventory() {
   const { user } = useAuthStore();
   const { format } = useCurrency();
@@ -113,8 +119,17 @@ export default function Inventory() {
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
+  // Sorting
+  const [sortColumn, setSortColumn] = useState<SortColumn>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   // Dialogs state
   const [isReceiveDialogOpen, setIsReceiveDialogOpen] = useState(false);
@@ -122,29 +137,31 @@ export default function Inventory() {
   const [isStockTakeDialogOpen, setIsStockTakeDialogOpen] = useState(false);
   const [isReserveDialogOpen, setIsReserveDialogOpen] = useState(false);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
-
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
-  // Receive stock form
+  // Form states
   const [receiveQuantity, setReceiveQuantity] = useState(0);
   const [receiveCostPrice, setReceiveCostPrice] = useState(0);
   const [receiveSupplier, setReceiveSupplier] = useState("");
   const [receiveReference, setReceiveReference] = useState("");
   const [receiveNotes, setReceiveNotes] = useState("");
-
-  // Adjust stock form
   const [adjustType, setAdjustType] = useState<"add" | "subtract">("add");
   const [adjustQuantity, setAdjustQuantity] = useState(0);
   const [adjustReason, setAdjustReason] = useState("");
   const [adjustNotes, setAdjustNotes] = useState("");
-
-  // Stock take form
   const [stockTakeCount, setStockTakeCount] = useState(0);
   const [stockTakeNotes, setStockTakeNotes] = useState("");
-
-  // Reserve stock form
   const [reserveQuantity, setReserveQuantity] = useState(0);
   const [reserveNotes, setReserveNotes] = useState("");
+  const [productMovements, setProductMovements] = useState<InventoryMovement[]>([]);
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const loadInventory = async () => {
     try {
@@ -174,14 +191,24 @@ export default function Inventory() {
     }
   };
 
-  // ========== RECEIVE STOCK ==========
+  const loadProductMovements = async (productId: number) => {
+    try {
+      const result = await invoke<InventoryMovement[]>("get_inventory_movements", {
+        productId,
+        limit: 50,
+        offset: 0,
+      });
+      setProductMovements(result);
+    } catch (error) {
+      console.error("Failed to load product movements:", error);
+    }
+  };
+
   const handleReceiveStock = async () => {
-    if (!selectedItem) return;
-    if (receiveQuantity <= 0) {
+    if (!selectedItem || receiveQuantity <= 0) {
       toast.error("❌ Quantity must be greater than 0");
       return;
     }
-
     try {
       await invoke("receive_stock", {
         request: {
@@ -194,7 +221,6 @@ export default function Inventory() {
         },
         userId: user?.id,
       });
-
       toast.success(`✅ Received ${receiveQuantity} units of ${selectedItem.product?.name}`);
       setIsReceiveDialogOpen(false);
       resetReceiveForm();
@@ -214,18 +240,11 @@ export default function Inventory() {
     setReceiveNotes("");
   };
 
-  // ========== ADJUST STOCK ==========
   const handleAdjustStock = async () => {
-    if (!selectedItem) return;
-    if (adjustQuantity <= 0) {
-      toast.error("❌ Quantity must be greater than 0");
+    if (!selectedItem || adjustQuantity <= 0 || !adjustReason.trim()) {
+      toast.error(adjustQuantity <= 0 ? "❌ Quantity must be greater than 0" : "❌ Reason is required");
       return;
     }
-    if (!adjustReason.trim()) {
-      toast.error("❌ Reason is required");
-      return;
-    }
-
     try {
       await invoke("adjust_stock", {
         request: {
@@ -237,9 +256,7 @@ export default function Inventory() {
         },
         userId: user?.id,
       });
-
-      const action = adjustType === "add" ? "Added" : "Removed";
-      toast.success(`✅ ${action} ${adjustQuantity} units of ${selectedItem.product?.name}`);
+      toast.success(`✅ ${adjustType === "add" ? "Added" : "Removed"} ${adjustQuantity} units of ${selectedItem.product?.name}`);
       setIsAdjustDialogOpen(false);
       resetAdjustForm();
       loadInventory();
@@ -257,14 +274,11 @@ export default function Inventory() {
     setAdjustNotes("");
   };
 
-  // ========== STOCK TAKE ==========
   const handleStockTake = async () => {
-    if (!selectedItem) return;
-    if (stockTakeCount < 0) {
+    if (!selectedItem || stockTakeCount < 0) {
       toast.error("❌ Count cannot be negative");
       return;
     }
-
     try {
       await invoke("stock_take", {
         productId: selectedItem.product_id,
@@ -272,11 +286,8 @@ export default function Inventory() {
         userId: user?.id,
         notes: stockTakeNotes || null,
       });
-
       const difference = stockTakeCount - selectedItem.current_stock;
-      toast.success(
-        `✅ Stock take completed. Difference: ${difference > 0 ? "+" : ""}${difference} units`
-      );
+      toast.success(`✅ Stock take completed. Difference: ${difference > 0 ? "+" : ""}${difference} units`);
       setIsStockTakeDialogOpen(false);
       resetStockTakeForm();
       loadInventory();
@@ -292,9 +303,11 @@ export default function Inventory() {
     setStockTakeNotes("");
   };
 
-  // ========== RESERVE STOCK ==========
   const handleReserveStock = async () => {
-    if (!selectedItem) return;
+    if (!selectedItem) {
+      toast.error("❌ No item selected");
+      return;
+    }
     if (reserveQuantity <= 0) {
       toast.error("❌ Quantity must be greater than 0");
       return;
@@ -311,7 +324,6 @@ export default function Inventory() {
         userId: user?.id,
         notes: reserveNotes || null,
       });
-
       toast.success(`✅ Reserved ${reserveQuantity} units of ${selectedItem.product?.name}`);
       setIsReserveDialogOpen(false);
       resetReserveForm();
@@ -328,7 +340,6 @@ export default function Inventory() {
     setReserveNotes("");
   };
 
-  // ========== DIALOGS ==========
   const openReceiveDialog = (item: InventoryItem) => {
     setSelectedItem(item);
     setReceiveCostPrice(item.product?.cost_price || 0);
@@ -357,77 +368,90 @@ export default function Inventory() {
     setIsMovementDialogOpen(true);
   };
 
-  const [productMovements, setProductMovements] = useState<InventoryMovement[]>([]);
-  const loadProductMovements = async (productId: number) => {
-    try {
-      const result = await invoke<InventoryMovement[]>("get_inventory_movements", {
-        productId,
-        limit: 50,
-        offset: 0,
-      });
-      setProductMovements(result);
-    } catch (error) {
-      console.error("Failed to load product movements:", error);
+  // Filtered and sorted inventory
+  const filteredAndSortedInventory = useMemo(() => {
+    let filtered = inventory.filter((item) => {
+      const matchesSearch =
+        !debouncedSearchQuery ||
+        item.product?.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        item.product?.sku.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+      const matchesCategory = filterCategory === "all" || item.product?.category === filterCategory;
+      const matchesStatus =
+        filterStatus === "all" ||
+        (filterStatus === "in-stock" && item.available_stock > 0) ||
+        (filterStatus === "low-stock" && item.current_stock <= item.minimum_stock && item.current_stock > 0) ||
+        (filterStatus === "out-of-stock" && item.current_stock === 0) ||
+        (filterStatus === "reserved" && item.reserved_stock > 0);
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      switch (sortColumn) {
+        case 'name':
+          aValue = a.product?.name.toLowerCase() || '';
+          bValue = b.product?.name.toLowerCase() || '';
+          break;
+        case 'sku':
+          aValue = a.product?.sku.toLowerCase() || '';
+          bValue = b.product?.sku.toLowerCase() || '';
+          break;
+        case 'current_stock':
+          aValue = a.current_stock;
+          bValue = b.current_stock;
+          break;
+        case 'available_stock':
+          aValue = a.available_stock;
+          bValue = b.available_stock;
+          break;
+        default:
+          return 0;
+      }
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [inventory, debouncedSearchQuery, filterCategory, filterStatus, sortColumn, sortDirection]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAndSortedInventory.length / itemsPerPage);
+  const paginatedInventory = filteredAndSortedInventory.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleSort = (column: SortColumn) => {
+    if (column === sortColumn) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
     }
   };
 
-  // Filters
-  const filteredInventory = inventory.filter((item) => {
-    const matchesSearch =
-      !searchQuery ||
-      item.product?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.product?.sku.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesCategory =
-      filterCategory === "all" || item.product?.category === filterCategory;
-
-    const matchesStatus =
-      filterStatus === "all" ||
-      (filterStatus === "in-stock" && item.available_stock > 0) ||
-      (filterStatus === "low-stock" &&
-        item.current_stock <= item.minimum_stock &&
-        item.current_stock > 0) ||
-      (filterStatus === "out-of-stock" && item.current_stock === 0) ||
-      (filterStatus === "reserved" && item.reserved_stock > 0);
-
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
   const categories = [...new Set(inventory.map((i) => i.product?.category).filter(Boolean))];
-
-  // Statistics
   const totalItems = inventory.length;
   const inStock = inventory.filter((i) => i.available_stock > 0).length;
-  const lowStock = inventory.filter(
-    (i) => i.current_stock <= i.minimum_stock && i.current_stock > 0
-  ).length;
+  const lowStock = inventory.filter((i) => i.current_stock <= i.minimum_stock && i.current_stock > 0).length;
   const outOfStock = inventory.filter((i) => i.current_stock === 0).length;
-  const totalValue = inventory.reduce(
-    (sum, item) => sum + (item.current_stock * (item.product?.cost_price || 0)),
-    0
-  );
+  const totalValue = inventory.reduce((sum, item) => sum + (item.current_stock * (item.product?.cost_price || 0)), 0);
 
   const getStockStatus = (item: InventoryItem) => {
     if (item.current_stock === 0) return { label: "Out of Stock", color: "destructive" };
-    if (item.current_stock <= item.minimum_stock)
-      return { label: "Low Stock", color: "warning" };
+    if (item.current_stock <= item.minimum_stock) return { label: "Low Stock", color: "warning" };
     return { label: "In Stock", color: "success" };
   };
 
   const getMovementIcon = (type: string) => {
     switch (type) {
-      case "receipt":
-        return <PackagePlus className="w-4 h-4 text-green-600" />;
-      case "sale":
-        return <TrendingDown className="w-4 h-4 text-red-600" />;
-      case "adjustment":
-        return <RefreshCw className="w-4 h-4 text-blue-600" />;
-      case "stock_take":
-        return <ClipboardCheck className="w-4 h-4 text-purple-600" />;
-      case "reservation":
-        return <Lock className="w-4 h-4 text-orange-600" />;
-      default:
-        return <Package className="w-4 h-4" />;
+      case "receipt": return <PackagePlus className="w-4 h-4 text-green-600" />;
+      case "sale": return <TrendingDown className="w-4 h-4 text-red-600" />;
+      case "adjustment": return <RefreshCw className="w-4 h-4 text-blue-600" />;
+      case "stock_take": return <ClipboardCheck className="w-4 h-4 text-purple-600" />;
+      case "reservation": return <Lock className="w-4 h-4 text-orange-600" />;
+      default: return <Package className="w-4 h-4" />;
     }
   };
 
@@ -435,6 +459,10 @@ export default function Inventory() {
     loadInventory();
     loadMovements();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, filterCategory, filterStatus, sortColumn, sortDirection]);
 
   return (
     <div className="space-y-6">
@@ -464,7 +492,6 @@ export default function Inventory() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -476,7 +503,6 @@ export default function Inventory() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -488,7 +514,6 @@ export default function Inventory() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -500,7 +525,6 @@ export default function Inventory() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -527,7 +551,6 @@ export default function Inventory() {
                 className="pl-10"
               />
             </div>
-
             <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger>
                 <SelectValue placeholder="All Categories" />
@@ -541,7 +564,6 @@ export default function Inventory() {
                 ))}
               </SelectContent>
             </Select>
-
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger>
                 <SelectValue placeholder="All Status" />
@@ -585,119 +607,168 @@ export default function Inventory() {
                   ))}
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead className="text-right">Current Stock</TableHead>
-                      <TableHead className="text-right">Reserved</TableHead>
-                      <TableHead className="text-right">Available</TableHead>
-                      <TableHead className="text-right">Min/Max</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInventory.map((item) => {
-                      const status = getStockStatus(item);
-                      return (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{item.product?.name}</div>
-                              {item.product?.category && (
-                                <div className="text-sm text-muted-foreground">
-                                  {item.product.category}
-                                </div>
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
+                          Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                        </TableHead>
+                        <TableHead className="cursor-pointer" onClick={() => handleSort('sku')}>
+                          SKU {sortColumn === 'sku' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                        </TableHead>
+                        <TableHead className="text-right cursor-pointer" onClick={() => handleSort('current_stock')}>
+                          Current Stock {sortColumn === 'current_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                        </TableHead>
+                        <TableHead className="text-right">Reserved</TableHead>
+                        <TableHead className="text-right cursor-pointer" onClick={() => handleSort('available_stock')}>
+                          Available {sortColumn === 'available_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                        </TableHead>
+                        <TableHead className="text-right">Min/Max</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedInventory.map((item) => {
+                        const status = getStockStatus(item);
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{item.product?.name}</div>
+                                {item.product?.category && (
+                                  <div className="text-sm text-muted-foreground">
+                                    {item.product.category}
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {item.product?.sku}
+                            </TableCell>
+                            <TableCell className="text-right font-bold">
+                              {item.current_stock}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {item.reserved_stock > 0 ? (
+                                <Badge variant="outline">{item.reserved_stock}</Badge>
+                              ) : (
+                                "—"
                               )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">
-                            {item.product?.sku}
-                          </TableCell>
-                          <TableCell className="text-right font-bold">
-                            {item.current_stock}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {item.reserved_stock > 0 ? (
-                              <Badge variant="outline">{item.reserved_stock}</Badge>
-                            ) : (
-                              "—"
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {item.available_stock}
-                          </TableCell>
-                          <TableCell className="text-right text-sm text-muted-foreground">
-                            {item.minimum_stock} / {item.maximum_stock}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              {!item.product?.is_active && (
-                                <Badge variant="outline" className="text-xs  text-red-600 border-red-600">
-                                 <span className="w-full text-center">Inactive Product</span>
-                                </Badge>
-                              )}
-                              {item.product?.is_active && (
-                                <Badge
-                                  variant={
-                                    status.color === "destructive"
-                                      ? "destructive"
-                                      : status.color === "warning"
-                                        ? "secondary"
-                                        : "default"
-                                  }
-                                >
-                                 <span className="w-full text-center"> {status.label}</span>
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => openReceiveDialog(item)}>
-                                  <PackagePlus className="w-4 h-4 mr-2" />
-                                  Receive Stock
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openAdjustDialog(item)}>
-                                  <RefreshCw className="w-4 h-4 mr-2" />
-                                  Adjust Stock
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openStockTakeDialog(item)}>
-                                  <ClipboardCheck className="w-4 h-4 mr-2" />
-                                  Stock Take
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openReserveDialog(item)}>
-                                  <Lock className="w-4 h-4 mr-2" />
-                                  Reserve Stock
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openMovementDialog(item)}>
-                                  <History className="w-4 h-4 mr-2" />
-                                  View History
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {item.available_stock}
+                            </TableCell>
+                            <TableCell className="text-right text-sm text-muted-foreground">
+                              {item.minimum_stock} / {item.maximum_stock}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-1">
+                                {!item.product?.is_active && (
+                                  <Badge variant="outline" className="text-xs text-red-600 border-red-600">
+                                    <span className="w-full text-center">Inactive Product</span>
+                                  </Badge>
+                                )}
+                                {item.product?.is_active && (
+                                  <Badge
+                                    variant={
+                                      status.color === "destructive"
+                                        ? "destructive"
+                                        : status.color === "warning"
+                                          ? "secondary"
+                                          : "default"
+                                    }
+                                  >
+                                    <span className="w-full text-center">{status.label}</span>
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openReceiveDialog(item)}>
+                                    <PackagePlus className="w-4 h-4 mr-2" />
+                                    Receive Stock
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openAdjustDialog(item)}>
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Adjust Stock
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openStockTakeDialog(item)}>
+                                    <ClipboardCheck className="w-4 h-4 mr-2" />
+                                    Stock Take
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openReserveDialog(item)}>
+                                    <Lock className="w-4 h-4 mr-2" />
+                                    Reserve Stock
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openMovementDialog(item)}>
+                                    <History className="w-4 h-4 mr-2" />
+                                    View History
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                  {totalPages > 1 && (
+                    <Pagination className="mt-4">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentPage > 1) setCurrentPage(currentPage - 1);
+                            }}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                          />
+                        </PaginationItem>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === page}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(page);
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                          <PaginationNext
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                            }}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </>
               )}
-
-              {!loading && filteredInventory.length === 0 && (
+              {!loading && filteredAndSortedInventory.length === 0 && (
                 <div className="text-center py-12">
                   <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h3 className="text-lg font-medium mb-2">No inventory found</h3>
                   <p className="text-muted-foreground">
-                    {searchQuery || filterCategory !== "all" || filterStatus !== "all"
+                    {debouncedSearchQuery || filterCategory !== "all" || filterStatus !== "all"
                       ? "Try adjusting your filters"
                       : "Create products to start managing inventory"}
                   </p>
@@ -747,8 +818,7 @@ export default function Inventory() {
                       </TableCell>
                       <TableCell className="text-right">
                         <span
-                          className={`font-bold ${movement.quantity_change > 0 ? "text-green-600" : "text-red-600"
-                            }`}
+                          className={`font-bold ${movement.quantity_change > 0 ? "text-green-600" : "text-red-600"}`}
                         >
                           {movement.quantity_change > 0 ? "+" : ""}
                           {movement.quantity_change}
@@ -765,7 +835,6 @@ export default function Inventory() {
                   ))}
                 </TableBody>
               </Table>
-
               {movements.length === 0 && (
                 <div className="text-center py-12">
                   <History className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -780,14 +849,12 @@ export default function Inventory() {
         </TabsContent>
       </Tabs>
 
-      {/* RECEIVE STOCK DIALOG */}
+      {/* Dialogs */}
       <Dialog open={isReceiveDialogOpen} onOpenChange={setIsReceiveDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Receive Stock</DialogTitle>
-            <DialogDescription>
-              Add new stock for {selectedItem?.product?.name}
-            </DialogDescription>
+            <DialogDescription>Add new stock for {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -839,22 +906,17 @@ export default function Inventory() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReceiveDialogOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setIsReceiveDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleReceiveStock}>Receive Stock</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ADJUST STOCK DIALOG */}
       <Dialog open={isAdjustDialogOpen} onOpenChange={setIsAdjustDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adjust Stock</DialogTitle>
-            <DialogDescription>
-              Manually adjust stock for {selectedItem?.product?.name}
-            </DialogDescription>
+            <DialogDescription>Manually adjust stock for {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -916,22 +978,17 @@ export default function Inventory() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAdjustDialogOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setIsAdjustDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAdjustStock}>Adjust Stock</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* STOCK TAKE DIALOG */}
       <Dialog open={isStockTakeDialogOpen} onOpenChange={setIsStockTakeDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Stock Take / Physical Count</DialogTitle>
-            <DialogDescription>
-              Enter the actual physical count for {selectedItem?.product?.name}
-            </DialogDescription>
+            <DialogDescription>Enter the actual physical count for {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg">
@@ -978,22 +1035,17 @@ export default function Inventory() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsStockTakeDialogOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setIsStockTakeDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleStockTake}>Complete Stock Take</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* RESERVE STOCK DIALOG */}
       <Dialog open={isReserveDialogOpen} onOpenChange={setIsReserveDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reserve Stock</DialogTitle>
-            <DialogDescription>
-              Reserve stock for orders or quotes - {selectedItem?.product?.name}
-            </DialogDescription>
+            <DialogDescription>Reserve stock for orders or quotes - {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg">
@@ -1030,15 +1082,12 @@ export default function Inventory() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReserveDialogOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setIsReserveDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleReserveStock}>Reserve Stock</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* MOVEMENT HISTORY DIALOG */}
       <Dialog open={isMovementDialogOpen} onOpenChange={setIsMovementDialogOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
@@ -1067,15 +1116,12 @@ export default function Inventory() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getMovementIcon(movement.movement_type)}
-                        <span className="capitalize">
-                          {movement.movement_type.replace("_", " ")}
-                        </span>
+                        <span className="capitalize">{movement.movement_type.replace("_", " ")}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <span
-                        className={`font-bold ${movement.quantity_change > 0 ? "text-green-600" : "text-red-600"
-                          }`}
+                        className={`font-bold ${movement.quantity_change > 0 ? "text-green-600" : "text-red-600"}`}
                       >
                         {movement.quantity_change > 0 ? "+" : ""}
                         {movement.quantity_change}
@@ -1091,7 +1137,6 @@ export default function Inventory() {
                 ))}
               </TableBody>
             </Table>
-
             {productMovements.length === 0 && (
               <div className="text-center py-12">
                 <History className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />

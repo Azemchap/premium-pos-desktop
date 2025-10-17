@@ -1,16 +1,4 @@
 // src/pages/Notifications.tsx - World-class Notification Center
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,24 +9,35 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuthStore } from "@/store/authStore";
+import { invoke } from "@tauri-apps/api/core";
+import { formatDistance } from "date-fns";
+import {
+  AlertTriangle,
   Bell,
   BellOff,
   CheckCheck,
-  Trash2,
-  AlertTriangle,
-  Info,
   CheckCircle,
-  XCircle,
-  Package,
   DollarSign,
+  Info,
   Mail,
-  FileText,
+  Package,
+  Trash2,
+  XCircle
 } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useAuthStore } from "@/store/authStore";
-import { formatDistance } from "date-fns";
 
 interface Notification {
   id: number;

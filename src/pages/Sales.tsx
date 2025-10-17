@@ -44,6 +44,9 @@ import { currencyFormatter } from "@/lib/currency";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   Check,
   CheckCircle2,
   DollarSign,
@@ -59,9 +62,10 @@ import {
   Trash2,
   User
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 // Zod validation schemas
 const customerSchema = z.object({
@@ -132,6 +136,8 @@ interface CreateSaleRequest {
 }
 
 type ViewMode = "grid" | "list";
+type SortColumn = 'name' | 'sku' | 'category' | 'selling_price' | 'available_stock';
+type SortDirection = 'asc' | 'desc';
 
 export default function Sales() {
   const { user } = useAuthStore();
@@ -139,6 +145,7 @@ export default function Sales() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
@@ -164,6 +171,14 @@ export default function Sales() {
     const saved = localStorage.getItem("salesViewMode");
     return (saved as ViewMode) || "grid";
   });
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 20;
+
+  // Sorting
+  const [sortColumn, setSortColumn] = useState<SortColumn>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const toggleViewMode = () => {
     const newMode = viewMode === "grid" ? "list" : "grid";
@@ -242,10 +257,10 @@ export default function Sales() {
       cart.map((item) =>
         item.product.id === productId
           ? {
-              ...item,
-              quantity: newQuantity,
-              total: item.price * newQuantity + item.tax_amount * newQuantity,
-            }
+            ...item,
+            quantity: newQuantity,
+            total: item.price * newQuantity + item.tax_amount * newQuantity,
+          }
           : item
       )
     );
@@ -600,19 +615,86 @@ export default function Sales() {
     printReceiptWithData(completedSaleData);
   };
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      !searchQuery ||
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.barcode && product.barcode.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
 
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
-    return matchesSearch && matchesCategory;
-  });
+  // Filtered and sorted products
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = products.filter((product) => {
+      const matchesSearch =
+        !debouncedSearchQuery ||
+        product.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        product.sku.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        (product.barcode && product.barcode.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
 
-  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+      const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      switch (sortColumn) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'sku':
+          aValue = a.sku.toLowerCase();
+          bValue = b.sku.toLowerCase();
+          break;
+        case 'category':
+          aValue = (a.category || '').toLowerCase();
+          bValue = (b.category || '').toLowerCase();
+          break;
+        case 'selling_price':
+          aValue = a.selling_price;
+          bValue = b.selling_price;
+          break;
+        case 'available_stock':
+          aValue = a.available_stock;
+          bValue = b.available_stock;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [products, debouncedSearchQuery, selectedCategory, sortColumn, sortDirection]);
+
+  // Unique categories
+  const categories = useMemo(() => {
+    return [...new Set(products.map((p) => p.category).filter(Boolean))];
+  }, [products]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAndSortedProducts.length / productsPerPage);
+  const paginatedProducts = filteredAndSortedProducts.slice(
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage
+  );
+
+  const handleSort = (column: SortColumn) => {
+    if (column === sortColumn) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   const cartSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cartTax = cart.reduce((sum, item) => sum + item.tax_amount * item.quantity, 0);
@@ -622,6 +704,11 @@ export default function Sales() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    // Reset to first page when filters or sort change
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, selectedCategory, sortColumn, sortDirection]);
 
   return (
     <div className="space-y-6">
@@ -667,7 +754,7 @@ export default function Sales() {
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
-                  <SelectItem key={category} value={category || "uncategorized"}>
+                  <SelectItem key={category || "uncategorized"} value={category || "uncategorized"}>
                     {category || "Uncategorized"}
                   </SelectItem>
                 ))}
@@ -701,89 +788,181 @@ export default function Sales() {
               ))}
             </div>
           ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
-              {filteredProducts.map((product) => (
-                <Card
-                  key={product.id}
-                  className="hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => addToCart(product)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h3 className="font-medium line-clamp-1">{product.name}</h3>
-                        <p className="text-sm text-muted-foreground">{product.sku}</p>
-                      </div>
-                      {product.available_stock <= product.minimum_stock && (
-                        <Badge variant="destructive" className="text-xs">
-                          Low Stock
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold text-primary">
-                          {format(product.selling_price)}
-                        </span>
-                        <Badge variant="outline">{product.available_stock} in stock</Badge>
-                      </div>
-                      {product.category && (
-                        <Badge variant="secondary" className="text-xs">
-                          {product.category}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="max-h-[calc(100vh-300px)] overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">{product.sku}</div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+                {paginatedProducts.map((product) => (
+                  <Card
+                    key={product.id}
+                    className="hover:shadow-lg transition-shadow cursor-pointer"
+                    onClick={() => addToCart(product)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-medium line-clamp-1">{product.name}</h3>
+                          <p className="text-sm text-muted-foreground">{product.sku}</p>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {product.category && (
-                          <Badge variant="secondary">{product.category}</Badge>
+                        {product.available_stock <= product.minimum_stock && (
+                          <Badge variant="destructive" className="text-xs">
+                            Low Stock
+                          </Badge>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={product.available_stock <= product.minimum_stock ? "destructive" : "outline"}>
-                          {product.available_stock}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-bold">
-                        {format(product.selling_price)}
-                      </TableCell>
-                      <TableCell>
-                        <Button size="sm" onClick={() => addToCart(product)}>
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-2xl font-bold text-primary">
+                            {format(product.selling_price)}
+                          </span>
+                          <Badge variant="outline">{product.available_stock} in stock</Badge>
+                        </div>
+                        {product.category && (
+                          <Badge variant="secondary" className="text-xs">
+                            {product.category}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) setCurrentPage(currentPage - 1);
+                        }}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={currentPage === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(page);
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                        }}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
+          ) : (
+            <>
+              <Card className="max-h-[calc(100vh-300px)] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
+                        Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => handleSort('category')}>
+                        Category {sortColumn === 'category' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => handleSort('available_stock')}>
+                        Stock {sortColumn === 'available_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="cursor-pointer text-right" onClick={() => handleSort('selling_price')}>
+                        Price {sortColumn === 'selling_price' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedProducts.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-sm text-muted-foreground">{product.sku}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {product.category && (
+                            <Badge variant="secondary">{product.category}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={product.available_stock <= product.minimum_stock ? "destructive" : "outline"}>
+                            {product.available_stock}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-bold">
+                          {format(product.selling_price)}
+                        </TableCell>
+                        <TableCell>
+                          <Button size="sm" onClick={() => addToCart(product)}>
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
+              {totalPages > 1 && (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) setCurrentPage(currentPage - 1);
+                        }}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={currentPage === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(page);
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                        }}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
 
-          {!loading && filteredProducts.length === 0 && (
+          {!loading && filteredAndSortedProducts.length === 0 && (
             <Card>
               <CardContent className="text-center py-12">
                 <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -996,6 +1175,22 @@ export default function Sales() {
               </Select>
               {validationErrors.method && (
                 <p className="text-xs text-red-500">{validationErrors.method}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="amountReceived">Amount Received</Label>
+              <Input
+                id="amountReceived"
+                type="number"
+                step="0.01"
+                min="0"
+                value={paymentInfo.amountReceived}
+                onChange={(e) => setPaymentInfo({ ...paymentInfo, amountReceived: parseFloat(e.target.value) || 0 })}
+                placeholder="0.00"
+                className={validationErrors.amountReceived ? "border-red-500" : ""}
+              />
+              {validationErrors.amountReceived && (
+                <p className="text-xs text-red-500">{validationErrors.amountReceived}</p>
               )}
             </div>
 
