@@ -14,6 +14,7 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import { useAuthStore } from "@/store/authStore";
+import { invoke } from "@tauri-apps/api/core";
 import {
   BarChart3,
   Bell,
@@ -27,11 +28,12 @@ import {
   Receipt,
   Settings,
   ShoppingCart,
+  Store as StoreIcon,
   Sun,
   User,
   Users
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 interface NavigationItem {
