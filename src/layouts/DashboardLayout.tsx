@@ -28,7 +28,7 @@ import {
   Receipt,
   Settings,
   ShoppingCart,
-  StoreIcon,
+  Store as StoreIcon,
   Sun,
   User,
   Users
@@ -71,9 +71,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const config = await invoke<any>("get_store_config");
         setStoreName(config.name || "Premium POS");
         
-        // Load notification count
+        // Load notification count (only unread)
         const notifications = await invoke<any[]>("get_notifications", { 
-          isRead: false 
+          isRead: false,
+          limit: 100
         });
         setNotificationCount(notifications.length);
       } catch (error) {
@@ -83,20 +84,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     loadDashboardData();
     
-    // Refresh notification count every 30 seconds
+    // Refresh notification count every 10 seconds (like social media)
     const interval = setInterval(async () => {
       try {
         const notifications = await invoke<any[]>("get_notifications", { 
-          isRead: false 
+          isRead: false,
+          limit: 100
         });
-        setNotificationCount(notifications.length);
+        const newCount = notifications.length;
+        
+        // If count increased, show a subtle indicator
+        if (newCount > notificationCount) {
+          // Optional: Could add a pulse animation or sound here
+          setNotificationCount(newCount);
+        } else {
+          setNotificationCount(newCount);
+        }
       } catch (error) {
         // Silently fail
       }
-    }, 30000);
+    }, 10000); // Every 10 seconds like social media
 
     return () => clearInterval(interval);
-  }, []);
+  }, [notificationCount]);
 
   const hasPermission = (allowedRoles?: string[]) => {
     if (!allowedRoles || allowedRoles.length === 0) return true;
@@ -260,12 +270,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex justify-end  flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/notifications")} className="relative">
-                <Bell className="w-5 h-5" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate("/notifications")} 
+                className="relative hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
+              >
+                <Bell className={`w-5 h-5 ${
+                  notificationCount > 0 
+                    ? 'text-blue-600 dark:text-blue-400 animate-pulse' 
+                    : 'text-gray-600 dark:text-gray-400'
+                }`} />
                 {notificationCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 bg-red-500 text-white px-1.5 min-w-[20px] h-5 flex items-center justify-center text-xs">
-                    {notificationCount > 99 ? '99+' : notificationCount}
-                  </Badge>
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <Badge className="relative inline-flex bg-red-500 hover:bg-red-600 text-white px-1.5 min-w-[20px] h-5 text-xs font-bold shadow-lg border-2 border-background">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </Badge>
+                  </span>
                 )}
               </Button>
 
