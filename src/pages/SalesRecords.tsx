@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { useCurrency } from "@/hooks/useCurrency";
 import { currencyFormatter, formatCurrency } from "@/lib/currency";
+import { printReceipt } from "@/lib/receipt-printer";
 import { invoke } from "@tauri-apps/api/core";
 import { format as formatDate, startOfMonth, startOfQuarter, startOfWeek, startOfYear } from "date-fns";
 import {
@@ -228,27 +229,44 @@ export default function SalesRecords() {
     }
 
     try {
-      toast.success("🖨️ Preparing receipt...");
+      // Prepare sale data for the centralized receipt printer
+      const saleDataForPrint = {
+        sale_number: selectedSale.sale_number,
+        created_at: selectedSale.created_at,
+        cashier_name: selectedSaleDetails?.cashier_name,
+        customer_name: selectedSale.customer_name,
+        customer_phone: selectedSale.customer_phone,
+        items: saleItems.map((item) => ({
+          product_id: item.product_id,
+          product_name: item.product?.name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          line_total: item.line_total,
+          tax_amount: item.tax_amount,
+        })),
+        subtotal: selectedSale.subtotal,
+        tax_amount: selectedSale.tax_amount,
+        discount_amount: selectedSale.discount_amount,
+        total_amount: selectedSale.total_amount,
+        payment_method: selectedSale.payment_method,
+        notes: selectedSale.notes,
+      };
 
-      // Create iframe for printing
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'absolute';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = 'none';
-      document.body.appendChild(iframe);
+      // Use centralized receipt printer
+      await printReceipt(saleDataForPrint);
+    } catch (error) {
+      console.error("Failed to print receipt:", error);
+      toast.error("❌ Failed to print receipt");
+    }
+  };
 
-      const iframeDoc = iframe.contentWindow?.document;
-      if (!iframeDoc) {
-        toast.error("❌ Failed to create print frame");
-        return;
-      }
-
-      // Get store info
-      const storeInfo = await invoke<any>("get_store_config").catch(() => null);
-
-      // Build receipt HTML directly
-      const receiptHTML = `
+  // For backwards compatibility - keeping old HTML generation if needed in future
+  const _oldPrintImplementation = async () => {
+    if (!selectedSale || saleItems.length === 0) {
+      return;
+    }
+    const storeInfo = await invoke<any>("get_store_config").catch(() => null);
+    const receiptHTML = `
         <!DOCTYPE html>
         <html>
           <head>
