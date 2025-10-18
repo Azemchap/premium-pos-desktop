@@ -403,8 +403,53 @@ pub fn get_migrations() -> Vec<Migration> {
         version: 5,
         description: "add_profile_image_to_users",
         sql: r#"
-                -- Add profile_image_url column to users table
-                ALTER TABLE users ADD COLUMN profile_image_url TEXT;
+                -- This migration adds profile_image_url to users table
+                -- Since it may have been partially applied, we make it idempotent
+                
+                -- Rename existing table
+                ALTER TABLE users RENAME TO users_old_v5;
+                
+                -- Create new table with profile_image_url
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT NOT NULL,
+                    role TEXT NOT NULL CHECK (role IN ('Admin', 'Manager', 'Cashier', 'StockKeeper')),
+                    is_active BOOLEAN DEFAULT true,
+                    profile_image_url TEXT,
+                    last_login DATETIME,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                -- Copy all data from old table
+                INSERT INTO users (id, username, email, password_hash, first_name, last_name, role, is_active, profile_image_url, last_login, created_at, updated_at)
+                SELECT 
+                    id, 
+                    username, 
+                    email, 
+                    password_hash, 
+                    first_name, 
+                    last_name, 
+                    role, 
+                    is_active,
+                    profile_image_url,
+                    last_login, 
+                    created_at, 
+                    updated_at
+                FROM users_old_v5;
+                
+                -- Drop old table
+                DROP TABLE users_old_v5;
+                
+                -- Recreate indexes
+                CREATE INDEX idx_users_username ON users(username);
+                CREATE INDEX idx_users_email ON users(email);
+                CREATE INDEX idx_users_role ON users(role);
+                CREATE INDEX idx_users_active ON users(is_active);
             "#,
         kind: MigrationKind::Up,
     }]
