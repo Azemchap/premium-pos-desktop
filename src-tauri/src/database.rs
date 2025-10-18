@@ -348,5 +348,55 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
             "#,
         kind: MigrationKind::Up,
+    },
+        Migration {
+        version: 4,
+        description: "add_address_fields_to_locations",
+        sql: r#"
+                -- Rename existing locations table
+                ALTER TABLE locations RENAME TO locations_old;
+                
+                -- Create new locations table with all required columns
+                CREATE TABLE locations (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    address TEXT,
+                    city TEXT,
+                    state TEXT,
+                    zip_code TEXT,
+                    phone TEXT,
+                    email TEXT,
+                    tax_rate REAL DEFAULT 0.0,
+                    currency TEXT DEFAULT 'USD',
+                    timezone TEXT DEFAULT 'UTC',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                -- Copy data from old table, providing defaults for new columns
+                INSERT INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, timezone, created_at, updated_at)
+                SELECT 
+                    id, 
+                    name, 
+                    CASE 
+                        WHEN address = '123 Main Street' THEN '123 Main Street, Suite 100'
+                        ELSE COALESCE(address, '')
+                    END,
+                    'New York',
+                    'NY',
+                    '10001',
+                    phone, 
+                    email, 
+                    tax_rate, 
+                    currency, 
+                    timezone, 
+                    created_at, 
+                    updated_at
+                FROM locations_old;
+                
+                -- Drop old table
+                DROP TABLE locations_old;
+            "#,
+        kind: MigrationKind::Up,
     }]
 }
