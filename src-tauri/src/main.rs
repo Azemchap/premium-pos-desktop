@@ -4,7 +4,10 @@
 mod commands;
 mod database;
 mod models;
-mod seeder;
+// Choose which seeder to use:
+// mod seeder; // Generic products
+mod seeder_building_materials; // Building materials wholesale
+use seeder_building_materials as seeder;
 
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;

@@ -404,7 +404,12 @@ pub fn get_migrations() -> Vec<Migration> {
         description: "add_profile_image_to_users",
         sql: r#"
                 -- This migration adds profile_image_url to users table
-                -- Since it may have been partially applied, we make it idempotent
+                -- We need to temporarily disable foreign keys to safely recreate the table
+                
+                PRAGMA foreign_keys=OFF;
+                
+                -- Begin transaction
+                BEGIN TRANSACTION;
                 
                 -- Rename existing table
                 ALTER TABLE users RENAME TO users_old_v5;
@@ -417,7 +422,7 @@ pub fn get_migrations() -> Vec<Migration> {
                     password_hash TEXT NOT NULL,
                     first_name TEXT NOT NULL,
                     last_name TEXT NOT NULL,
-                    role TEXT NOT NULL CHECK (role IN ('Admin', 'Manager', 'Cashier', 'StockKeeper')),
+                    role TEXT NOT NULL CHECK (role IN ('Admin', 'Manager', 'Cashier', 'StockKeeper', 'Warehouse')),
                     is_active BOOLEAN DEFAULT true,
                     profile_image_url TEXT,
                     last_login DATETIME,
@@ -450,6 +455,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX idx_users_email ON users(email);
                 CREATE INDEX idx_users_role ON users(role);
                 CREATE INDEX idx_users_active ON users(is_active);
+                
+                -- Commit transaction
+                COMMIT;
+                
+                -- Re-enable foreign keys
+                PRAGMA foreign_keys=ON;
             "#,
         kind: MigrationKind::Up,
     }]
