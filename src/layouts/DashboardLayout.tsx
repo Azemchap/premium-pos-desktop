@@ -47,10 +47,10 @@ const navigation: NavigationItem[] = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Sales", href: "/sales", icon: ShoppingCart },
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
-  { name: "Products", href: "/products", icon: Package },
   { name: "Inventory", href: "/inventory", icon: Database },
-  { name: "Master Data", href: "/master-data", icon: Database, roles: ["Admin", "Manager"] },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Products", href: "/products", icon: Package, roles: ["Admin", "Manager"] },
+  { name: "Master Data", href: "/master-data", icon: Database, roles: ["Admin", "Manager"] },
   { name: "Users", href: "/users", icon: Users, roles: ["Admin", "Manager"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["Admin", "Manager"] },
 ];
@@ -312,10 +312,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <User className="w-4 h-4 mr-2" />
                     Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings")}>
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </DropdownMenuItem>
+                  {hasPermission(["Admin", "Manager"]) && (
+                    <DropdownMenuItem onClick={() => navigate("/settings")}>
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="w-4 h-4 mr-2" />
