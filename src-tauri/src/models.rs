@@ -10,6 +10,7 @@ pub struct User {
     pub last_name: String,
     pub role: String,
     pub is_active: bool,
+    pub profile_image_url: Option<String>,
     pub last_login: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -27,9 +28,11 @@ pub struct CreateUserRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateProfileRequest {
+    pub username: String,
     pub first_name: String,
     pub last_name: String,
     pub email: String,
+    pub profile_image_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

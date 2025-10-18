@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -209,6 +209,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <div className="p-3 bg-muted rounded-lg">
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-8 h-8">
+                        {user?.profile_image_url ? (
+                          <AvatarImage src={user.profile_image_url} alt={`${user.first_name} ${user.last_name}`} />
+                        ) : null}
                         <AvatarFallback>
                           {user ? getInitials(user.first_name, user.last_name) : "U"}
                         </AvatarFallback>
@@ -295,6 +298,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2">
                     <Avatar className="w-8 h-8">
+                      {user?.profile_image_url ? (
+                        <AvatarImage src={user.profile_image_url} alt={`${user.first_name} ${user.last_name}`} />
+                      ) : null}
                       <AvatarFallback>
                         {user ? getInitials(user.first_name, user.last_name) : "U"}
                       </AvatarFallback>

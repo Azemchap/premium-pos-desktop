@@ -398,5 +398,14 @@ pub fn get_migrations() -> Vec<Migration> {
                 DROP TABLE locations_old;
             "#,
         kind: MigrationKind::Up,
+    },
+        Migration {
+        version: 5,
+        description: "add_profile_image_to_users",
+        sql: r#"
+                -- Add profile_image_url column to users table
+                ALTER TABLE users ADD COLUMN profile_image_url TEXT;
+            "#,
+        kind: MigrationKind::Up,
     }]
 }
