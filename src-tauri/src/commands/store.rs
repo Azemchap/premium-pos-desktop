@@ -7,7 +7,7 @@ pub async fn get_store_config(pool: State<'_, SqlitePool>) -> Result<StoreConfig
     println!("DEBUG(store): get_store_config called");
     let pool_ref = pool.inner();
 
-    let row = sqlx::query("SELECT id, name, address, phone, email, tax_rate, currency, timezone, created_at, updated_at FROM locations WHERE id = 1")
+    let row = sqlx::query("SELECT id, name, address, city, state, zip_code, phone, email, tax_rate, currency, timezone, created_at, updated_at FROM locations WHERE id = 1")
         .fetch_one(pool_ref)
         .await
         .map_err(|e| {
@@ -19,6 +19,9 @@ pub async fn get_store_config(pool: State<'_, SqlitePool>) -> Result<StoreConfig
         id: row.try_get("id").map_err(|e| e.to_string())?,
         name: row.try_get("name").map_err(|e| e.to_string())?,
         address: row.try_get("address").ok().flatten(),
+        city: row.try_get("city").ok().flatten(),
+        state: row.try_get("state").ok().flatten(),
+        zip_code: row.try_get("zip_code").ok().flatten(),
         phone: row.try_get("phone").ok().flatten(),
         email: row.try_get("email").ok().flatten(),
         tax_rate: row.try_get("tax_rate").map_err(|e| e.to_string())?,
@@ -37,9 +40,12 @@ pub async fn update_store_config(pool: State<'_, SqlitePool>, request: UpdateSto
     println!("DEBUG(store): update_store_config called name='{}'", request.name);
     let pool_ref = pool.inner();
 
-    sqlx::query("UPDATE locations SET name = ?1, address = ?2, phone = ?3, email = ?4, tax_rate = ?5, currency = ?6, timezone = ?7, updated_at = CURRENT_TIMESTAMP WHERE id = 1")
+    sqlx::query("UPDATE locations SET name = ?1, address = ?2, city = ?3, state = ?4, zip_code = ?5, phone = ?6, email = ?7, tax_rate = ?8, currency = ?9, timezone = ?10, updated_at = CURRENT_TIMESTAMP WHERE id = 1")
         .bind(&request.name)
         .bind(&request.address)
+        .bind(&request.city)
+        .bind(&request.state)
+        .bind(&request.zip_code)
         .bind(&request.phone)
         .bind(&request.email)
         .bind(request.tax_rate)

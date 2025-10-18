@@ -26,6 +26,19 @@ pub struct CreateUserRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateProfileRequest {
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChangePasswordRequest {
+    pub current_password: String,
+    pub new_password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {
     pub username: String,
     pub password: String,
@@ -191,6 +204,9 @@ pub struct StoreConfig {
     pub id: i64,
     pub name: String,
     pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
     pub phone: Option<String>,
     pub email: Option<String>,
     pub tax_rate: f64,
@@ -204,6 +220,9 @@ pub struct StoreConfig {
 pub struct UpdateStoreConfigRequest {
     pub name: String,
     pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
     pub phone: Option<String>,
     pub email: Option<String>,
     pub tax_rate: f64,

@@ -15,6 +15,8 @@ import { User, Camera, Key, Info } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import { z } from "zod";
+import { invoke } from "@tauri-apps/api/core";
+import { useNavigate } from "react-router-dom";
 
 // Validation schemas
 const profileSchema = z.object({
@@ -33,7 +35,8 @@ const passwordSchema = z.object({
 });
 
 export default function Profile() {
-  const { user } = useAuthStore();
+  const { user, updateUser, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [profileForm, setProfileForm] = useState({
     first_name: user?.first_name || "",
     last_name: user?.last_name || "",
@@ -98,17 +101,20 @@ export default function Profile() {
       setValidationErrors({});
       setLoading(true);
 
-      // Note: This would need a backend endpoint to update user profile
-      // For now, we'll just show success
-      toast.success("✅ Profile updated successfully!");
+      // Update profile in backend
+      const updatedUser: any = await invoke("update_user_profile", { 
+        userId: user?.id,
+        request: {
+          first_name: profileForm.first_name,
+          last_name: profileForm.last_name,
+          email: profileForm.email
+        }
+      });
+
+      // Update user in auth store
+      updateUser(updatedUser);
       
-      // TODO: Add actual backend call
-      // await invoke("update_user_profile", { 
-      //   userId: user?.id,
-      //   firstName: profileForm.first_name,
-      //   lastName: profileForm.last_name,
-      //   email: profileForm.email
-      // });
+      toast.success("✅ Profile updated successfully!");
 
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -132,19 +138,28 @@ export default function Profile() {
       setValidationErrors({});
       setLoading(true);
 
-      // TODO: Add actual backend call
-      // await invoke("change_password", {
-      //   userId: user?.id,
-      //   currentPassword: passwordForm.currentPassword,
-      //   newPassword: passwordForm.newPassword
-      // });
+      // Change password in backend
+      await invoke("change_user_password", {
+        userId: user?.id,
+        request: {
+          current_password: passwordForm.currentPassword,
+          new_password: passwordForm.newPassword
+        }
+      });
 
-      toast.success("✅ Password changed successfully!");
+      toast.success("✅ Password changed successfully! Please log in with your new password.");
+      
       setPasswordForm({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
+
+      // Log out user and redirect to login
+      setTimeout(() => {
+        logout();
+        navigate("/login");
+      }, 2000);
 
     } catch (error) {
       if (error instanceof z.ZodError) {

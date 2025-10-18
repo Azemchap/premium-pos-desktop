@@ -208,6 +208,8 @@ async fn main() {
             commands::users::create_user,
             commands::users::update_user,
             commands::users::delete_user,
+            commands::users::update_user_profile,
+            commands::users::change_user_password,
             // Product management commands
             commands::products::get_products,
             commands::products::get_products_with_stock,

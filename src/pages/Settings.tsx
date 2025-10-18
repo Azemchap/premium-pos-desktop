@@ -40,6 +40,9 @@ interface StoreConfig {
   id: number;
   name: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
   phone?: string;
   email?: string;
   tax_rate: number;
@@ -52,6 +55,9 @@ interface StoreConfig {
 interface UpdateStoreConfigRequest {
   name: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
   phone?: string;
   email?: string;
   tax_rate: number;
@@ -66,6 +72,9 @@ export default function Settings() {
   const [storeForm, setStoreForm] = useState<UpdateStoreConfigRequest>({
     name: "",
     address: "",
+    city: "",
+    state: "",
+    zip_code: "",
     phone: "",
     email: "",
     tax_rate: 0,
@@ -101,6 +110,9 @@ export default function Settings() {
       setStoreForm({
         name: result.name,
         address: result.address || "",
+        city: result.city || "",
+        state: result.state || "",
+        zip_code: result.zip_code || "",
         phone: result.phone || "",
         email: result.email || "",
         tax_rate: result.tax_rate,
@@ -147,6 +159,9 @@ export default function Settings() {
       setStoreForm({
         name: storeConfig.name,
         address: storeConfig.address || "",
+        city: storeConfig.city || "",
+        state: storeConfig.state || "",
+        zip_code: storeConfig.zip_code || "",
         phone: storeConfig.phone || "",
         email: storeConfig.email || "",
         tax_rate: storeConfig.tax_rate,
@@ -240,14 +255,45 @@ export default function Settings() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="store-address">Address</Label>
-                      <Textarea
+                      <Label htmlFor="store-address">Street Address</Label>
+                      <Input
                         id="store-address"
                         value={storeForm.address}
                         onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
-                        placeholder="123 Main Street, City, State 12345"
-                        rows={3}
+                        placeholder="123 Main Street, Suite 100"
                       />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="store-city">City</Label>
+                        <Input
+                          id="store-city"
+                          value={storeForm.city}
+                          onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
+                          placeholder="New York"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="store-state">State/Province</Label>
+                        <Input
+                          id="store-state"
+                          value={storeForm.state}
+                          onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
+                          placeholder="NY"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="store-zip">ZIP/Postal Code</Label>
+                        <Input
+                          id="store-zip"
+                          value={storeForm.zip_code}
+                          onChange={(e) => setStoreForm({ ...storeForm, zip_code: e.target.value })}
+                          placeholder="10001"
+                        />
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -278,7 +324,7 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            {/* <Card>
+            <Card>
               <CardHeader>
                 <CardTitle>Regional Settings</CardTitle>
                 <CardDescription>
@@ -351,9 +397,9 @@ export default function Settings() {
                   </>
                 )}
               </CardContent>
-            </Card> */}
+            </Card>
 
-            {/* <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={resetStoreConfig} disabled={loading}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Reset
@@ -362,7 +408,7 @@ export default function Settings() {
                 <Save className="w-4 h-4 mr-2" />
                 Save Changes
               </Button>
-            </div> */}
+            </div>
           </div>
         </TabsContent>
 
