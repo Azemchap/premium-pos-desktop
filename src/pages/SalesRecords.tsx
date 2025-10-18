@@ -1,5 +1,3 @@
-// src/pages/SalesRecords.tsx
-import ReceiptTemplate from "@/components/ReceiptTemplate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,15 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -28,8 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCurrency } from "@/hooks/useCurrency";
-import { currencyFormatter, formatCurrency } from "@/lib/currency";
+import { formatCurrency } from "@/lib/currency";
 import { printReceipt } from "@/lib/receipt-printer";
 import { invoke } from "@tauri-apps/api/core";
 import { format as formatDate, startOfMonth, startOfQuarter, startOfWeek, startOfYear } from "date-fns";
@@ -41,15 +31,11 @@ import {
   CreditCard,
   DollarSign,
   Eye,
-  Filter,
   Printer,
-  Search,
   TrendingUp
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { toast } from "sonner";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 interface SaleWithDetails {
   id: number;
@@ -153,7 +139,7 @@ export default function SalesRecords() {
   const [sortColumn, setSortColumn] = useState<SortColumn>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  const getDateRangeDatesDates = (range: DateRange): { start: string; end: string } => {
+  const getDateRangeDates = (range: DateRange): { start: string; end: string } => {
     const today = new Date();
     const formatDateString = (date: Date) => formatDate(date, "yyyy-MM-dd");
 
@@ -178,7 +164,7 @@ export default function SalesRecords() {
   const loadSales = async () => {
     try {
       setLoading(true);
-      const { start, end } = getDateRangeDatesDates(dateRange);
+      const { start, end } = getDateRangeDates(dateRange);
 
       const [salesData, statsData] = await Promise.all([
         invoke<SaleWithDetails[]>("get_sales_with_details", {
@@ -230,7 +216,7 @@ export default function SalesRecords() {
 
     try {
       // Prepare sale data for the centralized receipt printer
-      const saleDataForPrint = {
+      const saleData = {
         sale_number: selectedSale.sale_number,
         created_at: selectedSale.created_at,
         cashier_name: selectedSaleDetails?.cashier_name,
@@ -250,176 +236,12 @@ export default function SalesRecords() {
         total_amount: selectedSale.total_amount,
         payment_method: selectedSale.payment_method,
         notes: selectedSale.notes,
+        amount_received: undefined, // Not provided in current data; adjust if available
+        change: undefined, // Not provided in current data; adjust if available
       };
 
       // Use centralized receipt printer
-      await printReceipt(saleDataForPrint);
-    } catch (error) {
-      console.error("Failed to print receipt:", error);
-      toast.error("❌ Failed to print receipt");
-    }
-  };
-
-  // For backwards compatibility - keeping old HTML generation if needed in future
-  const _oldPrintImplementation = async () => {
-    if (!selectedSale || saleItems.length === 0) {
-      return;
-    }
-    const storeInfo = await invoke<any>("get_store_config").catch(() => null);
-    const receiptHTML = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <title>Receipt - ${selectedSale.sale_number}</title>
-            <style>
-              @media print {
-                @page {
-                  size: 80mm auto;
-                  margin: 0 auto;
-                }
-              }
-              body {
-                font-family: 'Courier New', monospace;
-                font-size: 12px;
-                max-width: 80mm;
-                margin: 0 auto;
-                padding: 10px;
-              }
-              .header {
-                text-align: center;
-                border-bottom: 2px dashed #000;
-                padding-bottom: 10px;
-                margin-bottom: 10px;
-              }
-              .header h1 {
-                margin: 0;
-                font-size: 18px;
-              }
-              .header p {
-                margin: 2px 0;
-                font-size: 10px;
-              }
-              .info {
-                margin-bottom: 10px;
-                font-size: 11px;
-              }
-              .items {
-                border-top: 1px solid #000;
-                border-bottom: 1px solid #000;
-                padding: 5px 0;
-                margin: 10px 0;
-              }
-              .item {
-                display: flex;
-                justify-content: space-between;
-                margin: 3px 0;
-              }
-              .totals {
-                margin-top: 10px;
-              }
-              .total-row {
-                display: flex;
-                justify-content: space-between;
-                margin: 2px 0;
-              }
-              .grand-total {
-                font-weight: bold;
-                font-size: 14px;
-                border-top: 2px solid #000;
-                padding-top: 5px;
-                margin-top: 5px;
-              }
-              .footer {
-                text-align: center;
-                margin-top: 15px;
-                border-top: 2px dashed #000;
-                padding-top: 10px;
-                font-size: 10px;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>${storeInfo?.store_name || 'Premium POS'}</h1>
-              ${storeInfo ? `
-                <p>${storeInfo.address}</p>
-                <p>${storeInfo.city}, ${storeInfo.state} ${storeInfo.zip_code}</p>
-                <p>Tel: ${storeInfo.phone}</p>
-                ${storeInfo.email ? `<p>${storeInfo.email}</p>` : ''}
-              ` : ''}
-            </div>
-            
-            <div class="info">
-              <p><strong>Receipt #:</strong> ${selectedSale.sale_number}</p>
-              <p><strong>Date:</strong> ${formatDate(new Date(selectedSale.created_at), "MMM dd, yyyy hh:mm a")}</p>
-              ${selectedSaleDetails?.cashier_name ? `<p><strong>Cashier:</strong> ${selectedSaleDetails.cashier_name}</p>` : ''}
-              ${selectedSale.customer_name ? `<p><strong>Customer:</strong> ${selectedSale.customer_name}</p>` : ''}
-              ${selectedSale.customer_phone ? `<p><strong>Phone:</strong> ${selectedSale.customer_phone}</p>` : ''}
-            </div>
-            
-            <div class="items">
-              ${saleItems.map((item) => `
-                <div class="item">
-                  <span>${item.product?.name || 'Product #' + item.product_id}</span>
-                </div>
-                <div class="item">
-                  <span>&nbsp;&nbsp;${item.quantity} x ${currencyFormatter.format(item.unit_price)}</span>
-                  <span>${currencyFormatter.format(item.line_total)}</span>
-                </div>
-              `).join('')}
-            </div>
-            
-            <div class="totals">
-              <div class="total-row">
-                <span>Subtotal:</span>
-                <span>${currencyFormatter.format(selectedSale.subtotal)}</span>
-              </div>
-              <div class="total-row">
-                <span>Tax:</span>
-                <span>${currencyFormatter.format(selectedSale.tax_amount)}</span>
-              </div>
-              ${selectedSale.discount_amount > 0 ? `
-                <div class="total-row">
-                  <span>Discount:</span>
-                  <span>-${currencyFormatter.format(selectedSale.discount_amount)}</span>
-                </div>
-              ` : ''}
-              <div class="total-row grand-total">
-                <span>TOTAL:</span>
-                <span>${currencyFormatter.format(selectedSale.total_amount)}</span>
-              </div>
-            </div>
-            
-            <div class="info">
-              <p><strong>Payment:</strong> ${selectedSale.payment_method.toUpperCase()}</p>
-            </div>
-            
-            <div class="footer">
-              <p><strong>Thank you for your purchase!</strong></p>
-              <p>Please keep this receipt for your records</p>
-              <p style="font-size: 9px;">Powered by Premium POS System</p>
-            </div>
-          </body>
-        </html>
-      `;
-
-      iframeDoc.open();
-      iframeDoc.write(receiptHTML);
-      iframeDoc.close();
-
-      // Wait for content to load, then print
-      setTimeout(() => {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-        toast.success("✅ Receipt sent to printer!");
-
-        // Clean up after printing
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 1000);
-      }, 500);
-
+      await printReceipt(saleData);
     } catch (error) {
       console.error("Failed to print receipt:", error);
       toast.error("❌ Failed to print receipt");

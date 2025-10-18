@@ -438,16 +438,16 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-green-50 hover:border-green-500 dark:hover:bg-green-950"
+                            className="h-20 flex flex-col items-center justify-center gap-2  hover:border-green-500"
                             onClick={() => navigate('/sales')}
                         >
                             <ShoppingCart className="w-5 h-5 text-green-600" />
-                            <span className="text-sm font-medium">New Sale</span>
+                            <span className="text-sm font-medium">New Sales</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-blue-50 hover:border-blue-500 dark:hover:bg-blue-950"
+                            className="h-20 flex flex-col items-center justify-center gap-2  hover:border-blue-500 "
                             onClick={() => navigate('/products')}
                         >
                             <Plus className="w-5 h-5 text-blue-600" />
@@ -456,7 +456,7 @@ export default function Dashboard() {
                         
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-purple-50 hover:border-purple-500 dark:hover:bg-purple-950"
+                            className="h-20 flex flex-col items-center justify-center gap-2  hover:border-purple-500 "
                             onClick={() => navigate('/inventory')}
                         >
                             <Package className="w-5 h-5 text-purple-600" />
@@ -465,7 +465,7 @@ export default function Dashboard() {
                         
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-orange-50 hover:border-orange-500 dark:hover:bg-orange-950"
+                            className="h-20 flex flex-col items-center justify-center gap-2  hover:border-orange-500 hover:bg-none "
                             onClick={() => navigate('/reports')}
                         >
                             <BarChart3 className="w-5 h-5 text-orange-600" />
