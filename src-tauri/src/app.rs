@@ -1,6 +1,5 @@
 // Shared application logic for both desktop and mobile
 
-use tauri::Manager;
 use crate::{commands, database, seeder_building_materials as seeder};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
@@ -176,8 +175,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_haptics::init())
-        // Remove this line - barcode scanner doesn't have standard init
-        // .plugin(tauri_plugin_barcode_scanner::init())
+        .plugin(tauri_plugin_barcode_scanner::init())
         .invoke_handler(tauri::generate_handler![
             commands::auth::login_user,
             commands::auth::register_user,
