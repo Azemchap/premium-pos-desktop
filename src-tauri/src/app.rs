@@ -182,7 +182,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_haptics::init())
-        .plugin(tauri_plugin_barcode_scanner::init())
+        // Barcode scanner doesn't use init() - it's invoked directly via commands
+        // .plugin(tauri_plugin_barcode_scanner::init())
         .invoke_handler(tauri::generate_handler![
             commands::auth::login_user,
             commands::auth::register_user,
