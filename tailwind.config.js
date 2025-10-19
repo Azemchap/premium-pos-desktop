@@ -93,4 +93,5 @@ export default {
 		// Remove tailwindcss-animate if you have issues with it
 		// or install it: pnpm add tailwindcss-animate
 	],
+	safelist: ['safe-top', 'safe-bottom'],
 }

@@ -1,3 +1,4 @@
+import MobileBottomNav from "@/components/MobileBottomNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,16 +65,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Haptic feedback wrapper (calls Rust command)
+  const hapticFeedback = async (intensity: 'light' | 'medium' | 'heavy') => {
+    try {
+      await invoke("haptic_feedback", { intensity });
+    } catch (error) {
+      console.error("Haptic feedback failed:", error); // No-op on non-mobile or errors
+    }
+  };
+
   // Load store config and notification count
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        // Load store config
         const config = await invoke<any>("get_store_config");
         setStoreName(config.name || "Premium POS");
-        
-        // Load notification count (only unread)
-        const notifications = await invoke<any[]>("get_notifications", { 
+
+        const notifications = await invoke<any[]>("get_notifications", {
           isRead: false,
           limit: 100
         });
@@ -84,27 +92,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
 
     loadDashboardData();
-    
-    // Refresh notification count every 10 seconds (like social media)
+
     const interval = setInterval(async () => {
       try {
-        const notifications = await invoke<any[]>("get_notifications", { 
+        const notifications = await invoke<any[]>("get_notifications", {
           isRead: false,
           limit: 100
         });
         const newCount = notifications.length;
-        
-        // If count increased, show a subtle indicator
         if (newCount > notificationCount) {
-          // Optional: Could add a pulse animation or sound here
           setNotificationCount(newCount);
         } else {
           setNotificationCount(newCount);
         }
       } catch (error) {
-        // Silently fail
+        console.error("Notification refresh failed:", error);
       }
-    }, 10000); // Every 10 seconds like social media
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [notificationCount]);
@@ -135,13 +139,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (href === "/") {
       return location.pathname === "/" || location.pathname === "/dashboard";
     }
-    // Exact match for paths to avoid overlap (e.g., /sales vs /sales-records)
     return location.pathname === href;
   };
 
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
-      {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-60">
           <div className="space-y-6">
@@ -175,7 +177,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </SheetContent>
       </Sheet>
 
-      {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-60 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-border bg-card px-6 pb-4">
           <div className="flex h-16 shrink-0 items-center">
@@ -258,68 +259,64 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
 
-      {/* Main content */}
       <div className="lg:pl-60">
-      {/* Top bar */}
-      <div className="sticky top-0 z-40 flex h-14 md:h-16 shrink-0 items-center gap-x-2 sm:gap-x-4 border-b border-border bg-background px-3 sm:px-4 md:px-6 lg:px-8 shadow-sm safe-top">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="p-2 lg:hidden touch-target-sm"
-          onClick={async () => {
-            await hapticFeedback('light');
-            setSidebarOpen(true);
-          }}
-        >
-          <Menu className="w-5 h-5 md:w-6 md:h-6" />
-        </Button>
+        <div className="sticky top-0 z-40 flex h-14 md:h-16 shrink-0 items-center gap-x-2 sm:gap-x-4 border-b border-border bg-background px-3 sm:px-4 md:px-6 lg:px-8 shadow-sm safe-top">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="p-2 lg:hidden touch-target-sm"
+            onClick={async () => {
+              await hapticFeedback('light');
+              setSidebarOpen(true);
+            }}
+          >
+            <Menu className="w-5 h-5 md:w-6 md:h-6" />
+          </Button>
 
-          {/* Separator */}
           <div className="h-6 w-px bg-border lg:hidden" />
 
-          <div className="flex justify-end  flex-1 gap-x-4 self-stretch lg:gap-x-6">
+          <div className="flex justify-end flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                await hapticFeedback('light');
-                navigate("/notifications");
-              }}
-              className="relative hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors touch-target"
-            >
-              <Bell className={`w-4 h-4 md:w-5 md:h-5 ${ 
-                notificationCount > 0 
-                  ? 'text-blue-600 dark:text-blue-400 animate-pulse' 
-                  : 'text-gray-600 dark:text-gray-400'
-              }`} />
-              {notificationCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <Badge className="relative inline-flex bg-red-500 hover:bg-red-600 text-white px-1 md:px-1.5 min-w-[16px] md:min-w-[20px] h-4 md:h-5 text-[10px] md:text-xs font-bold shadow-lg border-2 border-background">
-                    {notificationCount > 99 ? '99+' : notificationCount}
-                  </Badge>
-                </span>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  await hapticFeedback('light');
+                  navigate("/notifications");
+                }}
+                className="relative hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors touch-target"
+              >
+                <Bell className={`w-4 h-4 md:w-5 md:h-5 ${notificationCount > 0
+                    ? 'text-zinc-600 dark:text-zinc-400 animate-pulse'
+                    : 'text-gray-600 dark:text-gray-400'
+                  }`} />
+                {notificationCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zinc-400 opacity-75 dark:bg-zinc-600"></span>
+                    <Badge className="relative inline-flex bg-zinc-500 hover:bg-zinc-600 text-white px-1 md:px-1.5 min-w-[16px] md:min-w-[20px] h-4 md:h-5 text-[10px] md:text-xs font-bold shadow-lg border-2 border-background">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </Badge>
+                  </span>
+                )}
               </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-1 sm:gap-2 touch-target">
-                  <Avatar className="w-7 h-7 md:w-8 md:h-8">
-                    {user?.profile_image_url ? (
-                      <AvatarImage src={user.profile_image_url} alt={`${user.first_name} ${user.last_name}`} />
-                    ) : null}
-                    <AvatarFallback className="text-xs md:text-sm">
-                      {user ? getInitials(user.first_name, user.last_name) : "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden md:block text-sm font-medium">
-                    {user?.first_name} {user?.last_name}
-                  </span>
-                  <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-1 sm:gap-2 touch-target">
+                    <Avatar className="w-7 h-7 md:w-8 md:h-8">
+                      {user?.profile_image_url ? (
+                        <AvatarImage src={user.profile_image_url} alt={`${user.first_name} ${user.last_name}`} />
+                      ) : null}
+                      <AvatarFallback className="text-xs md:text-sm">
+                        {user ? getInitials(user.first_name, user.last_name) : "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden md:block text-sm font-medium">
+                      {user?.first_name} {user?.last_name}
+                    </span>
+                    <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -344,16 +341,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-      {/* Page content */}
-      <main className="py-4 md:py-8 safe-bottom">
-        <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 md:px-6 lg:px-8">
-          {children}
-        </div>
-      </main>
-    </div>
+        <main className="py-4 md:py-8 safe-bottom">
+          <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 md:px-6 lg:px-8">
+            {children}
+          </div>
+        </main>
+      </div>
 
-    {/* Mobile Bottom Navigation */}
-    <MobileBottomNav />
-  </div>
-);
+      <MobileBottomNav />
+    </div>
+  );
 }
