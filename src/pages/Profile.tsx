@@ -1,4 +1,5 @@
 // src/pages/Profile.tsx - User Profile Management
+import { hapticFeedback } from "@/lib/mobile-utils";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -193,9 +194,9 @@ export default function Profile() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Profile</h1>
+        <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Profile</h1>
         <p className="text-muted-foreground mt-1">
           Manage your account settings and preferences
         </p>
@@ -204,13 +205,13 @@ export default function Profile() {
       {/* Profile Header Card */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-1 sm:gap-4 md:gap-6">
             <div className="relative">
               <Avatar className="w-24 h-24">
                 {avatar ? (
                   <AvatarImage src={avatar} alt={`${user?.first_name} ${user?.last_name}`} />
                 ) : (
-                  <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                  <AvatarFallback className="text-lg sm:text-xl md:text-2xl bg-primary text-primary-foreground">
                     {getInitials()}
                   </AvatarFallback>
                 )}
@@ -230,7 +231,7 @@ export default function Profile() {
               </label>
             </div>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
                 {user?.first_name} {user?.last_name}
               </h2>
               <p className="text-muted-foreground">{user?.email}</p>
@@ -255,8 +256,8 @@ export default function Profile() {
       {/* Tabs for different sections */}
       <Card>
         <CardContent className="p-6">
-          <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+          <Tabs defaultValue="profile" className="space-y-3 sm:space-y-3 md:space-y-6">
+            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
               <TabsTrigger value="profile">
                 <User className="w-4 h-4 mr-2" />
                 Profile
@@ -272,8 +273,8 @@ export default function Profile() {
             </TabsList>
 
             {/* Profile Tab */}
-            <TabsContent value="profile" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TabsContent value="profile" className="space-y-2 md:space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4">
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="username">Username *</Label>
                   <Input
@@ -344,8 +345,8 @@ export default function Profile() {
             </TabsContent>
 
             {/* Security Tab */}
-            <TabsContent value="security" className="space-y-4">
-              <div className="space-y-4">
+            <TabsContent value="security" className="space-y-2 md:space-y-4">
+              <div className="space-y-2 md:space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">Current Password *</Label>
                   <Input
@@ -410,11 +411,11 @@ export default function Profile() {
             </TabsContent>
 
             {/* Account Tab */}
-            <TabsContent value="account" className="space-y-4">
-              <div className="space-y-4">
+            <TabsContent value="account" className="space-y-2 md:space-y-4">
+              <div className="space-y-2 md:space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
                   <h3 className="font-medium mb-2">Account Information</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-1 md:gap-4 text-xs sm:text-sm">
                     <div>
                       <p className="text-muted-foreground">Username</p>
                       <p className="font-medium">{user?.username}</p>

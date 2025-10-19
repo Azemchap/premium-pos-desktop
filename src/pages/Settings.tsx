@@ -1,4 +1,5 @@
 // src/pages/Settings.tsx
+import { hapticFeedback } from "@/lib/mobile-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -156,15 +157,15 @@ export default function Settings() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
+          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground mt-1">
             Configure your store and system preferences
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1 sm:gap-2">
           <Button variant="outline" onClick={() => {
             resetToDefaults();
             toast.success("🔄 All preferences reset to defaults");
@@ -180,7 +181,7 @@ export default function Settings() {
         </div>
       </div>
 
-      <Tabs defaultValue="store" className="space-y-4">
+      <Tabs defaultValue="store" className="space-y-2 md:space-y-4">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="store">
             <Store className="w-4 h-4 mr-2" />
@@ -206,7 +207,7 @@ export default function Settings() {
 
         {/* Store Configuration */}
         <TabsContent value="store">
-          <div className="grid gap-6">
+          <div className="grid gap-1 sm:gap-4 md:gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Store Information</CardTitle>
@@ -214,9 +215,9 @@ export default function Settings() {
                   Basic information about your store
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2 md:space-y-4">
                 {loading ? (
-                  <div className="space-y-4">
+                  <div className="space-y-2 md:space-y-4">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Skeleton key={i} className="h-10 w-full" />
                     ))}
@@ -243,7 +244,7 @@ export default function Settings() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="store-city">City</Label>
                         <Input
@@ -275,7 +276,7 @@ export default function Settings() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="store-phone">Phone</Label>
                         <Input
@@ -310,9 +311,9 @@ export default function Settings() {
                   Configure currency and tax rate for your store
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2 md:space-y-4">
                 {loading ? (
-                  <div className="space-y-4">
+                  <div className="space-y-2 md:space-y-4">
                     {Array.from({ length: 2 }).map((_, i) => (
                       <Skeleton key={i} className="h-10 w-full" />
                     ))}
@@ -387,7 +388,7 @@ export default function Settings() {
                 Configure system behavior and data management
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-3 sm:space-y-3 md:space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Auto-save Enabled</Label>
@@ -465,7 +466,7 @@ export default function Settings() {
                 Select your preferred currency for the entire app
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2 md:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="app-currency">App Currency</Label>
                 <Select value={currency.code} onValueChange={(value: any) => {
@@ -500,7 +501,7 @@ export default function Settings() {
                 Customize the look and feel of your application
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-3 sm:space-y-3 md:space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Dark Mode</Label>
@@ -564,7 +565,7 @@ export default function Settings() {
                 Control how and when you receive notifications
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-3 sm:space-y-3 md:space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Email Notifications</Label>
@@ -627,7 +628,7 @@ export default function Settings() {
                 Configure receipt printing and formatting
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-3 sm:space-y-3 md:space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Auto-print Receipts</Label>

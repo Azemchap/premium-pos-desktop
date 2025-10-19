@@ -1,4 +1,5 @@
 // src/pages/Reports.tsx - World-Class Financial Analytics & Accounting Insights
+import { hapticFeedback } from "@/lib/mobile-utils";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -208,7 +209,7 @@ export default function Reports() {
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
+            <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1">{value}</p>
             {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
             {trend !== undefined && (
               <div className={`flex items-center mt-2 text-sm ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -225,10 +226,10 @@ export default function Reports() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Financial Reports & Analytics</h1>
+          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Financial Reports & Analytics</h1>
           <p className="text-muted-foreground mt-1">
             Comprehensive business insights and accounting metrics
           </p>
@@ -242,7 +243,7 @@ export default function Reports() {
       {/* Date Range Selector */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
             <div className="space-y-2">
               <Label>Date Range</Label>
               <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
@@ -285,13 +286,13 @@ export default function Reports() {
       </Card>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-32" />
           ))}
         </div>
       ) : (
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue="overview" className="space-y-3 sm:space-y-3 md:space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="financial">Financial</TabsTrigger>
@@ -301,9 +302,9 @@ export default function Reports() {
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-3 sm:space-y-3 md:space-y-6">
             {/* Key Revenue Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
               <MetricCard
                 title="Total Sales"
                 value={salesReport ? formatCurrency(salesReport.total_sales) : '0'}
@@ -339,10 +340,10 @@ export default function Reports() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-1 md:gap-4">
                   <div className="p-4 bg-green-50 rounded-lg">
                     <p className="text-sm text-green-800 font-medium">Cash</p>
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">
                       {formatCurrency(salesReport?.cash_sales || 0)}
                     </p>
                     <p className="text-xs text-green-700 mt-1">
@@ -353,7 +354,7 @@ export default function Reports() {
                   </div>
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800 font-medium">Card</p>
-                    <p className="text-2xl font-bold text-blue-600">
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">
                       {formatCurrency(salesReport?.card_sales || 0)}
                     </p>
                     <p className="text-xs text-blue-700 mt-1">
@@ -364,7 +365,7 @@ export default function Reports() {
                   </div>
                   <div className="p-4 bg-purple-50 rounded-lg">
                     <p className="text-sm text-purple-800 font-medium">Mobile</p>
-                    <p className="text-2xl font-bold text-purple-600">
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-600">
                       {formatCurrency(salesReport?.mobile_sales || 0)}
                     </p>
                     <p className="text-xs text-purple-700 mt-1">
@@ -375,7 +376,7 @@ export default function Reports() {
                   </div>
                   <div className="p-4 bg-orange-50 rounded-lg">
                     <p className="text-sm text-orange-800 font-medium">Check</p>
-                    <p className="text-2xl font-bold text-orange-600">
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-orange-600">
                       {formatCurrency(salesReport?.check_sales || 0)}
                     </p>
                     <p className="text-xs text-orange-700 mt-1">
@@ -428,9 +429,9 @@ export default function Reports() {
           </TabsContent>
 
           {/* Financial Tab */}
-          <TabsContent value="financial" className="space-y-6">
+          <TabsContent value="financial" className="space-y-3 sm:space-y-3 md:space-y-6">
             {/* Financial Health Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-4 md:gap-6">
               <MetricCard
                 title="Gross Profit Margin"
                 value={`${financialMetrics?.gross_profit_margin.toFixed(1) || 0}%`}
@@ -457,7 +458,7 @@ export default function Reports() {
                 <CardTitle>Profit & Loss Statement</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-2 md:space-y-4">
                   <div className="flex justify-between items-center pb-2 border-b">
                     <span className="font-medium">Revenue</span>
                     <span className="text-lg font-bold text-green-600">
@@ -504,13 +505,13 @@ export default function Reports() {
                 <CardTitle>Key Performance Indicators (KPIs)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-4 md:gap-6">
                   <div className="p-4 bg-muted rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">Inventory Turnover Ratio</span>
                       <Package className="w-4 h-4 text-muted-foreground" />
                     </div>
-                    <p className="text-3xl font-bold">{financialMetrics?.inventory_turnover_ratio.toFixed(2) || '0.00'}</p>
+                    <p className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">{financialMetrics?.inventory_turnover_ratio.toFixed(2) || '0.00'}</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Times inventory sold & replaced
                     </p>
@@ -520,7 +521,7 @@ export default function Reports() {
                       <span className="text-sm font-medium">Average Basket Size</span>
                       <ShoppingCart className="w-4 h-4 text-muted-foreground" />
                     </div>
-                    <p className="text-3xl font-bold">{financialMetrics?.average_basket_size.toFixed(1) || '0.0'}</p>
+                    <p className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">{financialMetrics?.average_basket_size.toFixed(1) || '0.0'}</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Items per transaction
                     </p>
@@ -531,8 +532,8 @@ export default function Reports() {
           </TabsContent>
 
           {/* Cash Flow Tab */}
-          <TabsContent value="cashflow" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <TabsContent value="cashflow" className="space-y-3 sm:space-y-3 md:space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-4 md:gap-6">
               <MetricCard
                 title="Cash Inflow"
                 value={formatCurrency(cashFlow?.cash_inflow || 0)}
@@ -562,7 +563,7 @@ export default function Reports() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-2 md:space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Opening Balance</span>
                     <span className="text-lg font-bold">
@@ -589,7 +590,7 @@ export default function Reports() {
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t-2">
                     <span className="text-lg font-bold">Closing Balance</span>
-                    <span className="text-2xl font-bold text-primary">
+                    <span className="text-lg sm:text-xl md:text-2xl font-bold text-primary">
                       {formatCurrency(cashFlow?.closing_balance || 0)}
                     </span>
                   </div>
@@ -599,7 +600,7 @@ export default function Reports() {
           </TabsContent>
 
           {/* Products Tab */}
-          <TabsContent value="products" className="space-y-6">
+          <TabsContent value="products" className="space-y-3 sm:space-y-3 md:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -650,7 +651,7 @@ export default function Reports() {
           </TabsContent>
 
           {/* Categories Tab */}
-          <TabsContent value="categories" className="space-y-6">
+          <TabsContent value="categories" className="space-y-3 sm:space-y-3 md:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">

@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { hapticFeedback } from "@/lib/mobile-utils";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -224,15 +225,15 @@ export default function Notifications() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Notifications</h1>
+          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Notifications</h1>
           <p className="text-muted-foreground mt-1">
             Stay updated with alerts and system messages
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button variant="outline" onClick={checkLowStock}>
             <Package className="w-4 h-4 mr-2" />
             Check Low Stock
@@ -248,13 +249,13 @@ export default function Notifications() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{stats.total}</p>
                 </div>
                 <Bell className="w-8 h-8 text-blue-600" />
               </div>
@@ -266,7 +267,7 @@ export default function Notifications() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Unread</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.unread}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600">{stats.unread}</p>
                 </div>
                 <BellOff className="w-8 h-8 text-red-600" />
               </div>
@@ -278,7 +279,7 @@ export default function Notifications() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Low Stock</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.low_stock}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600">{stats.low_stock}</p>
                 </div>
                 <Package className="w-8 h-8 text-yellow-600" />
               </div>
@@ -290,7 +291,7 @@ export default function Notifications() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">System</p>
-                  <p className="text-2xl font-bold">{stats.system}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{stats.system}</p>
                 </div>
                 <Info className="w-8 h-8 text-blue-600" />
               </div>
@@ -302,7 +303,7 @@ export default function Notifications() {
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
             <div className="space-y-2">
               <Label>Filter by Type</Label>
               <Select value={filterType} onValueChange={setFilterType}>
@@ -357,16 +358,16 @@ export default function Notifications() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-4">
+            <div className="space-y-2 md:space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center py-12">
-              <Bell className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <div className="text-center py-6 md:py-12">
+              <Bell className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-medium mb-2">No notifications</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-2 md:mb-4">
                 You're all caught up!
               </p>
               <Button variant="outline" onClick={checkLowStock}>
@@ -408,7 +409,7 @@ export default function Notifications() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-1 sm:gap-2 mb-1">
                           <span className="font-medium">{notification.title}</span>
                           {!notification.is_read && (
                             <Badge variant="destructive" className="text-xs">New</Badge>

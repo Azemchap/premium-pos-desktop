@@ -67,6 +67,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { hapticFeedback } from "@/lib/mobile-utils";
 
 // Zod validation schemas
 const customerSchema = z.object({
@@ -535,15 +536,15 @@ export default function Sales() {
   }, [debouncedSearchQuery, selectedCategory, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Point of Sale</h1>
+          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Point of Sale</h1>
           <p className="text-muted-foreground mt-1">
             Process sales and manage transactions
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {cart.length > 0 && (
             <Button
               variant="destructive"
@@ -557,13 +558,13 @@ export default function Sales() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-4 md:gap-6">
         {/* Products Section */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-2 md:space-y-4">
           {/* Search and Filters */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-1 md:gap-4">
             <div className="relative col-span-2">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
               <Input
                 placeholder="Search products..."
                 value={searchQuery}
@@ -606,14 +607,14 @@ export default function Sales() {
 
           {/* Products Grid/List */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 md:grid-cols-3 gap-1 md:gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-40" />
               ))}
             </div>
           ) : viewMode === "grid" ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 md:grid-cols-3 gap-1 md:gap-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
                 {paginatedProducts.map((product) => (
                   <Card
                     key={product.id}
@@ -634,7 +635,7 @@ export default function Sales() {
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-2xl font-bold text-primary">
+                          <span className="text-lg sm:text-xl md:text-2xl font-bold text-primary">
                             {format(product.selling_price)}
                           </span>
                           <Badge variant="outline">{product.available_stock} in stock</Badge>
@@ -697,16 +698,16 @@ export default function Sales() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                        Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                        Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                       </TableHead>
                       <TableHead className="cursor-pointer" onClick={() => handleSort('category')}>
-                        Category {sortColumn === 'category' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                        Category {sortColumn === 'category' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                       </TableHead>
                       <TableHead className="cursor-pointer" onClick={() => handleSort('available_stock')}>
-                        Stock {sortColumn === 'available_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                        Stock {sortColumn === 'available_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                       </TableHead>
                       <TableHead className="cursor-pointer text-right" onClick={() => handleSort('selling_price')}>
-                        Price {sortColumn === 'selling_price' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                        Price {sortColumn === 'selling_price' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                       </TableHead>
                       <TableHead></TableHead>
                     </TableRow>
@@ -788,8 +789,8 @@ export default function Sales() {
 
           {!loading && filteredAndSortedProducts.length === 0 && (
             <Card>
-              <CardContent className="text-center py-12">
-                <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <CardContent className="text-center py-6 md:py-12">
+                <Package className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
                 <h3 className="text-lg font-medium mb-2">No products found</h3>
                 <p className="text-muted-foreground">
                   Try adjusting your search criteria
@@ -800,7 +801,7 @@ export default function Sales() {
         </div>
 
         {/* Cart Section */}
-        <div className="space-y-4">
+        <div className="space-y-2 md:space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -811,11 +812,11 @@ export default function Sales() {
                 <Badge>{cart.length} items</Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2 md:space-y-4">
               {/* Cart Items */}
               <div className="space-y-3 max-h-60 overflow-y-auto">
                 {cart.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-4 md:py-8 text-muted-foreground">
                     <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>Cart is empty</p>
                   </div>
@@ -861,15 +862,15 @@ export default function Sales() {
               {cart.length > 0 && (
                 <>
                   <div className="border-t pt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-xs sm:text-sm">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span className="font-medium">{format(cartSubtotal)}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-xs sm:text-sm">
                       <span className="text-muted-foreground">Tax</span>
                       <span className="font-medium">{format(cartTax)}</span>
                     </div>
-                    <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <div className="flex justify-between text-base sm:text-lg font-bold border-t pt-2">
                       <span>Total</span>
                       <span className="text-primary">{format(cartTotal)}</span>
                     </div>
@@ -914,7 +915,7 @@ export default function Sales() {
               Add customer details (optional)
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="customerName">Name</Label>
               <Input
@@ -983,7 +984,7 @@ export default function Sales() {
               Total: {format(cartTotal)}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="paymentMethod">Payment Method</Label>
               <Select value={paymentInfo.method} onValueChange={(value) => setPaymentInfo({ ...paymentInfo, method: value })}>
@@ -1022,7 +1023,7 @@ export default function Sales() {
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-green-800">Change</span>
-                  <span className="text-2xl font-bold text-green-600">
+                  <span className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">
                     {format(change)}
                   </span>
                 </div>
@@ -1053,12 +1054,12 @@ export default function Sales() {
               Sale Number: <span className="font-mono font-bold">{completedSaleNumber}</span>
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="bg-green-50 p-6 rounded-lg text-center">
+          <div className="space-y-2 md:space-y-4 py-4">
+            <div className="bg-green-50 p-3 md:p-6 rounded-lg text-center">
               <p className="text-sm text-green-800 mb-2">Total Amount</p>
               <p className="text-4xl font-bold text-green-600">{format(cartTotal)}</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-1 md:gap-4">
               <div className="text-center p-4 bg-muted rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">Payment Method</p>
                 <p className="font-medium capitalize">{paymentInfo.method}</p>
@@ -1069,7 +1070,7 @@ export default function Sales() {
               </div>
             </div>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm:flex-row gap-1 sm:gap-2">
             <Button variant="outline" onClick={handlePrintReceipt} className="w-full">
               <Printer className="w-4 h-4 mr-2" />
               Print Receipt

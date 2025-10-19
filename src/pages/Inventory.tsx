@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { hapticFeedback } from "@/lib/mobile-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -466,10 +467,10 @@ export default function Inventory() {
   }, [debouncedSearchQuery, filterCategory, filterStatus, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Inventory Management</h1>
+          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Inventory Management</h1>
           <p className="text-muted-foreground mt-1">
             Manage stock levels, receive inventory, and track movements
           </p>
@@ -481,13 +482,13 @@ export default function Inventory() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-1 sm:gap-4 md:gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-2xl font-bold">{totalItems}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold">{totalItems}</p>
               </div>
               <Package className="w-8 h-8 text-blue-600" />
             </div>
@@ -498,7 +499,7 @@ export default function Inventory() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">In Stock</p>
-                <p className="text-2xl font-bold text-green-600">{inStock}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{inStock}</p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-600" />
             </div>
@@ -509,7 +510,7 @@ export default function Inventory() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Low Stock</p>
-                <p className="text-2xl font-bold text-yellow-600">{lowStock}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600">{lowStock}</p>
               </div>
               <AlertCircle className="w-8 h-8 text-yellow-600" />
             </div>
@@ -520,7 +521,7 @@ export default function Inventory() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Out of Stock</p>
-                <p className="text-2xl font-bold text-red-600">{outOfStock}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600">{outOfStock}</p>
               </div>
               <TrendingDown className="w-8 h-8 text-red-600" />
             </div>
@@ -531,7 +532,7 @@ export default function Inventory() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold">{format(totalValue)}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold">{format(totalValue)}</p>
               </div>
               <Package className="w-8 h-8 text-purple-600" />
             </div>
@@ -542,9 +543,9 @@ export default function Inventory() {
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
               <Input
                 placeholder="Search products..."
                 value={searchQuery}
@@ -582,7 +583,7 @@ export default function Inventory() {
       </Card>
 
       {/* Tabs */}
-      <Tabs defaultValue="inventory" className="space-y-4">
+      <Tabs defaultValue="inventory" className="space-y-2 md:space-y-4">
         <TabsList>
           <TabsTrigger value="inventory">
             <Package className="w-4 h-4 mr-2" />
@@ -602,7 +603,7 @@ export default function Inventory() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="space-y-4">
+                <div className="space-y-2 md:space-y-4">
                   {Array.from({ length: 10 }).map((_, i) => (
                     <Skeleton key={i} className="h-16 w-full" />
                   ))}
@@ -613,17 +614,17 @@ export default function Inventory() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                          Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                          Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                         </TableHead>
                         <TableHead className="cursor-pointer" onClick={() => handleSort('sku')}>
-                          SKU {sortColumn === 'sku' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                          SKU {sortColumn === 'sku' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                         </TableHead>
                         <TableHead className="text-right cursor-pointer" onClick={() => handleSort('current_stock')}>
-                          Current Stock {sortColumn === 'current_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                          Current Stock {sortColumn === 'current_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                         </TableHead>
                         <TableHead className="text-right">Reserved</TableHead>
                         <TableHead className="text-right cursor-pointer" onClick={() => handleSort('available_stock')}>
-                          Available {sortColumn === 'available_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                          Available {sortColumn === 'available_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                         </TableHead>
                         <TableHead className="text-right">Min/Max</TableHead>
                         <TableHead>Status</TableHead>
@@ -645,7 +646,7 @@ export default function Inventory() {
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="font-mono text-sm">
+                            <TableCell className="font-mono text-xs sm:text-sm">
                               {item.product?.sku}
                             </TableCell>
                             <TableCell className="text-right font-bold">
@@ -661,7 +662,7 @@ export default function Inventory() {
                             <TableCell className="text-right font-medium">
                               {item.available_stock}
                             </TableCell>
-                            <TableCell className="text-right text-sm text-muted-foreground">
+                            <TableCell className="text-right text-xs sm:text-sm text-muted-foreground">
                               {item.minimum_stock} / {item.maximum_stock}
                             </TableCell>
                             <TableCell>
@@ -765,8 +766,8 @@ export default function Inventory() {
                 </>
               )}
               {!loading && filteredAndSortedInventory.length === 0 && (
-                <div className="text-center py-12">
-                  <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <div className="text-center py-6 md:py-12">
+                  <Package className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
                   <h3 className="text-lg font-medium mb-2">No inventory found</h3>
                   <p className="text-muted-foreground">
                     {debouncedSearchQuery || filterCategory !== "all" || filterStatus !== "all"
@@ -812,7 +813,7 @@ export default function Inventory() {
                         <div className="font-medium">{movement.product_name || `Product #${movement.product_id}`}</div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                           {getMovementIcon(movement.movement_type)}
                           <span className="capitalize">{movement.movement_type.replace("_", " ")}</span>
                         </div>
@@ -837,8 +838,8 @@ export default function Inventory() {
                 </TableBody>
               </Table>
               {movements.length === 0 && (
-                <div className="text-center py-12">
-                  <History className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <div className="text-center py-6 md:py-12">
+                  <History className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
                   <h3 className="text-lg font-medium mb-2">No movements yet</h3>
                   <p className="text-muted-foreground">
                     Stock movements will appear here as you manage inventory
@@ -857,7 +858,7 @@ export default function Inventory() {
             <DialogTitle>Receive Stock</DialogTitle>
             <DialogDescription>Add new stock for {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="receive-quantity">Quantity *</Label>
               <Input
@@ -919,7 +920,7 @@ export default function Inventory() {
             <DialogTitle>Adjust Stock</DialogTitle>
             <DialogDescription>Manually adjust stock for {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="space-y-2">
               <Label>Adjustment Type *</Label>
               <Select value={adjustType} onValueChange={(v: any) => setAdjustType(v)}>
@@ -991,12 +992,12 @@ export default function Inventory() {
             <DialogTitle>Stock Take / Physical Count</DialogTitle>
             <DialogDescription>Enter the actual physical count for {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="p-4 bg-muted rounded-lg">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-1 md:gap-4 text-xs sm:text-sm">
                 <div>
                   <p className="text-muted-foreground">System Count</p>
-                  <p className="text-2xl font-bold">{selectedItem?.current_stock}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{selectedItem?.current_stock}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Difference</p>
@@ -1048,16 +1049,16 @@ export default function Inventory() {
             <DialogTitle>Reserve Stock</DialogTitle>
             <DialogDescription>Reserve stock for orders or quotes - {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="p-4 bg-muted rounded-lg">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-1 md:gap-4 text-xs sm:text-sm">
                 <div>
                   <p className="text-muted-foreground">Available</p>
-                  <p className="text-2xl font-bold">{selectedItem?.available_stock}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{selectedItem?.available_stock}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Already Reserved</p>
-                  <p className="text-2xl font-bold">{selectedItem?.reserved_stock}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{selectedItem?.reserved_stock}</p>
                 </div>
               </div>
             </div>
@@ -1115,7 +1116,7 @@ export default function Inventory() {
                       })}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2">
                         {getMovementIcon(movement.movement_type)}
                         <span className="capitalize">{movement.movement_type.replace("_", " ")}</span>
                       </div>
@@ -1139,8 +1140,8 @@ export default function Inventory() {
               </TableBody>
             </Table>
             {productMovements.length === 0 && (
-              <div className="text-center py-12">
-                <History className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <div className="text-center py-6 md:py-12">
+                <History className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
                 <p className="text-muted-foreground">No movements for this product yet</p>
               </div>
             )}
