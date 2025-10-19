@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+// Module declarations
 mod commands;
 mod database;
 mod models;
@@ -8,6 +9,9 @@ mod models;
 // mod seeder; // Generic products
 mod seeder_building_materials; // Building materials wholesale
 use seeder_building_materials as seeder;
+
+// Export main_entry for mobile builds
+pub mod lib;
 
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
@@ -103,8 +107,14 @@ async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
     Ok(())
 }
 
+// Main entry point for desktop
 #[tokio::main]
 async fn main() {
+    main_entry().await.expect("error while running tauri application");
+}
+
+// Shared entry point for both desktop and mobile
+pub async fn main_entry() -> Result<(), Box<dyn std::error::Error>> {
     // Prefer OS app data directory for app data (not the watched src-tauri folder).
     // Use directories::ProjectDirs to compute a suitable per-user folder.
     let app_dir = ProjectDirs::from("com", "premiumpos", "Premium POS")
@@ -297,6 +307,7 @@ async fn main() {
             commands::stock::release_reserved_stock,
             commands::stock::stock_take,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .run(tauri::generate_context!())?;
+    
+    Ok(())
 }
