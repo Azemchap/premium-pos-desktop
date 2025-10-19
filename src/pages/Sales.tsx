@@ -556,9 +556,9 @@ export default function Sales() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2  gap-1 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5  gap-1 sm:gap-4 md:gap-6">
         {/* Products Section */}
-        <div className="lg:col-span-2 space-y-2 md:space-y-4">
+        <div className="lg:col-span-3 space-y-2 md:space-y-4">
           {/* Search and Filters */}
           <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-1 md:gap-4">
             <div className="relative col-span-2">
@@ -799,7 +799,7 @@ export default function Sales() {
         </div>
 
         {/* Cart Section */}
-        <div className="space-y-2 md:space-y-4">
+        <div className="space-y-2 md:space-y-4 lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
