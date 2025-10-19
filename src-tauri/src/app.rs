@@ -1,5 +1,6 @@
 // Shared application logic for both desktop and mobile
 
+use tauri::Manager;
 use crate::{commands, database, seeder_building_materials as seeder};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
