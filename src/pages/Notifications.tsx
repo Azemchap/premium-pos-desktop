@@ -12,7 +12,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { hapticFeedback } from "@/lib/mobile-utils";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -30,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { parseUTCDate } from "@/lib/date-utils";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import { formatDistance } from "date-fns";
@@ -49,7 +49,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { parseUTCDate } from "@/lib/date-utils";
 
 interface Notification {
   id: number;
@@ -228,7 +227,7 @@ export default function Notifications() {
     <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Notifications</h1>
+          <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Notifications</h1>
           <p className="text-muted-foreground mt-1">
             Stay updated with alerts and system messages
           </p>

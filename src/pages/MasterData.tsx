@@ -1,5 +1,4 @@
 // src/pages/MasterData.tsx - Master Data Management
-import { hapticFeedback } from "@/lib/mobile-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -332,7 +331,7 @@ export default function MasterData() {
     <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Master Data</h1>
+          <h1 className="text-xl sm:text-lg md:text-3xl font-bold">Master Data</h1>
           <p className="text-muted-foreground mt-1">
             Manage categories, brands, and units of measurement
           </p>

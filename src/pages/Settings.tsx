@@ -1,5 +1,4 @@
 // src/pages/Settings.tsx
-import { hapticFeedback } from "@/lib/mobile-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuthStore } from "@/store/authStore";
@@ -160,7 +158,7 @@ export default function Settings() {
     <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Settings</h1>
+          <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground mt-1">
             Configure your store and system preferences
           </p>

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import {
   Select,
   SelectContent,
@@ -40,7 +41,6 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
-import { currencyFormatter } from "@/lib/currency";
 import { printReceipt } from "@/lib/receipt-printer";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
@@ -66,8 +66,6 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { hapticFeedback } from "@/lib/mobile-utils";
 
 // Zod validation schemas
 const customerSchema = z.object({
@@ -539,7 +537,7 @@ export default function Sales() {
     <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Point of Sale</h1>
+          <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Point of Sale</h1>
           <p className="text-muted-foreground mt-1">
             Process sales and manage transactions
           </p>
@@ -558,7 +556,7 @@ export default function Sales() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2  gap-1 sm:gap-4 md:gap-6">
         {/* Products Section */}
         <div className="lg:col-span-2 space-y-2 md:space-y-4">
           {/* Search and Filters */}
@@ -607,14 +605,14 @@ export default function Sales() {
 
           {/* Products Grid/List */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 md:grid-cols-3 gap-1 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1  gap-1 md:gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-40" />
               ))}
             </div>
           ) : viewMode === "grid" ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 md:grid-cols-3 gap-1 md:gap-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1  gap-1 md:gap-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
                 {paginatedProducts.map((product) => (
                   <Card
                     key={product.id}

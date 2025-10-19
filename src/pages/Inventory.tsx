@@ -1,5 +1,4 @@
 import { Badge } from "@/components/ui/badge";
-import { hapticFeedback } from "@/lib/mobile-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import {
   Select,
   SelectContent,
@@ -41,12 +41,11 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useCurrency } from "@/hooks/useCurrency";
+import { parseUTCDate } from "@/lib/date-utils";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import { formatDistance } from "date-fns";
-import { parseUTCDate } from "@/lib/date-utils";
 import {
   AlertCircle,
   ArrowDown,
@@ -470,7 +469,7 @@ export default function Inventory() {
     <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Inventory Management</h1>
+          <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Inventory Management</h1>
           <p className="text-muted-foreground mt-1">
             Manage stock levels, receive inventory, and track movements
           </p>

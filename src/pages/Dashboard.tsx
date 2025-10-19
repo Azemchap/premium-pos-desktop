@@ -1,5 +1,4 @@
 // src/pages/Dashboard.tsx - Enhanced with Store Config & Settings
-import { hapticFeedback } from "@/lib/mobile-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -190,7 +189,7 @@ export default function Dashboard() {
                     <Skeleton className="h-10 w-32" />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-4 ">
                     {Array.from({ length: 4 }).map((_, i) => (
                         <Card key={i}>
                             <CardContent className="p-6">
@@ -207,7 +206,7 @@ export default function Dashboard() {
                     ))}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 sm:gap-4 md:gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 sm:gap-4 ">
                     {Array.from({ length: 2 }).map((_, i) => (
                         <Card key={i}>
                             <CardHeader>
@@ -239,7 +238,7 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-4">
                 <div className="space-y-1">
                     <div className="flex items-center gap-3">
-                        <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                        <h1 className="text-xl sm:text-lg  md:text-2xl  font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
                             {getGreeting()}, {user?.first_name}!
                         </h1>
                         <Sparkles className="w-6 h-6 text-yellow-500 animate-pulse" />
@@ -285,7 +284,7 @@ export default function Dashboard() {
             </div>
 
             {/* Enhanced Stats Grid with Growth Indicators */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 md:gap-4 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 md:gap-4 sm:gap-4 ">
                 <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-green-500">
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between mb-2 md:mb-4">
@@ -310,7 +309,7 @@ export default function Dashboard() {
                             <p className="text-sm font-medium text-muted-foreground mb-1">
                                 Today's Sales
                             </p>
-                            <p className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+                            <p className="text-xl sm:text-lg  md:text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
                                 {formatCurrency(stats?.today_sales || 0)}
                             </p>
                             <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1">
@@ -336,7 +335,7 @@ export default function Dashboard() {
                             <p className="text-sm font-medium text-muted-foreground mb-1">
                                 Week Sales
                             </p>
-                            <p className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                            <p className="text-xl sm:text-lg  md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                                 {formatCurrency(stats?.week_sales || 0)}
                             </p>
                             <p className="text-sm text-muted-foreground mt-2">
@@ -365,7 +364,7 @@ export default function Dashboard() {
                             <p className="text-sm font-medium text-muted-foreground mb-1">
                                 Products
                             </p>
-                            <p className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                            <p className="text-xl sm:text-lg  md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
                                 {stats?.total_products || 0}
                             </p>
                             <div className="mt-3">
@@ -477,7 +476,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Additional Stats - Enhanced */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4 sm:gap-4 ">
                 <Card className="md:col-span-2">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
@@ -490,7 +489,7 @@ export default function Dashboard() {
                         <div className="grid grid-cols-2 gap-1 md:gap-4">
                             <div className="space-y-2">
                                 <p className="text-sm text-muted-foreground">Month Sales</p>
-                                <p className="text-lg sm:text-xl md:text-2xl font-bold">
+                                <p className="text-lg  md:text-2xl font-bold">
                                     {formatCurrency(stats?.month_sales || 0)}
                                 </p>
                                 <Progress 
@@ -500,7 +499,7 @@ export default function Dashboard() {
                             </div>
                             <div className="space-y-2">
                                 <p className="text-sm text-muted-foreground">Avg Transaction</p>
-                                <p className="text-lg sm:text-xl md:text-2xl font-bold">
+                                <p className="text-lg  md:text-2xl font-bold">
                                     {formatCurrency(stats?.average_transaction_value || 0)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
@@ -562,7 +561,7 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Activity - Enhanced */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 md:gap-4 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 md:gap-4 sm:gap-4 ">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-3">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">

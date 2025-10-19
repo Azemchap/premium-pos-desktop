@@ -1,24 +1,23 @@
 // src/pages/Profile.tsx - User Profile Management
-import { hapticFeedback } from "@/lib/mobile-utils";
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { User, Camera, Key, Info } from "lucide-react";
+import { formatLocalDate } from "@/lib/date-utils";
 import { useAuthStore } from "@/store/authStore";
+import { invoke } from "@tauri-apps/api/core";
+import { Camera, Info, Key, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
-import { invoke } from "@tauri-apps/api/core";
-import { useNavigate } from "react-router-dom";
-import { formatLocalDate } from "@/lib/date-utils";
 
 // Validation schemas
 const profileSchema = z.object({
@@ -108,7 +107,7 @@ export default function Profile() {
       setLoading(true);
 
       // Update profile in backend (including avatar)
-      const updatedUser: any = await invoke("update_user_profile", { 
+      const updatedUser: any = await invoke("update_user_profile", {
         userId: user?.id,
         request: {
           username: profileForm.username,
@@ -124,7 +123,7 @@ export default function Profile() {
 
       // Update user in auth store
       updateUser(updatedUser);
-      
+
       toast.success("✅ Profile updated successfully!");
 
     } catch (error) {
@@ -159,7 +158,7 @@ export default function Profile() {
       });
 
       toast.success("✅ Password changed successfully! Please log in with your new password.");
-      
+
       setPasswordForm({
         currentPassword: "",
         newPassword: "",
@@ -196,7 +195,7 @@ export default function Profile() {
   return (
     <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div>
-        <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Profile</h1>
+        <h1 className="text-xl sm:text-lg md:text-3xl font-bold">Profile</h1>
         <p className="text-muted-foreground mt-1">
           Manage your account settings and preferences
         </p>
