@@ -39,6 +39,13 @@
         "longDescription": "Premium Point of Sale and Inventory Management System for retail locations",
         "targets": "all",
         "externalBin": [],
-        "resources": []
+        "resources": [],
+        "android": {
+            "minSdkVersion": 24,
+            "versionCode": 1
+        },
+        "iOS": {
+            "minimumSystemVersion": "13.0"
+        }
     }
 }
