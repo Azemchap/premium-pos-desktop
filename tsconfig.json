@@ -26,12 +26,14 @@
         "paths": {
             "@/*": [
                 "./src/*"
+            ],
+            "@/types": [
+                "./src/types"
             ]
         }
     },
     "include": [
         "src"
     ],
-    "references": [
-    ]
+    "references": []
 }
