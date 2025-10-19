@@ -7,7 +7,7 @@ pub async fn get_store_config(pool: State<'_, SqlitePool>) -> Result<StoreConfig
     println!("DEBUG(store): get_store_config called");
     let pool_ref = pool.inner();
 
-    let row = sqlx::query("SELECT id, name, address, city, state, zip_code, phone, email, tax_rate, currency, timezone, created_at, updated_at FROM locations WHERE id = 1")
+    let row = sqlx::query("SELECT id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at FROM locations WHERE id = 1")
         .fetch_one(pool_ref)
         .await
         .map_err(|e| {
@@ -26,7 +26,6 @@ pub async fn get_store_config(pool: State<'_, SqlitePool>) -> Result<StoreConfig
         email: row.try_get("email").ok().flatten(),
         tax_rate: row.try_get("tax_rate").map_err(|e| e.to_string())?,
         currency: row.try_get("currency").map_err(|e| e.to_string())?,
-        timezone: row.try_get("timezone").map_err(|e| e.to_string())?,
         created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
     };
@@ -40,7 +39,7 @@ pub async fn update_store_config(pool: State<'_, SqlitePool>, request: UpdateSto
     println!("DEBUG(store): update_store_config called name='{}'", request.name);
     let pool_ref = pool.inner();
 
-    sqlx::query("UPDATE locations SET name = ?1, address = ?2, city = ?3, state = ?4, zip_code = ?5, phone = ?6, email = ?7, tax_rate = ?8, currency = ?9, timezone = ?10, updated_at = CURRENT_TIMESTAMP WHERE id = 1")
+    sqlx::query("UPDATE locations SET name = ?1, address = ?2, city = ?3, state = ?4, zip_code = ?5, phone = ?6, email = ?7, tax_rate = ?8, currency = ?9, updated_at = CURRENT_TIMESTAMP WHERE id = 1")
         .bind(&request.name)
         .bind(&request.address)
         .bind(&request.city)
@@ -50,7 +49,6 @@ pub async fn update_store_config(pool: State<'_, SqlitePool>, request: UpdateSto
         .bind(&request.email)
         .bind(request.tax_rate)
         .bind(&request.currency)
-        .bind(&request.timezone)
         .execute(pool_ref)
         .await
         .map_err(|e| {
