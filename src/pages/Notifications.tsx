@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import { formatDistance } from "date-fns";
+import { parseUTCDate } from "@/lib/date-utils";
 import {
   AlertTriangle,
   Bell,
@@ -449,7 +450,7 @@ export default function Notifications() {
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {formatDistance(new Date(notification.created_at), new Date(), {
+                          {formatDistance(parseUTCDate(notification.created_at), new Date(), {
                             addSuffix: true,
                           })}
                         </span>

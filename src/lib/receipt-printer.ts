@@ -2,6 +2,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { currencyFormatter } from "./currency";
 import { toast } from "sonner";
+import { formatLocalDateTime as formatLocalDateTimeUtil } from "./date-utils";
 
 interface SaleItem {
   product_id: number;
@@ -42,15 +43,10 @@ interface StoreConfig {
 /**
  * Formats a date string to local time
  * Fixes the timezone issue where UTC timestamps are displayed incorrectly
+ * Now uses the centralized utility
  */
 function formatLocalDateTime(dateString: string): string {
-  try {
-    // If the string doesn't have timezone info, treat it as UTC
-    const date = new Date(dateString + 'Z'); // Add 'Z' to indicate UTC
-    return date.toLocaleString();
-  } catch (error) {
-    return new Date(dateString).toLocaleString();
-  }
+  return formatLocalDateTimeUtil(dateString);
 }
 
 /**

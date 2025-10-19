@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/currency";
+import { formatLocalDate, parseUTCDate } from "@/lib/date-utils";
 import { printReceipt } from "@/lib/receipt-printer";
 import { invoke } from "@tauri-apps/api/core";
 import { format as formatDate, startOfMonth, startOfQuarter, startOfWeek, startOfYear } from "date-fns";
@@ -283,8 +284,8 @@ export default function SalesRecords() {
       let aValue: any, bValue: any;
       switch (sortColumn) {
         case 'created_at':
-          aValue = new Date(a.created_at).getTime();
-          bValue = new Date(b.created_at).getTime();
+          aValue = parseUTCDate(a.created_at).getTime();
+          bValue = parseUTCDate(b.created_at).getTime();
           break;
         case 'sale_number':
           aValue = a.sale_number;
@@ -511,10 +512,10 @@ export default function SalesRecords() {
                       <TableCell>
                         <div>
                           <div className="font-medium">
-                            {formatDate(new Date(sale.created_at), "MMM dd, yyyy")}
+                            {formatLocalDate(sale.created_at, "short-date")}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {formatDate(new Date(sale.created_at), "hh:mm a")}
+                            {formatLocalDate(sale.created_at, "short-time")}
                           </div>
                         </div>
                       </TableCell>
@@ -656,7 +657,7 @@ export default function SalesRecords() {
                 <div>
                   <Label className="text-muted-foreground">Date & Time</Label>
                   <p className="font-medium">
-                    {formatDate(new Date(selectedSale.created_at), "MMM dd, yyyy hh:mm a")}
+                    {formatLocalDate(selectedSale.created_at, "short-datetime")}
                   </p>
                 </div>
                 <div className="flex gap-2 items-center">
@@ -753,7 +754,7 @@ export default function SalesRecords() {
                   <p className="text-red-700 mt-1">{selectedSale.void_reason}</p>
                   {selectedSale.voided_at && (
                     <p className="text-sm text-red-600 mt-1">
-                      Voided on {formatDate(new Date(selectedSale.voided_at), "MMM dd, yyyy hh:mm a")}
+                      Voided on {formatLocalDate(selectedSale.voided_at, "short-datetime")}
                     </p>
                   )}
                 </div>

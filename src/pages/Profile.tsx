@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
+import { formatLocalDate } from "@/lib/date-utils";
 
 // Validation schemas
 const profileSchema = z.object({
@@ -440,7 +441,7 @@ export default function Profile() {
                       <p className="text-muted-foreground">Member Since</p>
                       <p className="font-medium">
                         {user?.created_at
-                          ? new Date(user.created_at).toLocaleDateString()
+                          ? formatLocalDate(user.created_at, "long-date")
                           : "Unknown"}
                       </p>
                     </div>

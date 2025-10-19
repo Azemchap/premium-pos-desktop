@@ -45,6 +45,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import { formatDistance } from "date-fns";
+import { parseUTCDate } from "@/lib/date-utils";
 import {
   AlertCircle,
   ArrowDown,
@@ -802,7 +803,7 @@ export default function Inventory() {
                     <TableRow key={movement.id}>
                       <TableCell>
                         <div className="text-sm">
-                          {formatDistance(new Date(movement.created_at), new Date(), {
+                          {formatDistance(parseUTCDate(movement.created_at), new Date(), {
                             addSuffix: true,
                           })}
                         </div>
@@ -1109,7 +1110,7 @@ export default function Inventory() {
                 {productMovements.map((movement) => (
                   <TableRow key={movement.id}>
                     <TableCell className="text-sm">
-                      {formatDistance(new Date(movement.created_at), new Date(), {
+                      {formatDistance(parseUTCDate(movement.created_at), new Date(), {
                         addSuffix: true,
                       })}
                     </TableCell>
