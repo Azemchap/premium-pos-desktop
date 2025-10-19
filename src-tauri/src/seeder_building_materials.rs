@@ -1125,11 +1125,12 @@ async fn seed_inventory(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), St
 async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String> {
     println!("💰 Seeding sales transactions...");
 
-    // Get admin user ID
-    let admin_id: i64 = sqlx::query_scalar("SELECT id FROM users WHERE username = 'admin'")
-        .fetch_one(pool)
+    // Get admin user ID (or any valid user)
+    let admin_id: i64 = sqlx::query_scalar("SELECT id FROM users WHERE username = 'admin' OR role = 'Admin' LIMIT 1")
+        .fetch_optional(pool)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "No users found in database".to_string())?;
 
     // Create 15 sample sales for building materials
     for i in 0i32..15i32 {
@@ -1144,11 +1145,11 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
         let mut subtotal = 0.0;
         let mut tax_amount = 0.0;
 
-        // Create sale
+        // Create sale - Don't include shift_id to avoid FK issues
         let sale_result = sqlx::query(
             "INSERT INTO sales (sale_number, subtotal, tax_amount, discount_amount, total_amount,
-             payment_method, payment_status, cashier_id, customer_name, notes, shift_id, created_at)
-             VALUES (?1, ?2, ?3, 0, ?4, ?5, 'completed', ?6, ?7, ?8, NULL, datetime('now', '-' || ?9 || ' days'))"
+             payment_method, payment_status, cashier_id, customer_name, notes, created_at)
+             VALUES (?1, ?2, ?3, 0, ?4, ?5, 'completed', ?6, ?7, ?8, datetime('now', '-' || ?9 || ' days'))"
         )
         .bind(&sale_number)
         .bind(0.0)
@@ -1161,7 +1162,7 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
         .bind(i % 30)
         .execute(pool)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| format!("Failed to insert sale: {} (cashier_id: {})", e, admin_id))?;
 
         let sale_id = sale_result.last_insert_rowid();
 
