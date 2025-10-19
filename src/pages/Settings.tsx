@@ -175,7 +175,7 @@ export default function Settings() {
           </Button>
           <Button onClick={saveAllSettings}>
             <Save className="w-4 h-4 mr-2" />
-            Save All Settings
+            Save Settings
           </Button>
         </div>
       </div>
