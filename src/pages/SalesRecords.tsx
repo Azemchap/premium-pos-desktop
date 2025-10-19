@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { hapticFeedback } from "@/lib/mobile-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -344,10 +345,10 @@ export default function SalesRecords() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Sales Records</h1>
+          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Sales Records</h1>
           <p className="text-muted-foreground mt-1">
             View and analyze sales transactions
           </p>
@@ -357,7 +358,7 @@ export default function SalesRecords() {
       {/* Date Range Selector */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
             <div className="space-y-2">
               <Label>Date Range</Label>
               <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
@@ -400,13 +401,13 @@ export default function SalesRecords() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Sales</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats.total_sales)}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{formatCurrency(stats.total_sales)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {stats.total_transactions} transactions
                   </p>
@@ -421,7 +422,7 @@ export default function SalesRecords() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Profit</p>
-                  <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_profit)}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{formatCurrency(stats.total_profit)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {stats.profit_margin.toFixed(1)}% margin
                   </p>
@@ -436,7 +437,7 @@ export default function SalesRecords() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Avg Transaction</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats.average_transaction)}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{formatCurrency(stats.average_transaction)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     per sale
                   </p>
@@ -477,7 +478,7 @@ export default function SalesRecords() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-4">
+            <div className="space-y-2 md:space-y-4">
               {Array.from({ length: 10 }).map((_, i) => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
@@ -488,20 +489,20 @@ export default function SalesRecords() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('created_at')}>
-                      Date & Time {sortColumn === 'created_at' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      Date & Time {sortColumn === 'created_at' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('sale_number')}>
-                      Sale # {sortColumn === 'sale_number' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      Sale # {sortColumn === 'sale_number' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                     </TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Cashier</TableHead>
                     <TableHead>Items</TableHead>
                     <TableHead>Payment</TableHead>
                     <TableHead className="text-right cursor-pointer" onClick={() => handleSort('total_amount')}>
-                      Total {sortColumn === 'total_amount' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      Total {sortColumn === 'total_amount' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                     </TableHead>
                     <TableHead className="text-right cursor-pointer" onClick={() => handleSort('profit')}>
-                      Profit {sortColumn === 'profit' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      Profit {sortColumn === 'profit' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                     </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -520,7 +521,7 @@ export default function SalesRecords() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-mono text-sm">{sale.sale_number}</div>
+                        <div className="font-mono text-xs sm:text-sm">{sale.sale_number}</div>
                         {sale.is_voided && (
                           <Badge variant="destructive" className="mt-1">
                             Voided
@@ -625,8 +626,8 @@ export default function SalesRecords() {
           )}
 
           {!loading && filteredAndSortedSales.length === 0 && (
-            <div className="text-center py-12">
-              <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <div className="text-center py-6 md:py-12">
+              <Calendar className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-medium mb-2">No sales found</h3>
               <p className="text-muted-foreground">
                 {debouncedSearchQuery ? "Try adjusting your search criteria" : "No sales in this date range"}
@@ -647,9 +648,9 @@ export default function SalesRecords() {
           </DialogHeader>
 
           {selectedSale && (
-            <div className="space-y-6">
+            <div className="space-y-3 sm:space-y-3 md:space-y-6">
               {/* Sale Header */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 md:gap-4">
                 <div>
                   <Label className="text-muted-foreground">Sale Number</Label>
                   <p className="font-mono font-medium">{selectedSale.sale_number}</p>
@@ -660,13 +661,13 @@ export default function SalesRecords() {
                     {formatLocalDate(selectedSale.created_at, "short-datetime")}
                   </p>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-1 sm:gap-2 items-center">
                   <Label className="text-muted-foreground">Payment Method</Label>
                   <Badge className={`${paymentMethodColors[selectedSale.payment_method] || ""} mt-1`}>
                     {selectedSale.payment_method.charAt(0).toUpperCase() + selectedSale.payment_method.slice(1)}
                   </Badge>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-1 sm:gap-2 items-center">
                   <Label className="text-muted-foreground">Status</Label>
                   <Badge variant={selectedSale.is_voided ? "destructive" : "default"} className="mt-1">
                     {selectedSale.is_voided ? "Voided" : "Completed"}
@@ -732,7 +733,7 @@ export default function SalesRecords() {
                       <span className="font-medium">-{formatCurrency(selectedSale.discount_amount)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                  <div className="flex justify-between text-base sm:text-lg font-bold border-t pt-2">
                     <span>Total</span>
                     <span>{formatCurrency(selectedSale.total_amount)}</span>
                   </div>
@@ -762,7 +763,7 @@ export default function SalesRecords() {
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
             <Button variant="outline" onClick={() => setIsDetailsOpen(false)} className="flex-1">
               Close
             </Button>

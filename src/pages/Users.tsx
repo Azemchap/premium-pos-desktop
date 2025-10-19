@@ -1,4 +1,5 @@
 // src/pages/Users.tsx
+import { hapticFeedback } from "@/lib/mobile-utils";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -308,8 +309,8 @@ export default function Users() {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
-              <Shield className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+              <Shield className="w-16 h-16 mx-auto mb-2 md:mb-4 text-muted-foreground" />
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-2">Access Denied</h2>
               <p className="text-muted-foreground">
                 You need administrator privileges to access user management.
               </p>
@@ -321,10 +322,10 @@ export default function Users() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
+          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">User Management</h1>
           <p className="text-muted-foreground mt-1">
             Manage user accounts, roles, and permissions
           </p>
@@ -336,13 +337,13 @@ export default function Users() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold">{users.length}</p>
               </div>
               <Shield className="w-8 h-8 text-blue-600" />
             </div>
@@ -354,7 +355,7 @@ export default function Users() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">
                   {users.filter(u => u.is_active).length}
                 </p>
               </div>
@@ -368,7 +369,7 @@ export default function Users() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Inactive</p>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600">
                   {users.filter(u => !u.is_active).length}
                 </p>
               </div>
@@ -382,7 +383,7 @@ export default function Users() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Admins</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-orange-600">
                   {users.filter(u => u.role === "Admin").length}
                 </p>
               </div>
@@ -395,11 +396,11 @@ export default function Users() {
       {/* Search and Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4">
             <div className="space-y-2">
               <Label htmlFor="search">Search Users</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
                 <Input
                   id="search"
                   placeholder="Search by name, email, or username..."
@@ -440,7 +441,7 @@ export default function Users() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-4">
+            <div className="space-y-2 md:space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
@@ -472,7 +473,7 @@ export default function Users() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center text-sm">
+                      <div className="flex items-center text-xs sm:text-sm">
                         <Mail className="w-3 h-3 mr-2 text-muted-foreground" />
                         {user.email}
                       </div>
@@ -493,7 +494,7 @@ export default function Users() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center text-sm text-muted-foreground">
+                      <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
                         <Calendar className="w-3 h-3 mr-2" />
                         {formatDate(user.created_at)}
                       </div>
@@ -535,10 +536,10 @@ export default function Users() {
           )}
 
           {!loading && filteredUsers.length === 0 && (
-            <div className="text-center py-12">
-              <Shield className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <div className="text-center py-6 md:py-12">
+              <Shield className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-medium mb-2">No users found</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-2 md:mb-4">
                 {searchQuery || selectedRole !== "all"
                   ? "Try adjusting your search criteria"
                   : "Get started by creating your first user"}
@@ -568,7 +569,7 @@ export default function Users() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4">
             <div className="space-y-2">
               <Label htmlFor="first_name">First Name *</Label>
               <Input
@@ -668,7 +669,7 @@ export default function Users() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="new_password">New Password</Label>
               <Input

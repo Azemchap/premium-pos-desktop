@@ -106,7 +106,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
                 <Input
                   id="username"
                   name="username"
@@ -123,7 +123,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
                 <Input
                   id="password"
                   name="password"

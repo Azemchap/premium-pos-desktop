@@ -1,4 +1,5 @@
 // src/pages/MasterData.tsx - Master Data Management
+import { hapticFeedback } from "@/lib/mobile-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -328,10 +329,10 @@ export default function MasterData() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Master Data</h1>
+          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Master Data</h1>
           <p className="text-muted-foreground mt-1">
             Manage categories, brands, and units of measurement
           </p>
@@ -339,13 +340,13 @@ export default function MasterData() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-4 md:gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Categories</p>
-                <p className="text-2xl font-bold">{categories.length}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold">{categories.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {categories.filter(c => c.is_active).length} active
                 </p>
@@ -360,7 +361,7 @@ export default function MasterData() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Brands</p>
-                <p className="text-2xl font-bold">{brands.length}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold">{brands.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {brands.filter(b => b.is_active).length} active
                 </p>
@@ -375,7 +376,7 @@ export default function MasterData() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Units</p>
-                <p className="text-2xl font-bold">{units.length}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold">{units.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {units.filter(u => u.is_active).length} active
                 </p>
@@ -393,14 +394,14 @@ export default function MasterData() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EntityType)}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
               <TabsTrigger value="category">Categories</TabsTrigger>
               <TabsTrigger value="brand">Brands</TabsTrigger>
               <TabsTrigger value="unit">Units</TabsTrigger>
             </TabsList>
 
             {/* CATEGORIES TAB */}
-            <TabsContent value="category" className="space-y-4">
+            <TabsContent value="category" className="space-y-2 md:space-y-4">
               <div className="flex justify-end">
                 <Button onClick={() => openCategoryDialog()}>
                   <Plus className="w-4 h-4 mr-2" />
@@ -458,7 +459,7 @@ export default function MasterData() {
             </TabsContent>
 
             {/* BRANDS TAB */}
-            <TabsContent value="brand" className="space-y-4">
+            <TabsContent value="brand" className="space-y-2 md:space-y-4">
               <div className="flex justify-end">
                 <Button onClick={() => openBrandDialog()}>
                   <Plus className="w-4 h-4 mr-2" />
@@ -516,7 +517,7 @@ export default function MasterData() {
             </TabsContent>
 
             {/* UNITS TAB */}
-            <TabsContent value="unit" className="space-y-4">
+            <TabsContent value="unit" className="space-y-2 md:space-y-4">
               <div className="flex justify-end">
                 <Button onClick={() => openUnitDialog()}>
                   <Plus className="w-4 h-4 mr-2" />
@@ -587,7 +588,7 @@ export default function MasterData() {
               {editingCategory ? "Update category details" : "Add a new category"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="category-name">Name *</Label>
               <Input
@@ -628,7 +629,7 @@ export default function MasterData() {
               {editingBrand ? "Update brand details" : "Add a new brand"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="brand-name">Name *</Label>
               <Input
@@ -669,7 +670,7 @@ export default function MasterData() {
               {editingUnit ? "Update unit details" : "Add a new unit of measurement"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="unit-name">Name *</Label>
               <Input

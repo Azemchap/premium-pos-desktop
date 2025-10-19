@@ -1,4 +1,5 @@
 // src/pages/Products.tsx
+import { hapticFeedback } from "@/lib/mobile-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -405,10 +406,10 @@ export default function Products() {
   const inactiveProducts = products.filter(p => !p.is_active).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-3 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Products</h1>
+          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Products</h1>
           <p className="text-muted-foreground mt-1">
             Manage your product catalog and pricing
           </p>
@@ -420,13 +421,13 @@ export default function Products() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-4 md:gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Products</p>
-                <p className="text-2xl font-bold">{totalProducts}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold">{totalProducts}</p>
               </div>
               <Package className="w-8 h-8 text-blue-600" />
             </div>
@@ -438,7 +439,7 @@ export default function Products() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold text-green-600">{activeProducts}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{activeProducts}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
@@ -450,7 +451,7 @@ export default function Products() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Inactive</p>
-                <p className="text-2xl font-bold text-red-600">{inactiveProducts}</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600">{inactiveProducts}</p>
               </div>
               <XCircle className="w-8 h-8 text-red-600" />
             </div>
@@ -461,11 +462,11 @@ export default function Products() {
       {/* Search and Filters - Auto-filtering */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-4">
             <div className="space-y-2 md:col-span-4">
               <Label htmlFor="search">Search</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
                 <Input
                   id="search"
                   placeholder="Search products..."
@@ -524,7 +525,7 @@ export default function Products() {
               </Select>
             </div>
           </div>
-          <div className="mt-2 text-sm text-muted-foreground">
+          <div className="mt-2 text-xs sm:text-sm text-muted-foreground">
             Showing {filteredAndSortedProducts.length} of {totalProducts} products
           </div>
         </CardContent>
@@ -537,7 +538,7 @@ export default function Products() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-4">
+            <div className="space-y-2 md:space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
@@ -548,19 +549,19 @@ export default function Products() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                      Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('sku')}>
-                      SKU {sortColumn === 'sku' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      SKU {sortColumn === 'sku' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('category')}>
-                      Category {sortColumn === 'category' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      Category {sortColumn === 'category' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('selling_price')}>
-                      Price {sortColumn === 'selling_price' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      Price {sortColumn === 'selling_price' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('is_active')}>
-                      Status {sortColumn === 'is_active' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      Status {sortColumn === 'is_active' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
                     </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -581,7 +582,7 @@ export default function Products() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-mono text-sm">{product.sku}</div>
+                          <div className="font-mono text-xs sm:text-sm">{product.sku}</div>
                           {product.barcode && (
                             <div className="text-xs text-muted-foreground">
                               {product.barcode}
@@ -706,10 +707,10 @@ export default function Products() {
           )}
 
           {!loading && filteredAndSortedProducts.length === 0 && (
-            <div className="text-center py-12">
-              <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <div className="text-center py-6 md:py-12">
+              <Package className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-medium mb-2">No products found</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-2 md:mb-4">
                 {searchQuery || selectedCategory !== "all" || selectedBrand !== "all" || statusFilter !== "all"
                   ? "Try adjusting your search criteria"
                   : "Get started by creating your first product"}
@@ -740,9 +741,9 @@ export default function Products() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-4 md:gap-6">
             {/* Basic Information */}
-            <div className="space-y-4">
+            <div className="space-y-2 md:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Product Name *</Label>
                 <Input
@@ -794,7 +795,7 @@ export default function Products() {
             </div>
 
             {/* Pricing */}
-            <div className="space-y-4">
+            <div className="space-y-2 md:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="selling_price">Selling Price *</Label>
                 <Input
@@ -858,7 +859,7 @@ export default function Products() {
             </div>
 
             {/* Categories & Brand */}
-            <div className="space-y-4">
+            <div className="space-y-2 md:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
                 <Select value={formData.category || "none"} onValueChange={(value) => setFormData({ ...formData, category: value === "none" ? "" : value })}>
@@ -921,7 +922,7 @@ export default function Products() {
             </div>
 
             {/* Additional Details */}
-            <div className="space-y-4">
+            <div className="space-y-2 md:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="weight">Weight (kg)</Label>
                 <Input
@@ -970,7 +971,7 @@ export default function Products() {
             </div>
 
             {/* Supplier Info */}
-            <div className="space-y-4 md:col-span-2">
+            <div className="space-y-2 md:space-y-4 md:col-span-2">
               <div className="space-y-2">
                 <Label htmlFor="supplier_info">Supplier Information</Label>
                 <Textarea

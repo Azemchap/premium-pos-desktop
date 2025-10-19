@@ -18,7 +18,7 @@ export default function Unauthorized() {
             You don't have permission to access this page. Please contact your administrator if you believe this is an error.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-2">
+        <CardContent className="flex flex-col gap-1 sm:gap-2">
           <Button onClick={() => navigate("/dashboard")} className="w-full">
             Go to Dashboard
           </Button>
