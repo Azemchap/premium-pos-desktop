@@ -1,6 +1,8 @@
 // Shared application logic for both desktop and mobile
 
-use crate::{commands, database, models, seeder};
+use crate::commands;
+use crate::database; // Add 'crate::' prefix
+use crate::seeder_building_materials as seeder; // Add 'crate::' prefix
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
 use directories::ProjectDirs;
@@ -23,11 +25,7 @@ async fn apply_migrations(pool: &SqlitePool) -> Result<(), String> {
             if s.is_empty() {
                 continue;
             }
-            let preview = if s.len() > 80 {
-                &s[..80]
-            } else {
-                s
-            };
+            let preview = if s.len() > 80 { &s[..80] } else { s };
             println!("DEBUG(main): executing statement (preview): {}", preview);
             pool.execute(s).await.map_err(|e| {
                 format!(
@@ -65,7 +63,8 @@ async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
                 return Err(format!("bcrypt verify error: {}", e));
             }
         }
-        let new_hash = hash(desired_pass, DEFAULT_COST).map_err(|e| format!("hash error: {}", e))?;
+        let new_hash =
+            hash(desired_pass, DEFAULT_COST).map_err(|e| format!("hash error: {}", e))?;
         sqlx::query("UPDATE users SET password_hash = ?1 WHERE username = 'admin'")
             .bind(&new_hash)
             .execute(pool)
@@ -178,7 +177,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_haptics::init())
-        .plugin(tauri_plugin_barcode_scanner::init())
+        // Remove this line - barcode scanner doesn't have standard init
+        // .plugin(tauri_plugin_barcode_scanner::init())
         .invoke_handler(tauri::generate_handler![
             commands::auth::login_user,
             commands::auth::register_user,
@@ -262,6 +262,6 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::stock::stock_take,
         ])
         .run(tauri::generate_context!())?;
-    
+
     Ok(())
 }
