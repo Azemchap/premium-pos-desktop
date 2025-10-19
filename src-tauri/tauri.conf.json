@@ -40,6 +40,10 @@
         "targets": "all",
         "externalBin": [],
         "resources": [],
+        "icon": [
+            "icons/icon.ico",
+            "icons/icon.png"
+        ],
         "android": {
             "minSdkVersion": 24,
             "versionCode": 1
