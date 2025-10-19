@@ -33,7 +33,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuthStore } from "@/store/authStore";
+// import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import { Edit, MoreHorizontal, Package, Plus, Ruler, Tag, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -110,7 +110,7 @@ export default function MasterData() {
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [unitForm, setUnitForm] = useState({ name: "", abbreviation: "", description: "" });
   
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // ========== CATEGORIES ==========

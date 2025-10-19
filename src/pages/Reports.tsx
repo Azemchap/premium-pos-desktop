@@ -46,7 +46,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
+// import { useAuthStore } from "@/store/authStore";
 import { useCurrency } from "@/hooks/useCurrency";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
