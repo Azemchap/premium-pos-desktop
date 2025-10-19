@@ -121,7 +121,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await hapticFeedback('medium');
     logout();
     navigate("/login");
   };
@@ -139,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
       {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-60">
@@ -259,59 +260,66 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main content */}
       <div className="lg:pl-60">
-        {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-background px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-          <Button
-            variant="ghost"
-            className="-m-2.5 p-2.5 lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="w-6 h-6" />
-          </Button>
+      {/* Top bar */}
+      <div className="sticky top-0 z-40 flex h-14 md:h-16 shrink-0 items-center gap-x-2 sm:gap-x-4 border-b border-border bg-background px-3 sm:px-4 md:px-6 lg:px-8 shadow-sm safe-top">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="p-2 lg:hidden touch-target-sm"
+          onClick={async () => {
+            await hapticFeedback('light');
+            setSidebarOpen(true);
+          }}
+        >
+          <Menu className="w-5 h-5 md:w-6 md:h-6" />
+        </Button>
 
           {/* Separator */}
           <div className="h-6 w-px bg-border lg:hidden" />
 
           <div className="flex justify-end  flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate("/notifications")} 
-                className="relative hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
-              >
-                <Bell className={`w-5 h-5 ${
-                  notificationCount > 0 
-                    ? 'text-blue-600 dark:text-blue-400 animate-pulse' 
-                    : 'text-gray-600 dark:text-gray-400'
-                }`} />
-                {notificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <Badge className="relative inline-flex bg-red-500 hover:bg-red-600 text-white px-1.5 min-w-[20px] h-5 text-xs font-bold shadow-lg border-2 border-background">
-                      {notificationCount > 99 ? '99+' : notificationCount}
-                    </Badge>
-                  </span>
-                )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await hapticFeedback('light');
+                navigate("/notifications");
+              }}
+              className="relative hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors touch-target"
+            >
+              <Bell className={`w-4 h-4 md:w-5 md:h-5 ${ 
+                notificationCount > 0 
+                  ? 'text-blue-600 dark:text-blue-400 animate-pulse' 
+                  : 'text-gray-600 dark:text-gray-400'
+              }`} />
+              {notificationCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <Badge className="relative inline-flex bg-red-500 hover:bg-red-600 text-white px-1 md:px-1.5 min-w-[16px] md:min-w-[20px] h-4 md:h-5 text-[10px] md:text-xs font-bold shadow-lg border-2 border-background">
+                    {notificationCount > 99 ? '99+' : notificationCount}
+                  </Badge>
+                </span>
+              )}
               </Button>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2">
-                    <Avatar className="w-8 h-8">
-                      {user?.profile_image_url ? (
-                        <AvatarImage src={user.profile_image_url} alt={`${user.first_name} ${user.last_name}`} />
-                      ) : null}
-                      <AvatarFallback>
-                        {user ? getInitials(user.first_name, user.last_name) : "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden lg:block text-sm font-medium">
-                      {user?.first_name} {user?.last_name}
-                    </span>
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-1 sm:gap-2 touch-target">
+                  <Avatar className="w-7 h-7 md:w-8 md:h-8">
+                    {user?.profile_image_url ? (
+                      <AvatarImage src={user.profile_image_url} alt={`${user.first_name} ${user.last_name}`} />
+                    ) : null}
+                    <AvatarFallback className="text-xs md:text-sm">
+                      {user ? getInitials(user.first_name, user.last_name) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:block text-sm font-medium">
+                    {user?.first_name} {user?.last_name}
+                  </span>
+                  <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />
+                </Button>
+              </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -336,13 +344,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        {/* Page content */}
-        <main className="py-8">
-          <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
-        </main>
-      </div>
+      {/* Page content */}
+      <main className="py-4 md:py-8 safe-bottom">
+        <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 md:px-6 lg:px-8">
+          {children}
+        </div>
+      </main>
     </div>
-  );
-}   
+
+    {/* Mobile Bottom Navigation */}
+    <MobileBottomNav />
+  </div>
+);
+}
