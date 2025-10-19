@@ -1,8 +1,6 @@
 // Shared application logic for both desktop and mobile
 
-use crate::commands;
-use crate::database; // Add 'crate::' prefix
-use crate::seeder_building_materials as seeder; // Add 'crate::' prefix
+use crate::{commands, database, seeder_building_materials as seeder};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
 use directories::ProjectDirs;

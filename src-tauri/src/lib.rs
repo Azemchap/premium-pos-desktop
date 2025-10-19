@@ -1,5 +1,5 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+// Tauri mobile entry point (lib.rs)
+// This file is required for Android/iOS builds
 
 pub mod commands;
 pub mod database;
@@ -14,8 +14,6 @@ pub fn run() {
         .build()
         .unwrap()
         .block_on(async {
-            if let Err(e) = app::run().await {
-                eprintln!("Application error: {}", e);
-            }
+            app::run().await.expect("error while running tauri application");
         });
 }
