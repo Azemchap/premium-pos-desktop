@@ -10,6 +10,7 @@ pub struct User {
     pub last_name: String,
     pub role: String,
     pub is_active: bool,
+    pub profile_image_url: Option<String>,
     pub last_login: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -23,6 +24,21 @@ pub struct CreateUserRequest {
     pub first_name: String,
     pub last_name: String,
     pub role: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateProfileRequest {
+    pub username: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub profile_image_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChangePasswordRequest {
+    pub current_password: String,
+    pub new_password: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -191,11 +207,13 @@ pub struct StoreConfig {
     pub id: i64,
     pub name: String,
     pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
     pub phone: Option<String>,
     pub email: Option<String>,
     pub tax_rate: f64,
     pub currency: String,
-    pub timezone: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -204,11 +222,13 @@ pub struct StoreConfig {
 pub struct UpdateStoreConfigRequest {
     pub name: String,
     pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
     pub phone: Option<String>,
     pub email: Option<String>,
     pub tax_rate: f64,
     pub currency: String,
-    pub timezone: String,
 }
 
 // Shift models

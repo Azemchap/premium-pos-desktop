@@ -1,6 +1,6 @@
-// src/hooks/useCurrency.ts - React hook for currency management
+// src/hooks/useCurrency.ts - React hook for real currency conversion
 import { useState, useEffect } from 'react';
-import { currencyFormatter, CurrencyCode, Currency } from '@/lib/currency';
+import { currencyFormatter, CurrencyCode, Currency, convertCurrency } from '@/lib/currency';
 
 export function useCurrency() {
   const [currency, setCurrencyState] = useState<Currency>(currencyFormatter.getCurrency());
@@ -23,8 +23,8 @@ export function useCurrency() {
     setCurrencyState(currencyFormatter.getCurrency());
   };
 
-  const format = (amount: number, options?: { showSymbol?: boolean; showCode?: boolean }) => {
-    return currencyFormatter.format(amount, options);
+  const format = (amountInUSD: number, options?: { showSymbol?: boolean; showCode?: boolean }) => {
+    return currencyFormatter.format(amountInUSD, options);
   };
 
   const parse = (formatted: string) => {
@@ -36,6 +36,7 @@ export function useCurrency() {
     changeCurrency,
     format,
     parse,
+    convert: convertCurrency,
     symbol: currency.symbol,
     code: currency.code,
     availableCurrencies: currencyFormatter.getAvailableCurrencies(),

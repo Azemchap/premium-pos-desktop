@@ -13,7 +13,7 @@ pub async fn login_user(pool: State<'_, SqlitePool>, request: LoginRequest) -> R
     
     // Try to find user by username first, then by email if username fails
     let row = sqlx::query(
-        "SELECT id, username, email, password_hash, first_name, last_name, role, is_active, last_login, created_at, updated_at
+        "SELECT id, username, email, password_hash, first_name, last_name, role, is_active, profile_image_url, last_login, created_at, updated_at
          FROM users WHERE (username = ?1 OR email = ?1) AND is_active = 1",
     )
     .bind(&request.username)
@@ -72,6 +72,7 @@ pub async fn login_user(pool: State<'_, SqlitePool>, request: LoginRequest) -> R
                 }
             }
         },
+        profile_image_url: row.try_get("profile_image_url").ok().flatten(),
         last_login: row.try_get("last_login").ok().flatten(),
         created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
@@ -128,7 +129,7 @@ pub async fn register_user(pool: State<'_, SqlitePool>, request: CreateUserReque
     })?;
 
     let row = sqlx::query(
-        "SELECT id, username, email, first_name, last_name, role, is_active, last_login, created_at, updated_at
+        "SELECT id, username, email, first_name, last_name, role, is_active, profile_image_url, last_login, created_at, updated_at
          FROM users WHERE username = ?1",
     )
     .bind(&request.username)
@@ -155,6 +156,7 @@ pub async fn register_user(pool: State<'_, SqlitePool>, request: CreateUserReque
                 }
             }
         },
+        profile_image_url: row.try_get("profile_image_url").ok().flatten(),
         last_login: row.try_get("last_login").ok().flatten(),
         created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,

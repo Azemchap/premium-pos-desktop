@@ -4,7 +4,10 @@
 mod commands;
 mod database;
 mod models;
-mod seeder;
+// Choose which seeder to use:
+// mod seeder; // Generic products
+mod seeder_building_materials; // Building materials wholesale
+use seeder_building_materials as seeder;
 
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
@@ -208,6 +211,8 @@ async fn main() {
             commands::users::create_user,
             commands::users::update_user,
             commands::users::delete_user,
+            commands::users::update_user_profile,
+            commands::users::change_user_password,
             // Product management commands
             commands::products::get_products,
             commands::products::get_products_with_stock,

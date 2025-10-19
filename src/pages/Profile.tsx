@@ -15,9 +15,13 @@ import { User, Camera, Key, Info } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import { z } from "zod";
+import { invoke } from "@tauri-apps/api/core";
+import { useNavigate } from "react-router-dom";
+import { formatLocalDate } from "@/lib/date-utils";
 
 // Validation schemas
 const profileSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
@@ -33,8 +37,10 @@ const passwordSchema = z.object({
 });
 
 export default function Profile() {
-  const { user } = useAuthStore();
+  const { user, updateUser, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [profileForm, setProfileForm] = useState({
+    username: user?.username || "",
     first_name: user?.first_name || "",
     last_name: user?.last_name || "",
     email: user?.email || "",
@@ -49,12 +55,16 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load avatar from localStorage
-    const savedAvatar = localStorage.getItem(`user_avatar_${user?.id}`);
-    if (savedAvatar) {
-      setAvatar(savedAvatar);
+    // Load avatar from user's profile_image_url or localStorage
+    if (user?.profile_image_url) {
+      setAvatar(user.profile_image_url);
+    } else {
+      const savedAvatar = localStorage.getItem(`user_avatar_${user?.id}`);
+      if (savedAvatar) {
+        setAvatar(savedAvatar);
+      }
     }
-  }, [user?.id]);
+  }, [user?.id, user?.profile_image_url]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -77,8 +87,7 @@ export default function Profile() {
     reader.onloadend = () => {
       const base64String = reader.result as string;
       setAvatar(base64String);
-      localStorage.setItem(`user_avatar_${user?.id}`, base64String);
-      toast.success("✅ Profile picture updated!");
+      toast.success("✅ Profile picture updated! Click 'Save Changes' to keep it.");
     };
     reader.onerror = () => {
       toast.error("❌ Failed to read image");
@@ -88,8 +97,7 @@ export default function Profile() {
 
   const handleRemoveAvatar = () => {
     setAvatar("");
-    localStorage.removeItem(`user_avatar_${user?.id}`);
-    toast.success("🗑️ Profile picture removed");
+    toast.success("🗑️ Profile picture removed! Click 'Save Changes' to confirm.");
   };
 
   const handleUpdateProfile = async () => {
@@ -98,17 +106,25 @@ export default function Profile() {
       setValidationErrors({});
       setLoading(true);
 
-      // Note: This would need a backend endpoint to update user profile
-      // For now, we'll just show success
-      toast.success("✅ Profile updated successfully!");
+      // Update profile in backend (including avatar)
+      const updatedUser: any = await invoke("update_user_profile", { 
+        userId: user?.id,
+        request: {
+          username: profileForm.username,
+          first_name: profileForm.first_name,
+          last_name: profileForm.last_name,
+          email: profileForm.email,
+          profile_image_url: avatar || null
+        }
+      });
+
+      // Remove localStorage avatar since it's now in database
+      localStorage.removeItem(`user_avatar_${user?.id}`);
+
+      // Update user in auth store
+      updateUser(updatedUser);
       
-      // TODO: Add actual backend call
-      // await invoke("update_user_profile", { 
-      //   userId: user?.id,
-      //   firstName: profileForm.first_name,
-      //   lastName: profileForm.last_name,
-      //   email: profileForm.email
-      // });
+      toast.success("✅ Profile updated successfully!");
 
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -132,19 +148,28 @@ export default function Profile() {
       setValidationErrors({});
       setLoading(true);
 
-      // TODO: Add actual backend call
-      // await invoke("change_password", {
-      //   userId: user?.id,
-      //   currentPassword: passwordForm.currentPassword,
-      //   newPassword: passwordForm.newPassword
-      // });
+      // Change password in backend
+      await invoke("change_user_password", {
+        userId: user?.id,
+        request: {
+          current_password: passwordForm.currentPassword,
+          new_password: passwordForm.newPassword
+        }
+      });
 
-      toast.success("✅ Password changed successfully!");
+      toast.success("✅ Password changed successfully! Please log in with your new password.");
+      
       setPasswordForm({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
+
+      // Log out user and redirect to login
+      setTimeout(() => {
+        logout();
+        navigate("/login");
+      }, 2000);
 
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -249,6 +274,21 @@ export default function Profile() {
             {/* Profile Tab */}
             <TabsContent value="profile" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="username">Username *</Label>
+                  <Input
+                    id="username"
+                    value={profileForm.username}
+                    onChange={(e) =>
+                      setProfileForm({ ...profileForm, username: e.target.value })
+                    }
+                    className={validationErrors.username ? "border-red-500" : ""}
+                  />
+                  {validationErrors.username && (
+                    <p className="text-xs text-red-500">{validationErrors.username}</p>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="first_name">First Name *</Label>
                   <Input
@@ -401,7 +441,7 @@ export default function Profile() {
                       <p className="text-muted-foreground">Member Since</p>
                       <p className="font-medium">
                         {user?.created_at
-                          ? new Date(user.created_at).toLocaleDateString()
+                          ? formatLocalDate(user.created_at, "long-date")
                           : "Unknown"}
                       </p>
                     </div>

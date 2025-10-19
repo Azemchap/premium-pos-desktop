@@ -1,6 +1,6 @@
 use tauri::{command, State};
-use bcrypt::{hash, DEFAULT_COST};
-use crate::models::{User, CreateUserRequest};
+use bcrypt::{hash, verify, DEFAULT_COST};
+use crate::models::{User, CreateUserRequest, UpdateProfileRequest, ChangePasswordRequest};
 use sqlx::{SqlitePool, Row};
 
 #[command]
@@ -8,7 +8,7 @@ pub async fn get_users(pool: State<'_, SqlitePool>) -> Result<Vec<User>, String>
     println!("DEBUG(users): get_users called");
     let pool_ref = pool.inner();
 
-    let rows = sqlx::query("SELECT id, username, email, first_name, last_name, role, is_active, last_login, created_at, updated_at FROM users ORDER BY created_at DESC")
+    let rows = sqlx::query("SELECT id, username, email, first_name, last_name, role, is_active, profile_image_url, last_login, created_at, updated_at FROM users ORDER BY created_at DESC")
         .fetch_all(pool_ref)
         .await
         .map_err(|e| {
@@ -34,6 +34,7 @@ pub async fn get_users(pool: State<'_, SqlitePool>) -> Result<Vec<User>, String>
                     }
                 }
             },
+            profile_image_url: row.try_get("profile_image_url").ok().flatten(),
             last_login: row.try_get("last_login").ok().flatten(),
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
             updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
@@ -83,7 +84,7 @@ pub async fn create_user(pool: State<'_, SqlitePool>, request: CreateUserRequest
             format!("Failed to create user: {}", e)
         })?;
 
-    let row = sqlx::query("SELECT id, username, email, first_name, last_name, role, is_active, last_login, created_at, updated_at FROM users WHERE username = ?1")
+    let row = sqlx::query("SELECT id, username, email, first_name, last_name, role, is_active, profile_image_url, last_login, created_at, updated_at FROM users WHERE username = ?1")
         .bind(&request.username)
         .fetch_one(pool_ref)
         .await
@@ -106,6 +107,7 @@ pub async fn create_user(pool: State<'_, SqlitePool>, request: CreateUserRequest
                 v != 0
             }
         },
+        profile_image_url: row.try_get("profile_image_url").ok().flatten(),
         last_login: row.try_get("last_login").ok().flatten(),
         created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
@@ -156,7 +158,7 @@ pub async fn update_user(pool: State<'_, SqlitePool>, user_id: i64, request: Cre
             format!("Failed to update user: {}", e)
         })?;
 
-    let row = sqlx::query("SELECT id, username, email, first_name, last_name, role, is_active, last_login, created_at, updated_at FROM users WHERE id = ?1")
+    let row = sqlx::query("SELECT id, username, email, first_name, last_name, role, is_active, profile_image_url, last_login, created_at, updated_at FROM users WHERE id = ?1")
         .bind(user_id)
         .fetch_one(pool_ref)
         .await
@@ -179,6 +181,7 @@ pub async fn update_user(pool: State<'_, SqlitePool>, user_id: i64, request: Cre
                 v != 0
             }
         },
+        profile_image_url: row.try_get("profile_image_url").ok().flatten(),
         last_login: row.try_get("last_login").ok().flatten(),
         created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
@@ -203,5 +206,150 @@ pub async fn delete_user(pool: State<'_, SqlitePool>, user_id: i64) -> Result<bo
         })?;
 
     println!("DEBUG(users): deactivated id={}", user_id);
+    Ok(true)
+}
+
+#[command]
+pub async fn update_user_profile(
+    pool: State<'_, SqlitePool>,
+    user_id: i64,
+    request: UpdateProfileRequest,
+) -> Result<User, String> {
+    println!("DEBUG(users): update_user_profile id={}", user_id);
+    let pool_ref = pool.inner();
+
+    // Check if username is already taken by another user
+    let username_exists = sqlx::query("SELECT id FROM users WHERE username = ?1 AND id != ?2")
+        .bind(&request.username)
+        .bind(user_id)
+        .fetch_optional(pool_ref)
+        .await
+        .map_err(|e| {
+            println!("DEBUG(users): username check error: {}", e);
+            format!("Database error: {}", e)
+        })?;
+
+    if username_exists.is_some() {
+        println!("DEBUG(users): username already in use");
+        return Err("Username already in use by another account".to_string());
+    }
+
+    // Check if email is already taken by another user
+    let email_exists = sqlx::query("SELECT id FROM users WHERE email = ?1 AND id != ?2")
+        .bind(&request.email)
+        .bind(user_id)
+        .fetch_optional(pool_ref)
+        .await
+        .map_err(|e| {
+            println!("DEBUG(users): email check error: {}", e);
+            format!("Database error: {}", e)
+        })?;
+
+    if email_exists.is_some() {
+        println!("DEBUG(users): email already in use");
+        return Err("Email already in use by another account".to_string());
+    }
+
+    // Update user profile including username and profile image
+    sqlx::query(
+        "UPDATE users SET username = ?1, first_name = ?2, last_name = ?3, email = ?4, profile_image_url = ?5, updated_at = CURRENT_TIMESTAMP WHERE id = ?6"
+    )
+    .bind(&request.username)
+    .bind(&request.first_name)
+    .bind(&request.last_name)
+    .bind(&request.email)
+    .bind(&request.profile_image_url)
+    .bind(user_id)
+    .execute(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(users): update profile error: {}", e);
+        format!("Failed to update profile: {}", e)
+    })?;
+
+    // Fetch and return updated user
+    let row = sqlx::query(
+        "SELECT id, username, email, first_name, last_name, role, is_active, profile_image_url, last_login, created_at, updated_at FROM users WHERE id = ?1"
+    )
+    .bind(user_id)
+    .fetch_one(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(users): fetch updated user error: {}", e);
+        format!("Failed to fetch updated user: {}", e)
+    })?;
+
+    let user = User {
+        id: row.try_get("id").map_err(|e| e.to_string())?,
+        username: row.try_get("username").map_err(|e| e.to_string())?,
+        email: row.try_get("email").map_err(|e| e.to_string())?,
+        first_name: row.try_get("first_name").map_err(|e| e.to_string())?,
+        last_name: row.try_get("last_name").map_err(|e| e.to_string())?,
+        role: row.try_get("role").map_err(|e| e.to_string())?,
+        is_active: match row.try_get::<bool, _>("is_active") {
+            Ok(b) => b,
+            Err(_) => {
+                let v: i64 = row.try_get("is_active").map_err(|e| e.to_string())?;
+                v != 0
+            }
+        },
+        profile_image_url: row.try_get("profile_image_url").ok().flatten(),
+        last_login: row.try_get("last_login").ok().flatten(),
+        created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+        updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
+    };
+
+    println!("DEBUG(users): profile updated successfully");
+    Ok(user)
+}
+
+#[command]
+pub async fn change_user_password(
+    pool: State<'_, SqlitePool>,
+    user_id: i64,
+    request: ChangePasswordRequest,
+) -> Result<bool, String> {
+    println!("DEBUG(users): change_user_password id={}", user_id);
+    let pool_ref = pool.inner();
+
+    // Get current password hash
+    let current_hash: String = sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ?1")
+        .bind(user_id)
+        .fetch_one(pool_ref)
+        .await
+        .map_err(|e| {
+            println!("DEBUG(users): fetch password error: {}", e);
+            format!("User not found: {}", e)
+        })?;
+
+    // Verify current password
+    let is_valid = verify(&request.current_password, &current_hash).map_err(|e| {
+        println!("DEBUG(users): password verification error: {}", e);
+        format!("Password verification failed: {}", e)
+    })?;
+
+    if !is_valid {
+        println!("DEBUG(users): current password incorrect");
+        return Err("Current password is incorrect".to_string());
+    }
+
+    // Hash new password
+    let new_hash = hash(&request.new_password, DEFAULT_COST).map_err(|e| {
+        println!("DEBUG(users): hash error: {}", e);
+        format!("Password hashing error: {}", e)
+    })?;
+
+    // Update password
+    sqlx::query("UPDATE users SET password_hash = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = ?2")
+        .bind(&new_hash)
+        .bind(user_id)
+        .execute(pool_ref)
+        .await
+        .map_err(|e| {
+            println!("DEBUG(users): update password error: {}", e);
+            format!("Failed to update password: {}", e)
+        })?;
+
+    println!("DEBUG(users): password changed successfully");
     Ok(true)
 }

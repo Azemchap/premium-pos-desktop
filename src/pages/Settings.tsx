@@ -40,11 +40,13 @@ interface StoreConfig {
   id: number;
   name: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
   phone?: string;
   email?: string;
   tax_rate: number;
   currency: string;
-  timezone: string;
   created_at: string;
   updated_at: string;
 }
@@ -52,11 +54,13 @@ interface StoreConfig {
 interface UpdateStoreConfigRequest {
   name: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
   phone?: string;
   email?: string;
   tax_rate: number;
   currency: string;
-  timezone: string;
 }
 
 export default function Settings() {
@@ -66,32 +70,18 @@ export default function Settings() {
   const [storeForm, setStoreForm] = useState<UpdateStoreConfigRequest>({
     name: "",
     address: "",
+    city: "",
+    state: "",
+    zip_code: "",
     phone: "",
     email: "",
     tax_rate: 0,
     currency: "USD",
-    timezone: "America/New_York",
   });
 
   const { theme, toggleTheme } = useAuthStore();
   const { currency, changeCurrency, availableCurrencies } = useCurrency();
   const { preferences, updatePreference, updatePreferences, resetToDefaults } = useSettings();
-
-  // Using availableCurrencies from useCurrency hook instead
-  // const currencies = availableCurrencies;
-
-  const timezones = [
-    "America/New_York",
-    "America/Chicago",
-    "America/Denver",
-    "America/Los_Angeles",
-    "America/Toronto",
-    "Europe/London",
-    "Europe/Paris",
-    "Asia/Tokyo",
-    "Asia/Shanghai",
-    "Australia/Sydney",
-  ];
 
   const loadStoreConfig = async () => {
     try {
@@ -101,11 +91,13 @@ export default function Settings() {
       setStoreForm({
         name: result.name,
         address: result.address || "",
+        city: result.city || "",
+        state: result.state || "",
+        zip_code: result.zip_code || "",
         phone: result.phone || "",
         email: result.email || "",
         tax_rate: result.tax_rate,
         currency: result.currency,
-        timezone: result.timezone,
       });
     } catch (error) {
       console.error("Failed to load store config:", error);
@@ -147,11 +139,13 @@ export default function Settings() {
       setStoreForm({
         name: storeConfig.name,
         address: storeConfig.address || "",
+        city: storeConfig.city || "",
+        state: storeConfig.state || "",
+        zip_code: storeConfig.zip_code || "",
         phone: storeConfig.phone || "",
         email: storeConfig.email || "",
         tax_rate: storeConfig.tax_rate,
         currency: storeConfig.currency,
-        timezone: storeConfig.timezone,
       });
       toast.info("Changes reset to saved values");
     }
@@ -240,14 +234,45 @@ export default function Settings() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="store-address">Address</Label>
-                      <Textarea
+                      <Label htmlFor="store-address">Street Address</Label>
+                      <Input
                         id="store-address"
                         value={storeForm.address}
                         onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
-                        placeholder="123 Main Street, City, State 12345"
-                        rows={3}
+                        placeholder="123 Main Street, Suite 100"
                       />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="store-city">City</Label>
+                        <Input
+                          id="store-city"
+                          value={storeForm.city}
+                          onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })}
+                          placeholder="New York"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="store-state">State/Province</Label>
+                        <Input
+                          id="store-state"
+                          value={storeForm.state}
+                          onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })}
+                          placeholder="NY"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="store-zip">ZIP/Postal Code</Label>
+                        <Input
+                          id="store-zip"
+                          value={storeForm.zip_code}
+                          onChange={(e) => setStoreForm({ ...storeForm, zip_code: e.target.value })}
+                          placeholder="10001"
+                        />
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -278,17 +303,17 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            {/* <Card>
+            <Card>
               <CardHeader>
                 <CardTitle>Regional Settings</CardTitle>
                 <CardDescription>
-                  Configure currency, tax rate, and timezone
+                  Configure currency and tax rate for your store
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {loading ? (
                   <div className="space-y-4">
-                    {Array.from({ length: 3 }).map((_, i) => (
+                    {Array.from({ length: 2 }).map((_, i) => (
                       <Skeleton key={i} className="h-10 w-full" />
                     ))}
                   </div>
@@ -298,7 +323,10 @@ export default function Settings() {
                       <Label htmlFor="currency">Currency</Label>
                       <Select
                         value={storeForm.currency}
-                        onValueChange={(value) => setStoreForm({ ...storeForm, currency: value })}
+                        onValueChange={(value) => {
+                          setStoreForm({ ...storeForm, currency: value });
+                          changeCurrency(value as any);
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -306,11 +334,14 @@ export default function Settings() {
                         <SelectContent>
                           {availableCurrencies.map((curr) => (
                             <SelectItem key={curr.code} value={curr.code}>
-                              {curr.name} ({curr.symbol})
+                              {curr.name} ({curr.symbol}) - Rate: {curr.rate.toFixed(2)}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-muted-foreground">
+                        All prices stored in USD will be converted to this currency for display
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -329,31 +360,12 @@ export default function Settings() {
                         Default tax rate for taxable products
                       </p>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="timezone">Timezone</Label>
-                      <Select
-                        value={storeForm.timezone}
-                        onValueChange={(value) => setStoreForm({ ...storeForm, timezone: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {timezones.map((tz) => (
-                            <SelectItem key={tz} value={tz}>
-                              {tz.replace("_", " ")}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </>
                 )}
               </CardContent>
-            </Card> */}
+            </Card>
 
-            {/* <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={resetStoreConfig} disabled={loading}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Reset
@@ -362,7 +374,7 @@ export default function Settings() {
                 <Save className="w-4 h-4 mr-2" />
                 Save Changes
               </Button>
-            </div> */}
+            </div>
           </div>
         </TabsContent>
 

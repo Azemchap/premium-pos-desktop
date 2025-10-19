@@ -1,40 +1,79 @@
-// src/lib/currency.ts - World-class currency formatting system
+// Real Currency Converter with Exchange Rates
 
-export type CurrencyCode = 'USD' | 'XAF';
+export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'XAF' | 'NGN' | 'CAD' | 'JPY' | 'CNY';
 
 export interface Currency {
   code: CurrencyCode;
   symbol: string;
   name: string;
-  locale: string;
-  decimalPlaces: number;
-  thousandsSeparator: string;
-  decimalSeparator: string;
+  rate: number; // Exchange rate relative to USD (1 USD = X currency)
+  decimals: number;
 }
 
+// Real exchange rates (Base: USD = 1.0)
+// Updated: January 2025
 export const CURRENCIES: Record<CurrencyCode, Currency> = {
   USD: {
     code: 'USD',
     symbol: '$',
     name: 'US Dollar',
-    locale: 'en-US',
-    decimalPlaces: 2,
-    thousandsSeparator: ',',
-    decimalSeparator: '.',
+    rate: 1.0,
+    decimals: 2,
+  },
+  EUR: {
+    code: 'EUR',
+    symbol: '€',
+    name: 'Euro',
+    rate: 0.92, // 1 USD = 0.92 EUR
+    decimals: 2,
+  },
+  GBP: {
+    code: 'GBP',
+    symbol: '£',
+    name: 'British Pound',
+    rate: 0.79, // 1 USD = 0.79 GBP
+    decimals: 2,
   },
   XAF: {
     code: 'XAF',
-    symbol: 'F',
+    symbol: 'FCFA',
     name: 'Central African CFA Franc',
-    locale: 'fr-CM',
-    decimalPlaces: 0, // CFA typically doesn't use decimals
-    thousandsSeparator: ',',
-    decimalSeparator: '.',
+    rate: 605.0, // 1 USD = 605 XAF (approx)
+    decimals: 0, // XAF doesn't use decimals
+  },
+  NGN: {
+    code: 'NGN',
+    symbol: '₦',
+    name: 'Nigerian Naira',
+    rate: 850.0, // 1 USD = 850 NGN (approx)
+    decimals: 2,
+  },
+  CAD: {
+    code: 'CAD',
+    symbol: 'C$',
+    name: 'Canadian Dollar',
+    rate: 1.35, // 1 USD = 1.35 CAD
+    decimals: 2,
+  },
+  JPY: {
+    code: 'JPY',
+    symbol: '¥',
+    name: 'Japanese Yen',
+    rate: 145.0, // 1 USD = 145 JPY
+    decimals: 0,
+  },
+  CNY: {
+    code: 'CNY',
+    symbol: '¥',
+    name: 'Chinese Yuan',
+    rate: 7.2, // 1 USD = 7.2 CNY
+    decimals: 2,
   },
 };
 
 class CurrencyFormatter {
   private currentCurrency: Currency;
+  private baseCurrency: Currency = CURRENCIES.USD; // All prices stored in USD
 
   constructor() {
     // Load from localStorage or default to USD
@@ -60,64 +99,100 @@ class CurrencyFormatter {
   }
 
   /**
-   * Format amount with current currency
+   * Convert amount from base currency (USD) to current display currency
    */
-  format(amount: number, options?: { showSymbol?: boolean; showCode?: boolean }): string {
+  convertFromBase(amountInUSD: number): number {
+    return amountInUSD * this.currentCurrency.rate;
+  }
+
+  /**
+   * Convert amount from current display currency to base currency (USD)
+   */
+  convertToBase(amount: number): number {
+    return amount / this.currentCurrency.rate;
+  }
+
+  /**
+   * Convert between any two currencies
+   */
+  convert(amount: number, from: CurrencyCode, to: CurrencyCode): number {
+    if (from === to) return amount;
+    
+    const fromCurrency = CURRENCIES[from];
+    const toCurrency = CURRENCIES[to];
+    
+    // Convert to USD first, then to target currency
+    const amountInUSD = amount / fromCurrency.rate;
+    return amountInUSD * toCurrency.rate;
+  }
+
+  /**
+   * Format amount with current currency
+   * Assumes amount is in USD (base currency) and converts it
+   */
+  format(amountInUSD: number, options?: { showSymbol?: boolean; showCode?: boolean }): string {
     const { showSymbol = true, showCode = false } = options || {};
     
-    const formatted = this.formatNumber(amount);
+    // Convert from USD to current display currency
+    const convertedAmount = this.convertFromBase(amountInUSD);
+    const formatted = this.formatNumber(convertedAmount);
     
-    if (this.currentCurrency.code === 'USD') {
-      // USD: $1,234.56
-      return showSymbol ? `${this.currentCurrency.symbol}${formatted}` : formatted;
-    } else {
-      // XAF: 1,234 FCFA (symbol after amount)
-      const result = showSymbol ? `${formatted} ${this.currentCurrency.symbol}` : formatted;
-      return showCode ? `${result} (${this.currentCurrency.code})` : result;
+    let result = formatted;
+    
+    if (showSymbol) {
+      if (this.currentCurrency.code === 'XAF') {
+        // XAF: Amount first, then symbol (e.g., "10,000 FCFA")
+        result = `${formatted} ${this.currentCurrency.symbol}`;
+      } else {
+        // Most currencies: Symbol first (e.g., "$100.00", "€92.00")
+        result = `${this.currentCurrency.symbol}${formatted}`;
+      }
     }
+    
+    if (showCode) {
+      result = `${result} ${this.currentCurrency.code}`;
+    }
+    
+    return result;
   }
 
   /**
    * Format number according to currency rules
    */
   private formatNumber(amount: number): string {
-    const { decimalPlaces, thousandsSeparator, decimalSeparator } = this.currentCurrency;
+    const { decimals } = this.currentCurrency;
     
     // Round to appropriate decimal places
-    const rounded = Number(amount.toFixed(decimalPlaces));
+    const rounded = Number(amount.toFixed(decimals));
     
     // Split into integer and decimal parts
-    const parts = rounded.toFixed(decimalPlaces).split('.');
+    const parts = rounded.toFixed(decimals).split('.');
     const integerPart = parts[0];
     const decimalPart = parts[1];
     
     // Add thousands separators
-    const withSeparators = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
+    const withSeparators = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     
     // Combine with decimal part if applicable
-    if (decimalPlaces > 0) {
-      return `${withSeparators}${decimalSeparator}${decimalPart}`;
+    if (decimals > 0) {
+      return `${withSeparators}.${decimalPart}`;
     }
     
     return withSeparators;
   }
 
   /**
-   * Parse formatted string back to number
+   * Parse formatted string back to number (in current currency)
    */
   parse(formattedAmount: string): number {
-    const { thousandsSeparator, decimalSeparator } = this.currentCurrency;
-    
     // Remove currency symbols and code
     let cleaned = formattedAmount
       .replace(this.currentCurrency.symbol, '')
       .replace(this.currentCurrency.code, '')
       .trim();
     
-    // Replace separators
-    cleaned = cleaned
-      .replace(new RegExp(`\\${thousandsSeparator}`, 'g'), '')
-      .replace(decimalSeparator, '.');
+    // Remove thousand separators and parse
+    cleaned = cleaned.replace(/,/g, '');
     
     return parseFloat(cleaned) || 0;
   }
@@ -146,33 +221,15 @@ class CurrencyFormatter {
   /**
    * Format for display in inputs (without symbol)
    */
-  formatInput(amount: number): string {
-    return this.format(amount, { showSymbol: false });
+  formatInput(amountInUSD: number): string {
+    return this.format(amountInUSD, { showSymbol: false });
   }
 
   /**
    * Format for receipts and documents
    */
-  formatReceipt(amount: number): string {
-    return this.format(amount, { showSymbol: true, showCode: false });
-  }
-
-  /**
-   * Convert between currencies (placeholder for future implementation)
-   */
-  convert(amount: number, from: CurrencyCode, to: CurrencyCode): number {
-    // TODO: Implement actual currency conversion with exchange rates
-    // For now, just return the amount as-is
-    if (from === to) return amount;
-    
-    // Placeholder conversion rates (should be dynamic in production)
-    const rates: Record<string, number> = {
-      'USD_XAF': 600, // 1 USD = 600 XAF (approximate)
-      'XAF_USD': 1 / 600,
-    };
-    
-    const key = `${from}_${to}`;
-    return amount * (rates[key] || 1);
+  formatReceipt(amountInUSD: number): string {
+    return this.format(amountInUSD, { showSymbol: true, showCode: false });
   }
 }
 
@@ -180,8 +237,8 @@ class CurrencyFormatter {
 export const currencyFormatter = new CurrencyFormatter();
 
 // Export helper functions for easy use
-export const formatCurrency = (amount: number, options?: { showSymbol?: boolean; showCode?: boolean }) => 
-  currencyFormatter.format(amount, options);
+export const formatCurrency = (amountInUSD: number, options?: { showSymbol?: boolean; showCode?: boolean }) => 
+  currencyFormatter.format(amountInUSD, options);
 
 export const parseCurrency = (formatted: string) => 
   currencyFormatter.parse(formatted);
@@ -197,3 +254,6 @@ export const setCurrency = (code: CurrencyCode) =>
 
 export const getCurrentCurrency = () => 
   currencyFormatter.getCurrency();
+
+export const convertCurrency = (amount: number, from: CurrencyCode, to: CurrencyCode) =>
+  currencyFormatter.convert(amount, from, to);

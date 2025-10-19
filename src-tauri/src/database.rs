@@ -11,11 +11,13 @@ pub fn get_migrations() -> Vec<Migration> {
                     id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL,
                     address TEXT,
+                    city TEXT,
+                    state TEXT,
+                    zip_code TEXT,
                     phone TEXT,
                     email TEXT,
                     tax_rate REAL DEFAULT 0.0,
                     currency TEXT DEFAULT 'USD',
-                    timezone TEXT DEFAULT 'UTC',
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
@@ -28,8 +30,9 @@ pub fn get_migrations() -> Vec<Migration> {
                     password_hash TEXT NOT NULL,
                     first_name TEXT NOT NULL,
                     last_name TEXT NOT NULL,
-                    role TEXT NOT NULL CHECK (role IN ('Admin', 'Manager', 'Cashier', 'StockKeeper')),
+                    role TEXT NOT NULL CHECK (role IN ('Admin', 'Manager', 'Cashier', 'StockKeeper', 'Warehouse')),
                     is_active BOOLEAN DEFAULT true,
+                    profile_image_url TEXT,
                     last_login DATETIME,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -63,7 +66,7 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Inventory tracking
                 CREATE TABLE IF NOT EXISTS inventory (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    product_id INTEGER NOT NULL REFERENCES products(id),
+                    product_id INTEGER NOT NULL,
                     current_stock INTEGER DEFAULT 0,
                     minimum_stock INTEGER DEFAULT 0,
                     maximum_stock INTEGER DEFAULT 0,
@@ -78,7 +81,7 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Inventory movements log
                 CREATE TABLE IF NOT EXISTS inventory_movements (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    product_id INTEGER NOT NULL REFERENCES products(id),
+                    product_id INTEGER NOT NULL,
                     movement_type TEXT NOT NULL CHECK (movement_type IN ('sale', 'return', 'adjustment', 'stock_take', 'damage', 'transfer', 'receipt', 'reservation', 'void')),
                     quantity_change INTEGER NOT NULL,
                     previous_stock INTEGER NOT NULL,
@@ -86,7 +89,7 @@ pub fn get_migrations() -> Vec<Migration> {
                     reference_id INTEGER,
                     reference_type TEXT,
                     notes TEXT,
-                    user_id INTEGER REFERENCES users(id),
+                    user_id INTEGER,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
@@ -100,13 +103,13 @@ pub fn get_migrations() -> Vec<Migration> {
                     total_amount REAL NOT NULL,
                     payment_method TEXT NOT NULL,
                     payment_status TEXT DEFAULT 'completed',
-                    cashier_id INTEGER NOT NULL REFERENCES users(id),
+                    cashier_id INTEGER NOT NULL,
                     customer_name TEXT,
                     customer_phone TEXT,
                     customer_email TEXT,
                     notes TEXT,
                     is_voided BOOLEAN DEFAULT false,
-                    voided_by INTEGER REFERENCES users(id),
+                    voided_by INTEGER,
                     voided_at DATETIME,
                     void_reason TEXT,
                     shift_id INTEGER,
@@ -116,8 +119,8 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Sale line items
                 CREATE TABLE IF NOT EXISTS sale_items (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    sale_id INTEGER NOT NULL REFERENCES sales(id),
-                    product_id INTEGER NOT NULL REFERENCES products(id),
+                    sale_id INTEGER NOT NULL,
+                    product_id INTEGER NOT NULL,
                     quantity INTEGER NOT NULL,
                     unit_price REAL NOT NULL,
                     discount_amount REAL DEFAULT 0.0,
@@ -131,23 +134,23 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE TABLE IF NOT EXISTS returns (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     return_number TEXT UNIQUE NOT NULL,
-                    original_sale_id INTEGER REFERENCES sales(id),
+                    original_sale_id INTEGER,
                     subtotal REAL NOT NULL,
                     tax_amount REAL DEFAULT 0.0,
                     total_amount REAL NOT NULL,
                     refund_method TEXT NOT NULL,
-                    processed_by INTEGER NOT NULL REFERENCES users(id),
+                    processed_by INTEGER NOT NULL,
                     reason TEXT,
                     notes TEXT,
-                    shift_id INTEGER REFERENCES shifts(id),
+                    shift_id INTEGER,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
                 -- Return line items
                 CREATE TABLE IF NOT EXISTS return_items (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    return_id INTEGER NOT NULL REFERENCES returns(id),
-                    product_id INTEGER NOT NULL REFERENCES products(id),
+                    return_id INTEGER NOT NULL,
+                    product_id INTEGER NOT NULL,
                     quantity INTEGER NOT NULL,
                     unit_price REAL NOT NULL,
                     line_total REAL NOT NULL,
@@ -171,7 +174,7 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Shifts for cash management
                 CREATE TABLE IF NOT EXISTS shifts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    user_id INTEGER NOT NULL,
                     start_time DATETIME NOT NULL,
                     end_time DATETIME,
                     opening_amount REAL NOT NULL,
@@ -188,11 +191,11 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Cash drawer transactions
                 CREATE TABLE IF NOT EXISTS cash_drawer_transactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    shift_id INTEGER NOT NULL REFERENCES shifts(id),
+                    shift_id INTEGER NOT NULL,
                     transaction_type TEXT NOT NULL CHECK (transaction_type IN ('opening', 'closing', 'adjustment', 'withdrawal', 'deposit')),
                     amount REAL NOT NULL,
                     reason TEXT,
-                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    user_id INTEGER NOT NULL,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
@@ -236,8 +239,8 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active);
 
                 -- Insert default store configuration
-                INSERT OR IGNORE INTO locations (id, name, address, phone, email, tax_rate, currency, timezone)
-                VALUES (1, 'Premium POS Store', '123 Main Street', '+1-555-0123', 'info@premiumpos.com', 0.08, 'USD', 'America/New_York');
+                INSERT OR IGNORE INTO locations (id, name, address, phone, email, tax_rate, currency)
+                VALUES (1, 'Premium POS Store', '123 Main Street', '+1-555-0123', 'info@premiumpos.com', 0.08, 'USD');
 
                 -- Insert default receipt templates
                 INSERT OR IGNORE INTO receipt_templates (name, template_type, printer_type, template_content, is_default, paper_width, font_size)
@@ -335,14 +338,109 @@ pub fn get_migrations() -> Vec<Migration> {
                     user_id INTEGER,
                     reference_id INTEGER,
                     reference_type TEXT,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id)
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                 );
 
                 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
                 CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(notification_type);
                 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
                 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
+            "#,
+        kind: MigrationKind::Up,
+    },
+        Migration {
+        version: 4,
+        description: "add_address_fields_to_locations",
+        sql: r#"
+                -- Rename existing locations table
+                ALTER TABLE locations RENAME TO locations_old;
+                
+                -- Create new locations table with all required columns
+                CREATE TABLE locations (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    address TEXT,
+                    city TEXT,
+                    state TEXT,
+                    zip_code TEXT,
+                    phone TEXT,
+                    email TEXT,
+                    tax_rate REAL DEFAULT 0.0,
+                    currency TEXT DEFAULT 'USD',
+                    timezone TEXT DEFAULT 'UTC',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                -- Copy data from old table, providing defaults for new columns
+                INSERT INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, timezone, created_at, updated_at)
+                SELECT 
+                    id, 
+                    name, 
+                    CASE 
+                        WHEN address = '123 Main Street' THEN '123 Main Street, Suite 100'
+                        ELSE COALESCE(address, '')
+                    END,
+                    'New York',
+                    'NY',
+                    '10001',
+                    phone, 
+                    email, 
+                    tax_rate, 
+                    currency, 
+                    timezone, 
+                    created_at, 
+                    updated_at
+                FROM locations_old;
+                
+                -- Drop old table
+                DROP TABLE locations_old;
+            "#,
+        kind: MigrationKind::Up,
+    },
+        Migration {
+        version: 5,
+        description: "add_profile_image_to_users",
+        sql: r#"
+                -- This migration adds profile_image_url to users table for existing databases
+                -- For new databases, v1 already includes this column
+                SELECT 1;
+            "#,
+        kind: MigrationKind::Up,
+    },
+        Migration {
+        version: 6,
+        description: "remove_timezone_from_locations",
+        sql: r#"
+                -- Remove timezone field from locations table (no longer needed)
+                -- Recreate table without timezone column
+                
+                -- Rename existing table
+                ALTER TABLE locations RENAME TO locations_old_v6;
+                
+                -- Create new table without timezone
+                CREATE TABLE locations (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    address TEXT,
+                    city TEXT,
+                    state TEXT,
+                    zip_code TEXT,
+                    phone TEXT,
+                    email TEXT,
+                    tax_rate REAL DEFAULT 0.0,
+                    currency TEXT DEFAULT 'USD',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                -- Copy data (excluding timezone)
+                INSERT INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at)
+                SELECT id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at
+                FROM locations_old_v6;
+                
+                -- Drop old table
+                DROP TABLE locations_old_v6;
             "#,
         kind: MigrationKind::Up,
     }]
