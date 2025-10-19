@@ -16,6 +16,25 @@ val tauriProperties = Properties().apply {
 android {
     compileSdk = 36
     namespace = "com.premiumpos.app"
+    
+    // Load signing configuration
+    val signingPropsFile = rootProject.file("../signing.properties")
+    val signingProps = Properties()
+    if (signingPropsFile.exists()) {
+        signingProps.load(signingPropsFile.inputStream())
+    }
+    
+    signingConfigs {
+        create("release") {
+            if (signingPropsFile.exists()) {
+                storeFile = file(signingProps.getProperty("storeFile"))
+                storePassword = signingProps.getProperty("storePassword")
+                keyAlias = signingProps.getProperty("keyAlias")
+                keyPassword = signingProps.getProperty("keyPassword")
+            }
+        }
+    }
+    
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "com.premiumpos.app"
@@ -37,6 +56,7 @@ android {
             }
         }
         getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }

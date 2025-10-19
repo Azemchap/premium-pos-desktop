@@ -25,3 +25,5 @@ dist-ssr
 node_modules
 src-tauri/target/
 .env.signing
+signing.properties
+*.keystore
