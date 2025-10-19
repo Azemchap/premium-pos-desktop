@@ -355,7 +355,7 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Rename existing locations table
                 ALTER TABLE locations RENAME TO locations_old;
                 
-                -- Create new locations table with all required columns
+                -- Create new locations table with all required columns (no timezone)
                 CREATE TABLE locations (
                     id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -367,13 +367,12 @@ pub fn get_migrations() -> Vec<Migration> {
                     email TEXT,
                     tax_rate REAL DEFAULT 0.0,
                     currency TEXT DEFAULT 'USD',
-                    timezone TEXT DEFAULT 'UTC',
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
                 
                 -- Copy data from old table, providing defaults for new columns
-                INSERT INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, timezone, created_at, updated_at)
+                INSERT INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at)
                 SELECT 
                     id, 
                     name, 
@@ -388,7 +387,6 @@ pub fn get_migrations() -> Vec<Migration> {
                     email, 
                     tax_rate, 
                     currency, 
-                    timezone, 
                     created_at, 
                     updated_at
                 FROM locations_old;
@@ -412,35 +410,9 @@ pub fn get_migrations() -> Vec<Migration> {
         version: 6,
         description: "remove_timezone_from_locations",
         sql: r#"
-                -- Remove timezone field from locations table (no longer needed)
-                -- Recreate table without timezone column
-                
-                -- Rename existing table
-                ALTER TABLE locations RENAME TO locations_old_v6;
-                
-                -- Create new table without timezone
-                CREATE TABLE locations (
-                    id INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    address TEXT,
-                    city TEXT,
-                    state TEXT,
-                    zip_code TEXT,
-                    phone TEXT,
-                    email TEXT,
-                    tax_rate REAL DEFAULT 0.0,
-                    currency TEXT DEFAULT 'USD',
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                );
-                
-                -- Copy data (excluding timezone)
-                INSERT INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at)
-                SELECT id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at
-                FROM locations_old_v6;
-                
-                -- Drop old table
-                DROP TABLE locations_old_v6;
+                -- Migration v6 is no longer needed since we removed timezone from v1 and v4
+                -- This is a no-op for compatibility with existing databases
+                SELECT 1;
             "#,
         kind: MigrationKind::Up,
     }]
