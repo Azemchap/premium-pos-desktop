@@ -129,12 +129,12 @@ export default function SalesRecords() {
   const [sales, setSales] = useState<SaleWithDetails[]>([]);
   const [stats, setStats] = useState<SalesStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<DateRange>("month");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("all");
+  const [paymentMethod] = useState("all");
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);

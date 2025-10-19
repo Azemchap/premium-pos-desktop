@@ -1,5 +1,5 @@
 // src/pages/Reports.tsx - World-Class Financial Analytics & Accounting Insights
-import { hapticFeedback } from "@/lib/mobile-utils";
+// import { hapticFeedback } from "@/lib/mobile-utils";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,8 +34,8 @@ import {
   DollarSign,
   ShoppingCart,
   Package,
-  BarChart3,
-  Calendar,
+  // BarChart3,
+  // Calendar,
   RefreshCw,
   CreditCard,
   Wallet,
@@ -50,7 +50,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useCurrency } from "@/hooks/useCurrency";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
-import { format as formatDate, subDays, startOfWeek, startOfMonth, startOfQuarter, startOfYear } from "date-fns";
+import { format as formatDate, startOfWeek, startOfMonth, startOfQuarter, startOfYear } from "date-fns";
 
 interface SalesReport {
   total_sales: number;
@@ -116,7 +116,7 @@ interface CategoryPerformance {
 type DateRange = "today" | "week" | "month" | "quarter" | "year" | "custom";
 
 export default function Reports() {
-  const { user } = useAuthStore();
+  // const { user } = useAuthStore();
   const { format: formatCurrency } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);

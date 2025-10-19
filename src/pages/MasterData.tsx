@@ -89,7 +89,7 @@ const unitSchema = z.object({
 type EntityType = "category" | "brand" | "unit";
 
 export default function MasterData() {
-  const { user } = useAuthStore();
+  // const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<EntityType>("category");
   
   // Categories
@@ -110,7 +110,7 @@ export default function MasterData() {
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [unitForm, setUnitForm] = useState({ name: "", abbreviation: "", description: "" });
   
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // ========== CATEGORIES ==========

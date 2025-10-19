@@ -73,7 +73,7 @@ export const CURRENCIES: Record<CurrencyCode, Currency> = {
 
 class CurrencyFormatter {
   private currentCurrency: Currency;
-  private baseCurrency: Currency = CURRENCIES.USD; // All prices stored in USD
+  // private baseCurrency: Currency = CURRENCIES.USD; // All prices stored in USD
 
   constructor() {
     // Load from localStorage or default to USD

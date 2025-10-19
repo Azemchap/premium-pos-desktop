@@ -64,7 +64,7 @@ export default function ReceiptTemplate({
         setStoreConfig(config);
 
         // Load product names for items
-        const productIds = items.map(item => item.product_id);
+        // const productIds = items.map(item => item.product_id);
         const products = await invoke<any[]>("get_products");
         const map: Record<number, string> = {};
         products.forEach(p => {

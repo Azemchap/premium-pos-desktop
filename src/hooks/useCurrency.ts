@@ -7,7 +7,7 @@ export function useCurrency() {
 
   useEffect(() => {
     // Listen for currency changes
-    const handleCurrencyChange = (event: CustomEvent<CurrencyCode>) => {
+    const handleCurrencyChange = (_event: CustomEvent<CurrencyCode>) => {
       setCurrencyState(currencyFormatter.getCurrency());
     };
 

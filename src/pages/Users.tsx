@@ -1,5 +1,5 @@
 // src/pages/Users.tsx
-import { hapticFeedback } from "@/lib/mobile-utils";
+// import { hapticFeedback } from "@/lib/mobile-utils";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,7 @@ import {
   CheckCircle,
   XCircle,
   Mail,
-  Phone,
+  // Phone,
   Calendar,
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";

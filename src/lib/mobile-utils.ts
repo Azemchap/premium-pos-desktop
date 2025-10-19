@@ -166,6 +166,7 @@ export function enableSmoothScroll() {
 export function disableTextSelection(element: HTMLElement) {
   element.style.userSelect = 'none';
   element.style.webkitUserSelect = 'none';
+  // @ts-ignore - webkit specific property
   element.style.webkitTouchCallout = 'none';
 }
 

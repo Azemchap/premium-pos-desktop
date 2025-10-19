@@ -80,7 +80,7 @@ export default function Settings() {
 
   const { theme, toggleTheme } = useAuthStore();
   const { currency, changeCurrency, availableCurrencies } = useCurrency();
-  const { preferences, updatePreference, updatePreferences, resetToDefaults } = useSettings();
+  const { preferences, updatePreference, resetToDefaults } = useSettings();
 
   const loadStoreConfig = async () => {
     try {
