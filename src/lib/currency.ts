@@ -36,7 +36,7 @@ export const CURRENCIES: Record<CurrencyCode, Currency> = {
   },
   XAF: {
     code: 'XAF',
-    symbol: 'FCFA',
+    symbol: 'F',
     name: 'Central African CFA Franc',
     rate: 605.0, // 1 USD = 605 XAF (approx)
     decimals: 0, // XAF doesn't use decimals
