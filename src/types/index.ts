@@ -176,7 +176,6 @@ export interface StoreConfig {
   tax_id?: string;
   tax_rate: number;
   currency: string;
-  timezone: string;
   created_at: string;
   updated_at: string;
 }
@@ -193,7 +192,6 @@ export interface UpdateStoreConfigRequest {
   tax_id?: string;
   tax_rate: number;
   currency: string;
-  timezone: string;
 }
 
 // ==================== MASTER DATA TYPES ====================
