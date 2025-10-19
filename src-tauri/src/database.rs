@@ -67,7 +67,7 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Inventory tracking
                 CREATE TABLE IF NOT EXISTS inventory (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    product_id INTEGER NOT NULL REFERENCES products(id),
+                    product_id INTEGER NOT NULL,
                     current_stock INTEGER DEFAULT 0,
                     minimum_stock INTEGER DEFAULT 0,
                     maximum_stock INTEGER DEFAULT 0,
@@ -82,7 +82,7 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Inventory movements log
                 CREATE TABLE IF NOT EXISTS inventory_movements (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    product_id INTEGER NOT NULL REFERENCES products(id),
+                    product_id INTEGER NOT NULL,
                     movement_type TEXT NOT NULL CHECK (movement_type IN ('sale', 'return', 'adjustment', 'stock_take', 'damage', 'transfer', 'receipt', 'reservation', 'void')),
                     quantity_change INTEGER NOT NULL,
                     previous_stock INTEGER NOT NULL,
@@ -90,7 +90,7 @@ pub fn get_migrations() -> Vec<Migration> {
                     reference_id INTEGER,
                     reference_type TEXT,
                     notes TEXT,
-                    user_id INTEGER REFERENCES users(id),
+                    user_id INTEGER,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
@@ -120,8 +120,8 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Sale line items
                 CREATE TABLE IF NOT EXISTS sale_items (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    sale_id INTEGER NOT NULL REFERENCES sales(id),
-                    product_id INTEGER NOT NULL REFERENCES products(id),
+                    sale_id INTEGER NOT NULL,
+                    product_id INTEGER NOT NULL,
                     quantity INTEGER NOT NULL,
                     unit_price REAL NOT NULL,
                     discount_amount REAL DEFAULT 0.0,
@@ -135,23 +135,23 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE TABLE IF NOT EXISTS returns (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     return_number TEXT UNIQUE NOT NULL,
-                    original_sale_id INTEGER REFERENCES sales(id),
+                    original_sale_id INTEGER,
                     subtotal REAL NOT NULL,
                     tax_amount REAL DEFAULT 0.0,
                     total_amount REAL NOT NULL,
                     refund_method TEXT NOT NULL,
-                    processed_by INTEGER NOT NULL REFERENCES users(id),
+                    processed_by INTEGER NOT NULL,
                     reason TEXT,
                     notes TEXT,
-                    shift_id INTEGER REFERENCES shifts(id),
+                    shift_id INTEGER,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
                 -- Return line items
                 CREATE TABLE IF NOT EXISTS return_items (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    return_id INTEGER NOT NULL REFERENCES returns(id),
-                    product_id INTEGER NOT NULL REFERENCES products(id),
+                    return_id INTEGER NOT NULL,
+                    product_id INTEGER NOT NULL,
                     quantity INTEGER NOT NULL,
                     unit_price REAL NOT NULL,
                     line_total REAL NOT NULL,
@@ -175,7 +175,7 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Shifts for cash management
                 CREATE TABLE IF NOT EXISTS shifts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    user_id INTEGER NOT NULL,
                     start_time DATETIME NOT NULL,
                     end_time DATETIME,
                     opening_amount REAL NOT NULL,
@@ -192,11 +192,11 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Cash drawer transactions
                 CREATE TABLE IF NOT EXISTS cash_drawer_transactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    shift_id INTEGER NOT NULL REFERENCES shifts(id),
+                    shift_id INTEGER NOT NULL,
                     transaction_type TEXT NOT NULL CHECK (transaction_type IN ('opening', 'closing', 'adjustment', 'withdrawal', 'deposit')),
                     amount REAL NOT NULL,
                     reason TEXT,
-                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    user_id INTEGER NOT NULL,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
@@ -339,8 +339,7 @@ pub fn get_migrations() -> Vec<Migration> {
                     user_id INTEGER,
                     reference_id INTEGER,
                     reference_type TEXT,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id)
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                 );
 
                 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
