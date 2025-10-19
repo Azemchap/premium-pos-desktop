@@ -91,13 +91,20 @@ async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
 
 /// Main application entry point shared by desktop and mobile
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let app_dir = ProjectDirs::from("com", "premiumpos", "Premium POS")
-        .map(|pd| pd.data_dir().to_path_buf())
-        .or_else(|| {
-            println!("DEBUG(main): ProjectDirs not available; falling back to cwd");
-            std::env::current_dir().ok()
-        })
-        .expect("Failed to determine an application directory");
+    // Determine data directory based on platform
+    let app_dir = if cfg!(target_os = "android") {
+        // On Android, use app-specific internal storage
+        std::path::PathBuf::from("/data/data/com.premiumpos.app/files")
+    } else {
+        // On desktop, use standard directories
+        ProjectDirs::from("com", "premiumpos", "Premium POS")
+            .map(|pd| pd.data_dir().to_path_buf())
+            .or_else(|| {
+                println!("DEBUG(main): ProjectDirs not available; falling back to cwd");
+                std::env::current_dir().ok()
+            })
+            .expect("Failed to determine an application directory")
+    };
 
     println!("DEBUG(main): resolved app_dir = {:?}", app_dir);
 
