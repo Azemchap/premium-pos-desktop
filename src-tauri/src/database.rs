@@ -18,7 +18,6 @@ pub fn get_migrations() -> Vec<Migration> {
                     email TEXT,
                     tax_rate REAL DEFAULT 0.0,
                     currency TEXT DEFAULT 'USD',
-                    timezone TEXT DEFAULT 'UTC',
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
@@ -240,8 +239,8 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active);
 
                 -- Insert default store configuration
-                INSERT OR IGNORE INTO locations (id, name, address, phone, email, tax_rate, currency, timezone)
-                VALUES (1, 'Premium POS Store', '123 Main Street', '+1-555-0123', 'info@premiumpos.com', 0.08, 'USD', 'America/New_York');
+                INSERT OR IGNORE INTO locations (id, name, address, phone, email, tax_rate, currency)
+                VALUES (1, 'Premium POS Store', '123 Main Street', '+1-555-0123', 'info@premiumpos.com', 0.08, 'USD');
 
                 -- Insert default receipt templates
                 INSERT OR IGNORE INTO receipt_templates (name, template_type, printer_type, template_content, is_default, paper_width, font_size)
@@ -404,19 +403,44 @@ pub fn get_migrations() -> Vec<Migration> {
         description: "add_profile_image_to_users",
         sql: r#"
                 -- This migration adds profile_image_url to users table for existing databases
-                -- For new databases, the column already exists from migration v1
-                -- This is a no-op for fresh installs, but updates existing databases
-                
-                -- Check if column exists by trying to add it (will fail silently if exists)
-                -- Since SQLite doesn't have IF NOT EXISTS for ALTER TABLE ADD COLUMN,
-                -- we use a different approach
-                
-                -- For existing databases without the column, we need to recreate the table
-                -- For fresh installs, this just validates the table structure
-                
-                -- This migration is intentionally minimal to avoid breaking changes
-                -- The column is now added in migration v1 for fresh installs
+                -- For new databases, v1 already includes this column
                 SELECT 1;
+            "#,
+        kind: MigrationKind::Up,
+    },
+        Migration {
+        version: 6,
+        description: "remove_timezone_from_locations",
+        sql: r#"
+                -- Remove timezone field from locations table (no longer needed)
+                -- Recreate table without timezone column
+                
+                -- Rename existing table
+                ALTER TABLE locations RENAME TO locations_old_v6;
+                
+                -- Create new table without timezone
+                CREATE TABLE locations (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    address TEXT,
+                    city TEXT,
+                    state TEXT,
+                    zip_code TEXT,
+                    phone TEXT,
+                    email TEXT,
+                    tax_rate REAL DEFAULT 0.0,
+                    currency TEXT DEFAULT 'USD',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                -- Copy data (excluding timezone)
+                INSERT INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at)
+                SELECT id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at
+                FROM locations_old_v6;
+                
+                -- Drop old table
+                DROP TABLE locations_old_v6;
             "#,
         kind: MigrationKind::Up,
     }]
