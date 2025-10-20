@@ -18,16 +18,17 @@ android {
     namespace = "com.premiumpos.app"
     
     // Load signing configuration
-    val signingPropsFile = rootProject.file("../signing.properties")
+    val signingPropsFile = rootProject.file("signing.properties")
     val signingProps = Properties()
     if (signingPropsFile.exists()) {
-        signingProps.load(signingPropsFile.inputStream())
+        signingPropsFile.inputStream().use { signingProps.load(it) }
     }
     
     signingConfigs {
         create("release") {
             if (signingPropsFile.exists()) {
-                storeFile = file(signingProps.getProperty("storeFile"))
+                val keystorePath = signingProps.getProperty("storeFile")
+                storeFile = rootProject.file(keystorePath)
                 storePassword = signingProps.getProperty("storePassword")
                 keyAlias = signingProps.getProperty("keyAlias")
                 keyPassword = signingProps.getProperty("keyPassword")
