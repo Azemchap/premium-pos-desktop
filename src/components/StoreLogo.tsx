@@ -63,6 +63,7 @@ export default function StoreLogo({
   }
 
   const storeName = storeConfig?.name || "ZTAD POS";
+  const storePhone = storeConfig?.phone || "Point of Sale";
   
   // Convert file path to asset URL for Tauri v2
   const logoUrl = storeConfig?.logo_url ? convertFileSrc(storeConfig.logo_url) : null;
@@ -104,7 +105,7 @@ export default function StoreLogo({
             {storeName}
           </span>
           {showSubtitle && (
-            <p className="text-xs text-muted-foreground">Point of Sale</p>
+            <p className="text-xs text-muted-foreground">{storePhone}</p>
           )}
         </div>
       </div>
