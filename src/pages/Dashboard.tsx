@@ -706,16 +706,18 @@ export default function Dashboard() {
                 <CardContent className="p-6 md:p-8">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
                         <div className="flex items-center gap-4 md:gap-6">
-                            <Store className="w-8 h-8 text-primary" />
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                                <Store className="w-6 h-6 text-white" />
+                            </div>
                             <div>
-                                <p className="font-semibold">{storeConfig?.name}</p>
+                                <p className="font-semibold text-lg">{storeConfig?.name || 'Premium POS'}</p>
                                 <p className="text-sm text-muted-foreground">
                                     {storeConfig?.email} • Tax Rate: {((storeConfig?.tax_rate || 0) * 100).toFixed(1)}%
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-                            <span>Powered by Premium POS</span>
+                            <span>Point of Sale System</span>
                             <Badge variant="outline">v1.0</Badge>
                         </div>
                     </div>

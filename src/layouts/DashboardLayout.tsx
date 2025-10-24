@@ -1,4 +1,5 @@
 import MobileBottomNav from "@/components/MobileBottomNav";
+import StoreLogo from "@/components/StoreLogo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,6 @@ import {
   Receipt,
   Settings,
   ShoppingCart,
-  Store as StoreIcon,
   Sun,
   Tag,
   User,
@@ -60,7 +60,6 @@ const navigation: NavigationItem[] = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
-  const [storeName, setStoreName] = useState<string>("");
   const { user, logout, theme, setTheme } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -74,24 +73,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  // Load store config and notification count
+  // Load notification count
   useEffect(() => {
-    const loadDashboardData = async () => {
+    const loadNotifications = async () => {
       try {
-        const config = await invoke<any>("get_store_config");
-        setStoreName(config.name || "Premium POS");
-
         const notifications = await invoke<any[]>("get_notifications", {
           isRead: false,
           limit: 100
         });
         setNotificationCount(notifications.length);
       } catch (error) {
-        console.error("Failed to load dashboard data:", error);
+        console.error("Failed to load notifications:", error);
       }
     };
 
-    loadDashboardData();
+    loadNotifications();
 
     const interval = setInterval(async () => {
       try {
@@ -147,15 +143,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-60">
           <div className="space-y-6">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                <StoreIcon className="text-primary-foreground w-4 h-4" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-sm leading-none">{storeName}</span>
-                <span className="text-xs text-muted-foreground">POS System</span>
-              </div>
-            </div>
+            <StoreLogo variant="mobile" />
 
             <nav className="space-y-2">
               {filteredNavigation.map((item) => (
@@ -180,15 +168,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
         <div className="flex grow flex-col gap-y-8 overflow-y-auto border-r border-border bg-card px-6 pb-6 shadow-sm">
           <div className="flex h-20 shrink-0 items-center">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                <StoreIcon className="text-primary-foreground w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-bold text-xl bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Premium POS</span>
-                <p className="text-xs text-muted-foreground">Point of Sale</p>
-              </div>
-            </div>
+            <StoreLogo variant="desktop" />
           </div>
 
           <nav className="flex flex-1 flex-col">
