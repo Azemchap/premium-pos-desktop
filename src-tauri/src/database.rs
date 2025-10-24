@@ -424,5 +424,144 @@ pub fn get_migrations() -> Vec<Migration> {
                 ALTER TABLE locations ADD COLUMN logo_url TEXT;
             "#,
         kind: MigrationKind::Up,
+    },
+        Migration {
+        version: 8,
+        description: "create_product_variants_system",
+        sql: r#"
+                -- Variant Types (templates for variant dimensions like "Size", "Color", etc.)
+                CREATE TABLE IF NOT EXISTS variant_types (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    description TEXT,
+                    display_order INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+
+                -- Variant Values (specific options for each type like "Small", "Red", etc.)
+                CREATE TABLE IF NOT EXISTS variant_values (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    variant_type_id INTEGER NOT NULL,
+                    value TEXT NOT NULL,
+                    code TEXT,
+                    display_order INTEGER DEFAULT 0,
+                    hex_color TEXT,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (variant_type_id) REFERENCES variant_types(id) ON DELETE CASCADE,
+                    UNIQUE(variant_type_id, value)
+                );
+
+                -- Product Variants (actual product variations)
+                CREATE TABLE IF NOT EXISTS product_variants (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    product_id INTEGER NOT NULL,
+                    sku TEXT UNIQUE NOT NULL,
+                    barcode TEXT UNIQUE,
+                    variant_name TEXT,
+                    cost_price REAL DEFAULT 0.0,
+                    selling_price REAL,
+                    wholesale_price REAL,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+                );
+
+                -- Product Variant Combinations (which variant values make up this variant)
+                CREATE TABLE IF NOT EXISTS product_variant_values (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    product_variant_id INTEGER NOT NULL,
+                    variant_value_id INTEGER NOT NULL,
+                    FOREIGN KEY (product_variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+                    FOREIGN KEY (variant_value_id) REFERENCES variant_values(id) ON DELETE CASCADE,
+                    UNIQUE(product_variant_id, variant_value_id)
+                );
+
+                -- Variant Inventory (stock tracking per variant)
+                CREATE TABLE IF NOT EXISTS variant_inventory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    product_variant_id INTEGER NOT NULL,
+                    current_stock INTEGER DEFAULT 0,
+                    minimum_stock INTEGER DEFAULT 0,
+                    maximum_stock INTEGER DEFAULT 0,
+                    reserved_stock INTEGER DEFAULT 0,
+                    available_stock INTEGER DEFAULT 0,
+                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (product_variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+                    UNIQUE(product_variant_id)
+                );
+
+                -- Create indexes for performance
+                CREATE INDEX IF NOT EXISTS idx_variant_types_active ON variant_types(is_active);
+                CREATE INDEX IF NOT EXISTS idx_variant_types_order ON variant_types(display_order);
+                
+                CREATE INDEX IF NOT EXISTS idx_variant_values_type ON variant_values(variant_type_id);
+                CREATE INDEX IF NOT EXISTS idx_variant_values_active ON variant_values(is_active);
+                CREATE INDEX IF NOT EXISTS idx_variant_values_order ON variant_values(display_order);
+                
+                CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id);
+                CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku);
+                CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode);
+                CREATE INDEX IF NOT EXISTS idx_product_variants_active ON product_variants(is_active);
+                
+                CREATE INDEX IF NOT EXISTS idx_product_variant_values_variant ON product_variant_values(product_variant_id);
+                CREATE INDEX IF NOT EXISTS idx_product_variant_values_value ON product_variant_values(variant_value_id);
+                
+                CREATE INDEX IF NOT EXISTS idx_variant_inventory_variant ON variant_inventory(product_variant_id);
+                CREATE INDEX IF NOT EXISTS idx_variant_inventory_stock ON variant_inventory(current_stock, minimum_stock);
+
+                -- Insert default variant types
+                INSERT OR IGNORE INTO variant_types (name, description, display_order) VALUES
+                ('Size', 'Product sizes (S, M, L, XL, etc.)', 1),
+                ('Color', 'Product colors', 2),
+                ('Material', 'Material type or composition', 3),
+                ('Style', 'Style or design variation', 4);
+
+                -- Insert common size values
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, display_order)
+                SELECT 1, 'Extra Small', 'XS', 1 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 1);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, display_order)
+                SELECT 1, 'Small', 'S', 2 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 1);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, display_order)
+                SELECT 1, 'Medium', 'M', 3 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 1);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, display_order)
+                SELECT 1, 'Large', 'L', 4 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 1);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, display_order)
+                SELECT 1, 'Extra Large', 'XL', 5 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 1);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, display_order)
+                SELECT 1, '2X Large', 'XXL', 6 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 1);
+
+                -- Insert common color values
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, hex_color, display_order)
+                SELECT 2, 'Black', 'BLK', '#000000', 1 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 2);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, hex_color, display_order)
+                SELECT 2, 'White', 'WHT', '#FFFFFF', 2 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 2);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, hex_color, display_order)
+                SELECT 2, 'Red', 'RED', '#FF0000', 3 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 2);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, hex_color, display_order)
+                SELECT 2, 'Blue', 'BLU', '#0000FF', 4 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 2);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, hex_color, display_order)
+                SELECT 2, 'Green', 'GRN', '#008000', 5 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 2);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, hex_color, display_order)
+                SELECT 2, 'Yellow', 'YEL', '#FFFF00', 6 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 2);
+                
+                INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, hex_color, display_order)
+                SELECT 2, 'Gray', 'GRY', '#808080', 7 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 2);
+            "#,
+        kind: MigrationKind::Up,
     }]
 }

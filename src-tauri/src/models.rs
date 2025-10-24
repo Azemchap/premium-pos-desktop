@@ -319,3 +319,125 @@ pub struct DashboardStats {
     pub week_sales: f64,
     pub month_sales: f64,
 }
+
+// Product Variants models
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VariantType {
+    pub id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub display_order: i32,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateVariantTypeRequest {
+    pub name: String,
+    pub description: Option<String>,
+    pub display_order: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateVariantTypeRequest {
+    pub name: String,
+    pub description: Option<String>,
+    pub display_order: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VariantValue {
+    pub id: i64,
+    pub variant_type_id: i64,
+    pub value: String,
+    pub code: Option<String>,
+    pub display_order: i32,
+    pub hex_color: Option<String>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateVariantValueRequest {
+    pub variant_type_id: i64,
+    pub value: String,
+    pub code: Option<String>,
+    pub display_order: Option<i32>,
+    pub hex_color: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateVariantValueRequest {
+    pub value: String,
+    pub code: Option<String>,
+    pub display_order: Option<i32>,
+    pub hex_color: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProductVariant {
+    pub id: i64,
+    pub product_id: i64,
+    pub sku: String,
+    pub barcode: Option<String>,
+    pub variant_name: Option<String>,
+    pub cost_price: f64,
+    pub selling_price: Option<f64>,
+    pub wholesale_price: Option<f64>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateProductVariantRequest {
+    pub product_id: i64,
+    pub sku: String,
+    pub barcode: Option<String>,
+    pub variant_name: Option<String>,
+    pub cost_price: f64,
+    pub selling_price: Option<f64>,
+    pub wholesale_price: Option<f64>,
+    pub variant_value_ids: Vec<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateProductVariantRequest {
+    pub sku: String,
+    pub barcode: Option<String>,
+    pub variant_name: Option<String>,
+    pub cost_price: f64,
+    pub selling_price: Option<f64>,
+    pub wholesale_price: Option<f64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProductVariantWithValues {
+    pub id: i64,
+    pub product_id: i64,
+    pub sku: String,
+    pub barcode: Option<String>,
+    pub variant_name: Option<String>,
+    pub cost_price: f64,
+    pub selling_price: Option<f64>,
+    pub wholesale_price: Option<f64>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+    pub variant_values: Vec<VariantValue>,
+    pub inventory: Option<VariantInventory>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VariantInventory {
+    pub id: i64,
+    pub product_variant_id: i64,
+    pub current_stock: i32,
+    pub minimum_stock: i32,
+    pub maximum_stock: i32,
+    pub reserved_stock: i32,
+    pub available_stock: i32,
+    pub last_updated: String,
+}
