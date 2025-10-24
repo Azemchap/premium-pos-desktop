@@ -399,7 +399,7 @@ export default function Dashboard() {
                                     variant="ghost" 
                                     size="sm"
                                     onClick={() => navigate('/inventory')}
-                                    className="h-8 text-orange-600"
+                                    className="h-8 text-orange-600 dark:text-orange-400"
                                 >
                                     <ArrowRight className="w-4 h-4" />
                                 </Button>
@@ -411,8 +411,8 @@ export default function Dashboard() {
                             </p>
                             <p className={`text-3xl font-bold ${
                                 (stats?.low_stock_items || 0) > 0 
-                                    ? 'text-orange-600' 
-                                    : 'text-green-600'
+                                    ? 'text-orange-600 dark:text-orange-400' 
+                                    : 'text-green-600 dark:text-green-400'
                             }`}>
                                 {stats?.low_stock_items || 0}
                             </p>
@@ -441,8 +441,8 @@ export default function Dashboard() {
                             className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-green-500 hover:bg-green-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/sales')}
                         >
-                            <div className="p-2 rounded-lg bg-green-100">
-                                <ShoppingCart className="w-6 h-6 md:w-7 md:h-7 text-green-600" />
+                            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                                <ShoppingCart className="w-6 h-6 md:w-7 md:h-7 text-green-600 dark:text-green-400" />
                             </div>
                             <span className="text-sm md:text-base font-medium">New Sale</span>
                         </Button>
@@ -463,8 +463,8 @@ export default function Dashboard() {
                             className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-purple-500 hover:bg-purple-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/inventory')}
                         >
-                            <div className="p-2 rounded-lg bg-purple-100">
-                                <Package className="w-6 h-6 md:w-7 md:h-7 text-purple-600" />
+                            <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                                <Package className="w-6 h-6 md:w-7 md:h-7 text-purple-600 dark:text-purple-400" />
                             </div>
                             <span className="text-sm md:text-base font-medium">Manage Stock</span>
                         </Button>
@@ -474,8 +474,8 @@ export default function Dashboard() {
                             className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-orange-500 hover:bg-orange-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/reports')}
                         >
-                            <div className="p-2 rounded-lg bg-orange-100">
-                                <BarChart3 className="w-6 h-6 md:w-7 md:h-7 text-orange-600" />
+                            <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                                <BarChart3 className="w-6 h-6 md:w-7 md:h-7 text-orange-600 dark:text-orange-400" />
                             </div>
                             <span className="text-sm md:text-base font-medium">View Reports</span>
                         </Button>
@@ -488,7 +488,7 @@ export default function Dashboard() {
                 <Card className="md:col-span-2">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <TrendingUp className="w-5 h-5 text-green-600" />
+                            <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
                             Sales Performance
                         </CardTitle>
                         <Badge variant="outline">This Month</Badge>
@@ -519,7 +519,7 @@ export default function Dashboard() {
                         <div className="pt-4 border-t">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Daily Average</span>
-                                <span className="font-semibold text-blue-600">
+                                <span className="font-semibold text-primary">
                                     {formatCurrency((stats?.month_sales || 0) / 30)}
                                 </span>
                             </div>
@@ -530,7 +530,7 @@ export default function Dashboard() {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <Package className="w-5 h-5 text-purple-600" />
+                            <Package className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                             Inventory
                         </CardTitle>
                     </CardHeader>
@@ -551,11 +551,11 @@ export default function Dashboard() {
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Health Score</span>
                                 <div className="flex items-center gap-1 sm:gap-2">
-                                    <span className="font-bold text-green-600">
+                                    <span className="font-bold text-green-600 dark:text-green-400">
                                         {getStockHealth().toFixed(0)}%
                                     </span>
                                     {getStockHealth() >= 90 ? (
-                                        <Sparkles className="w-4 h-4 text-green-600" />
+                                        <Sparkles className="w-4 h-4 text-green-600 dark:text-green-400" />
                                     ) : getStockHealth() >= 70 ? (
                                         <TrendingUp className="w-4 h-4 text-yellow-600" />
                                     ) : (
@@ -573,7 +573,7 @@ export default function Dashboard() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-3">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <ShoppingCart className="w-5 h-5 text-green-600" />
+                            <ShoppingCart className="w-5 h-5 text-green-600 dark:text-green-400" />
                             Recent Sales
                         </CardTitle>
                         <Button 
@@ -591,11 +591,11 @@ export default function Dashboard() {
                                 recentActivity.sales.map((sale) => (
                                     <div 
                                         key={sale.id} 
-                                        className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border"
+                                        className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 dark:hover:bg-muted transition-colors border border-border"
                                     >
                                         <div className="flex items-center gap-4 md:gap-6">
-                                            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
-                                                <DollarSign className="w-4 h-4 text-green-600" />
+                                            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                                                <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
                                             </div>
                                             <div>
                                                 <p className="font-medium">{sale.sale_number}</p>
@@ -608,7 +608,7 @@ export default function Dashboard() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <p className="font-bold text-green-600">
+                                        <p className="font-bold text-green-600 dark:text-green-400">
                                             {formatCurrency(sale.total_amount)}
                                         </p>
                                     </div>
@@ -638,7 +638,7 @@ export default function Dashboard() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-3">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <AlertCircle className="w-5 h-5 text-orange-600" />
+                            <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                             Low Stock Alerts
                         </CardTitle>
                         <Button 
@@ -657,18 +657,18 @@ export default function Dashboard() {
                                     return (
                                         <div 
                                             key={item.id} 
-                                            className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border"
+                                            className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 dark:hover:bg-muted transition-colors border border-border"
                                         >
                                             <div className="flex items-center gap-4 md:gap-6">
                                                 <div className={`p-2 rounded-lg ${
                                                     stockStatus.color === 'destructive' 
-                                                        ? 'bg-red-100 dark:bg-red-900/20' 
-                                                        : 'bg-yellow-100 dark:bg-yellow-900/20'
+                                                        ? 'bg-red-100 dark:bg-red-900/30' 
+                                                        : 'bg-yellow-100 dark:bg-yellow-900/30'
                                                 }`}>
                                                     <Package className={`w-4 h-4 ${
                                                         stockStatus.color === 'destructive' 
-                                                            ? 'text-red-600' 
-                                                            : 'text-yellow-600'
+                                                            ? 'text-red-600 dark:text-red-400' 
+                                                            : 'text-yellow-600 dark:text-yellow-400'
                                                     }`} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
@@ -689,10 +689,10 @@ export default function Dashboard() {
                                 })
                             ) : (
                                 <div className="text-center py-6 md:py-12 text-muted-foreground">
-                                    <div className="w-16 h-16 mx-auto mb-2 md:mb-4 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                                        <Zap className="w-8 h-8 text-green-600" />
+                                    <div className="w-16 h-16 mx-auto mb-2 md:mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                        <Zap className="w-8 h-8 text-green-600 dark:text-green-400" />
                                     </div>
-                                    <p className="font-medium text-green-600">All Products Healthy!</p>
+                                    <p className="font-medium text-green-600 dark:text-green-400">All Products Healthy!</p>
                                     <p className="text-sm">Your inventory is well-stocked</p>
                                 </div>
                             )}

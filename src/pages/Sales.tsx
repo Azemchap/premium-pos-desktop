@@ -820,7 +820,7 @@ export default function Sales() {
                   </div>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.product.id} className="flex gap-1 flex-col  p-3 bg-muted rounded-lg">
+                    <div key={item.product.id} className="flex gap-1 flex-col  p-3 bg-muted/50 dark:bg-muted border border-border rounded-lg">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{item.product.name}</p>
                         <p className="text-sm text-muted-foreground">

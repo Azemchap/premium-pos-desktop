@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Store as StoreIcon } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { Skeleton } from "./ui/skeleton";
 
 interface StoreConfig {
@@ -63,7 +62,17 @@ export default function StoreLogo({
   }
 
   const storeName = storeConfig?.name || "ZTAD POS";
-  const logoUrl = storeConfig?.logo_url ? convertFileSrc(storeConfig.logo_url) : null;
+  
+  // Convert file path to asset URL for Tauri
+  const getAssetUrl = (path: string) => {
+    if (!path) return null;
+    // For Tauri v2, we need to use the asset protocol
+    // Replace backslashes with forward slashes for URL compatibility
+    const normalizedPath = path.replace(/\\/g, '/');
+    return `asset://localhost/${normalizedPath}`;
+  };
+  
+  const logoUrl = storeConfig?.logo_url ? getAssetUrl(storeConfig.logo_url) : null;
 
   // Desktop variant (sidebar)
   if (variant === "desktop") {
