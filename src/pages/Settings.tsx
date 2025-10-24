@@ -155,7 +155,7 @@ export default function Settings() {
   }, []);
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Settings</h1>
@@ -205,7 +205,7 @@ export default function Settings() {
 
         {/* Store Configuration */}
         <TabsContent value="store">
-          <div className="grid gap-1 sm:gap-4 md:gap-6">
+          <div className="grid gap-4 md:gap-6 md:gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Store Information</CardTitle>
@@ -242,7 +242,7 @@ export default function Settings() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="store-city">City</Label>
                         <Input
@@ -274,7 +274,7 @@ export default function Settings() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="store-phone">Phone</Label>
                         <Input

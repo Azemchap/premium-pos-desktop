@@ -404,7 +404,7 @@ export default function Products() {
   const inactiveProducts = products.filter(p => !p.is_active).length;
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Products</h1>
@@ -419,7 +419,7 @@ export default function Products() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 md:gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -460,7 +460,7 @@ export default function Products() {
       {/* Search and Filters - Auto-filtering */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
             <div className="space-y-2 md:col-span-4">
               <Label htmlFor="search">Search</Label>
               <div className="relative">
@@ -739,7 +739,7 @@ export default function Products() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 md:gap-6">
             {/* Basic Information */}
             <div className="space-y-2 md:space-y-4">
               <div className="space-y-2">

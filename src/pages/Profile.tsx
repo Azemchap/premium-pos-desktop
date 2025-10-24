@@ -193,7 +193,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div>
         <h1 className="text-xl sm:text-lg md:text-3xl font-bold">Profile</h1>
         <p className="text-muted-foreground mt-1">
@@ -204,7 +204,7 @@ export default function Profile() {
       {/* Profile Header Card */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center gap-1 sm:gap-4 md:gap-6">
+          <div className="flex items-center gap-4 md:gap-6 md:gap-6">
             <div className="relative">
               <Avatar className="w-24 h-24">
                 {avatar ? (
@@ -273,7 +273,7 @@ export default function Profile() {
 
             {/* Profile Tab */}
             <TabsContent value="profile" className="space-y-2 md:space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="username">Username *</Label>
                   <Input
@@ -414,7 +414,7 @@ export default function Profile() {
               <div className="space-y-2 md:space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
                   <h3 className="font-medium mb-2">Account Information</h3>
-                  <div className="grid grid-cols-2 gap-1 md:gap-4 text-xs sm:text-sm">
+                  <div className="grid grid-cols-2 gap-4 md:gap-6 text-xs sm:text-sm">
                     <div>
                       <p className="text-muted-foreground">Username</p>
                       <p className="font-medium">{user?.username}</p>

@@ -177,21 +177,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </SheetContent>
       </Sheet>
 
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-60 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-border bg-card px-6 pb-4">
-          <div className="flex h-16 shrink-0 items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm px-1">POS</span>
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
+        <div className="flex grow flex-col gap-y-8 overflow-y-auto border-r border-border bg-card px-6 pb-6 shadow-sm">
+          <div className="flex h-20 shrink-0 items-center">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                <StoreIcon className="text-primary-foreground w-5 h-5" />
               </div>
-              <span className="font-bold text-xl">Premium POS</span>
+              <div>
+                <span className="font-bold text-xl bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Premium POS</span>
+                <p className="text-xs text-muted-foreground">Point of Sale</p>
+              </div>
             </div>
           </div>
 
           <nav className="flex flex-1 flex-col">
-            <ul role="list" className="flex flex-1 flex-col gap-y-7">
+            <ul role="list" className="flex flex-1 flex-col gap-y-10">
               <li>
-                <ul role="list" className="-mx-2 space-y-1">
+                <ul role="list" className="-mx-2 space-y-2">
                   {filteredNavigation.map((item) => (
                     <li key={item.name}>
                       <Button
@@ -208,8 +211,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </li>
 
               <li className="mt-auto">
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
+                <div className="space-y-3">
+                  <div className="p-4 bg-gradient-to-br from-primary/5 to-blue-50 rounded-xl border border-primary/10">
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-8 h-8">
                         {user?.profile_image_url ? (
@@ -230,26 +233,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-3">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={toggleTheme}
-                      className="flex-1"
+                      className="flex-1 hover:bg-primary/10 hover:text-primary hover:border-primary"
                     >
                       {theme === 'light' ? (
-                        <Moon className="w-4 h-4" />
+                        <Moon className="w-4 h-4 mr-2" />
                       ) : (
-                        <Sun className="w-4 h-4" />
+                        <Sun className="w-4 h-4 mr-2" />
                       )}
+                      <span className="text-xs">Theme</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleLogout}
-                      className="flex-1"
+                      className="flex-1 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-4 h-4 mr-2" />
+                      <span className="text-xs">Logout</span>
                     </Button>
                   </div>
                 </div>
@@ -259,8 +264,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
 
-      <div className="lg:pl-60">
-        <div className="sticky top-0 z-40 flex h-14 md:h-16 shrink-0 items-center gap-x-2 sm:gap-x-4 border-b border-border bg-background px-3 sm:px-4 md:px-6 lg:px-8 shadow-sm safe-top">
+      <div className="lg:pl-64">
+        <div className="sticky top-0 z-40 flex h-16 md:h-20 shrink-0 items-center gap-x-4 sm:gap-x-6 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 md:px-8 lg:px-10 shadow-sm safe-top">
           <Button
             variant="ghost"
             size="sm"
@@ -341,8 +346,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        <main className="py-4 md:py-8 safe-bottom">
-          <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 md:px-6 lg:px-8">
+        <main className="py-6 md:py-10 safe-bottom">
+          <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 md:px-8 lg:px-10">
             {children}
           </div>
         </main>

@@ -534,7 +534,7 @@ export default function Sales() {
   }, [debouncedSearchQuery, selectedCategory, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Point of Sale</h1>
@@ -556,11 +556,11 @@ export default function Sales() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5  gap-1 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5  gap-4 md:gap-6 md:gap-6">
         {/* Products Section */}
         <div className="lg:col-span-3 space-y-2 md:space-y-4">
           {/* Search and Filters */}
-          <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-1 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
             <div className="relative col-span-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
               <Input
@@ -605,14 +605,14 @@ export default function Sales() {
 
           {/* Products Grid/List */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1  gap-1 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1  gap-4 md:gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-40" />
               ))}
             </div>
           ) : viewMode === "grid" ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1  gap-1 md:gap-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1  gap-4 md:gap-6 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
                 {paginatedProducts.map((product) => (
                   <Card
                     key={product.id}
@@ -1057,7 +1057,7 @@ export default function Sales() {
               <p className="text-sm text-green-800 mb-2">Total Amount</p>
               <p className="text-4xl font-bold text-green-600">{format(cartTotal)}</p>
             </div>
-            <div className="grid grid-cols-2 gap-1 md:gap-4">
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
               <div className="text-center p-4 bg-muted rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">Payment Method</p>
                 <p className="font-medium capitalize">{paymentInfo.method}</p>

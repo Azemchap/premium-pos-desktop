@@ -183,13 +183,13 @@ export default function Dashboard() {
 
     if (loading) {
         return (
-            <div className="space-y-3 sm:space-y-3 md:space-y-6">
+            <div className="space-y-6 md:space-y-8">
                 <div className="flex items-center justify-between">
                     <Skeleton className="h-8 w-32" />
                     <Skeleton className="h-10 w-32" />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-4 ">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     {Array.from({ length: 4 }).map((_, i) => (
                         <Card key={i}>
                             <CardContent className="p-6">
@@ -206,7 +206,7 @@ export default function Dashboard() {
                     ))}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 sm:gap-4 ">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                     {Array.from({ length: 2 }).map((_, i) => (
                         <Card key={i}>
                             <CardHeader>
@@ -233,11 +233,11 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="space-y-3 sm:space-y-3 md:space-y-6">
+        <div className="space-y-6 md:space-y-8">
             {/* Enhanced Header with Store Info & Time */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4 md:gap-6">
                         <h1 className="text-xl sm:text-lg  md:text-2xl  font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
                             {getGreeting()}, {user?.first_name}!
                         </h1>
@@ -255,7 +255,7 @@ export default function Dashboard() {
                         )}
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4 md:gap-6">
                     <div className="hidden md:flex flex-col items-end">
                         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
                             <Clock className="w-4 h-4" />
@@ -284,10 +284,10 @@ export default function Dashboard() {
             </div>
 
             {/* Enhanced Stats Grid with Growth Indicators */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 md:gap-4 sm:gap-4 ">
-                <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-green-500">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2 md:mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-green-500 hover:scale-105">
+                    <CardContent className="p-6 md:p-8">
+                        <div className="flex items-center justify-between mb-4 md:mb-6">
                             <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg">
                                 <DollarSign className="w-6 h-6 text-white" />
                             </div>
@@ -320,9 +320,9 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2 md:mb-4">
+                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary hover:scale-105">
+                    <CardContent className="p-6 md:p-8">
+                        <div className="flex items-center justify-between mb-4 md:mb-6">
                             <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
                                 <BarChart3 className="w-6 h-6 text-white" />
                             </div>
@@ -345,9 +345,9 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-purple-500">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2 md:mb-4">
+                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-purple-500 hover:scale-105">
+                    <CardContent className="p-6 md:p-8">
+                        <div className="flex items-center justify-between mb-4 md:mb-6">
                             <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
                                 <Package className="w-6 h-6 text-white" />
                             </div>
@@ -378,11 +378,11 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className={`hover:shadow-lg transition-all duration-300 border-l-4 ${
+                <Card className={`hover:shadow-xl transition-all duration-300 border-l-4 hover:scale-105 ${
                     (stats?.low_stock_items || 0) > 0 ? 'border-l-orange-500' : 'border-l-green-500'
                 }`}>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2 md:mb-4">
+                    <CardContent className="p-6 md:p-8">
+                        <div className="flex items-center justify-between mb-4 md:mb-6">
                             <div className={`p-3 rounded-xl shadow-lg ${
                                 (stats?.low_stock_items || 0) > 0 
                                     ? 'bg-gradient-to-br from-orange-500 to-orange-600' 
@@ -427,56 +427,64 @@ export default function Dashboard() {
             </div>
 
             {/* Quick Actions */}
-            <Card className="border-2 border-dashed hover:border-primary transition-colors">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-1 sm:gap-2">
+            <Card className="border-2 border-dashed hover:border-primary transition-colors shadow-md">
+                <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 md:gap-3 text-lg md:text-xl">
                         <Zap className="w-5 h-5 text-yellow-500" />
                         Quick Actions
                     </CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-3">
+                <CardContent className="pt-0">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-1 sm:gap-2  hover:border-green-500"
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-green-500 hover:bg-green-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/sales')}
                         >
-                            <ShoppingCart className="w-5 h-5 text-green-600" />
-                            <span className="text-sm font-medium">New Sales</span>
+                            <div className="p-2 rounded-lg bg-green-100">
+                                <ShoppingCart className="w-6 h-6 md:w-7 md:h-7 text-green-600" />
+                            </div>
+                            <span className="text-sm md:text-base font-medium">New Sale</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-1 sm:gap-2  hover:border-blue-500 "
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-primary hover:bg-blue-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/products')}
                         >
-                            <Plus className="w-5 h-5 text-blue-600" />
-                            <span className="text-sm font-medium">Add Product</span>
+                            <div className="p-2 rounded-lg bg-blue-100">
+                                <Plus className="w-6 h-6 md:w-7 md:h-7 text-primary" />
+                            </div>
+                            <span className="text-sm md:text-base font-medium">Add Product</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-1 sm:gap-2  hover:border-purple-500 "
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-purple-500 hover:bg-purple-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/inventory')}
                         >
-                            <Package className="w-5 h-5 text-purple-600" />
-                            <span className="text-sm font-medium">Manage Stock</span>
+                            <div className="p-2 rounded-lg bg-purple-100">
+                                <Package className="w-6 h-6 md:w-7 md:h-7 text-purple-600" />
+                            </div>
+                            <span className="text-sm md:text-base font-medium">Manage Stock</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-1 sm:gap-2  hover:border-orange-500 hover:bg-none "
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-orange-500 hover:bg-orange-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/reports')}
                         >
-                            <BarChart3 className="w-5 h-5 text-orange-600" />
-                            <span className="text-sm font-medium">View Reports</span>
+                            <div className="p-2 rounded-lg bg-orange-100">
+                                <BarChart3 className="w-6 h-6 md:w-7 md:h-7 text-orange-600" />
+                            </div>
+                            <span className="text-sm md:text-base font-medium">View Reports</span>
                         </Button>
                     </div>
                 </CardContent>
             </Card>
 
             {/* Additional Stats - Enhanced */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4 sm:gap-4 ">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 <Card className="md:col-span-2">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
@@ -486,7 +494,7 @@ export default function Dashboard() {
                         <Badge variant="outline">This Month</Badge>
                     </CardHeader>
                     <CardContent className="space-y-2 md:space-y-4">
-                        <div className="grid grid-cols-2 gap-1 md:gap-4">
+                        <div className="grid grid-cols-2 gap-4 md:gap-6">
                             <div className="space-y-2">
                                 <p className="text-sm text-muted-foreground">Month Sales</p>
                                 <p className="text-lg  md:text-2xl font-bold">
@@ -561,7 +569,7 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Activity - Enhanced */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 md:gap-4 sm:gap-4 ">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-3">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
@@ -585,7 +593,7 @@ export default function Dashboard() {
                                         key={sale.id} 
                                         className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border"
                                     >
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-4 md:gap-6">
                                             <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
                                                 <DollarSign className="w-4 h-4 text-green-600" />
                                             </div>
@@ -651,7 +659,7 @@ export default function Dashboard() {
                                             key={item.id} 
                                             className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border"
                                         >
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-4 md:gap-6">
                                                 <div className={`p-2 rounded-lg ${
                                                     stockStatus.color === 'destructive' 
                                                         ? 'bg-red-100 dark:bg-red-900/20' 
@@ -694,10 +702,10 @@ export default function Dashboard() {
             </div>
 
             {/* Footer Info */}
-            <Card className="bg-gradient-to-r from-primary/5 to-blue-600/5 border-dashed">
-                <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-1 md:gap-4">
-                        <div className="flex items-center gap-3">
+            <Card className="bg-gradient-to-r from-primary/10 to-blue-600/10 border-dashed border-2 shadow-md">
+                <CardContent className="p-6 md:p-8">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
+                        <div className="flex items-center gap-4 md:gap-6">
                             <Store className="w-8 h-8 text-primary" />
                             <div>
                                 <p className="font-semibold">{storeConfig?.name}</p>

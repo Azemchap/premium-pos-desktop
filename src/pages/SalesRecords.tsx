@@ -344,7 +344,7 @@ export default function SalesRecords() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Sales Records</h1>
@@ -357,7 +357,7 @@ export default function SalesRecords() {
       {/* Date Range Selector */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2">
               <Label>Date Range</Label>
               <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
@@ -400,7 +400,7 @@ export default function SalesRecords() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 md:gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -649,7 +649,7 @@ export default function SalesRecords() {
           {selectedSale && (
             <div className="space-y-3 sm:space-y-3 md:space-y-6">
               {/* Sale Header */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 md:gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 <div>
                   <Label className="text-muted-foreground">Sale Number</Label>
                   <p className="font-mono font-medium">{selectedSale.sale_number}</p>
