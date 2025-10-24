@@ -37,11 +37,14 @@ interface StoreConfig {
     id: number;
     name: string;
     address?: string;
+    city?: string;
+    state?: string;
+    zip_code?: string;
     phone?: string;
     email?: string;
     tax_rate: number;
     currency: string;
-    timezone: string;
+    logo_url?: string;
     created_at: string;
     updated_at: string;
 }

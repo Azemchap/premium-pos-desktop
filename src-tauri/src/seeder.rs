@@ -71,8 +71,8 @@ async fn seed_store_config(pool: &SqlitePool) -> Result<(), String> {
     println!("🏪 Seeding store configuration...");
 
     sqlx::query(
-        "INSERT OR IGNORE INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, timezone)
-         VALUES (1, 'Premium POS Store', '123 Main Street, Suite 100', 'New York', 'NY', '10001', '+1-555-0100', 'contact@premiumpos.com', 8.5, 'USD', 'America/New_York')"
+        "INSERT OR IGNORE INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency)
+         VALUES (1, 'Premium POS Store', '123 Main Street, Suite 100', 'New York', 'NY', '10001', '+1-555-0100', 'contact@premiumpos.com', 0.085, 'USD')"
     )
     .execute(pool)
     .await
