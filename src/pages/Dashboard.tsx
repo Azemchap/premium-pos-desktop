@@ -285,11 +285,11 @@ export default function Dashboard() {
 
             {/* Enhanced Stats Grid with Growth Indicators */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-green-500 hover:scale-105">
-                    <CardContent className="p-6 md:p-8">
-                        <div className="flex items-center justify-between mb-4 md:mb-6">
-                            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg">
-                                <DollarSign className="w-6 h-6 text-white" />
+                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-green-500 dark:border-l-green-600 hover:scale-105">
+                    <CardContent className="p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 shadow-lg">
+                                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             </div>
                             {getSalesGrowth() !== 0 && (
                                 <Badge 
@@ -306,13 +306,13 @@ export default function Dashboard() {
                             )}
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">
+                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
                                 Today's Sales
                             </p>
-                            <p className="text-xl sm:text-lg  md:text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+                            <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-400">
                                 {formatCurrency(stats?.today_sales || 0)}
                             </p>
-                            <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1">
+                            <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2 flex items-center gap-1">
                                 <ShoppingCart className="w-3 h-3" />
                                 {stats?.today_transactions || 0} transactions
                             </p>
@@ -320,11 +320,11 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary hover:scale-105">
-                    <CardContent className="p-6 md:p-8">
-                        <div className="flex items-center justify-between mb-4 md:mb-6">
-                            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                                <BarChart3 className="w-6 h-6 text-white" />
+                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary dark:border-l-primary hover:scale-105">
+                    <CardContent className="p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-primary to-blue-600 dark:from-primary dark:to-blue-600 shadow-lg">
+                                <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             </div>
                             <Badge variant="outline" className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
@@ -332,24 +332,24 @@ export default function Dashboard() {
                             </Badge>
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">
+                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
                                 Week Sales
                             </p>
-                            <p className="text-xl sm:text-lg  md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                            <p className="text-lg md:text-2xl font-bold text-primary">
                                 {formatCurrency(stats?.week_sales || 0)}
                             </p>
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2">
                                 Avg: {formatCurrency((stats?.week_sales || 0) / 7)}/day
                             </p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-purple-500 hover:scale-105">
-                    <CardContent className="p-6 md:p-8">
-                        <div className="flex items-center justify-between mb-4 md:mb-6">
-                            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
-                                <Package className="w-6 h-6 text-white" />
+                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-purple-500 dark:border-l-purple-600 hover:scale-105">
+                    <CardContent className="p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 shadow-lg">
+                                <Package className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             </div>
                             <Button 
                                 variant="ghost" 
@@ -361,13 +361,13 @@ export default function Dashboard() {
                             </Button>
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">
+                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
                                 Products
                             </p>
-                            <p className="text-xl sm:text-lg  md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                            <p className="text-lg md:text-2xl font-bold text-purple-600 dark:text-purple-400">
                                 {stats?.total_products || 0}
                             </p>
-                            <div className="mt-3">
+                            <div className="mt-2 md:mt-3">
                                 <div className="flex justify-between text-xs text-muted-foreground mb-1">
                                     <span>Stock Health</span>
                                     <span>{getStockHealth().toFixed(0)}%</span>
@@ -379,19 +379,19 @@ export default function Dashboard() {
                 </Card>
 
                 <Card className={`hover:shadow-xl transition-all duration-300 border-l-4 hover:scale-105 ${
-                    (stats?.low_stock_items || 0) > 0 ? 'border-l-orange-500' : 'border-l-green-500'
+                    (stats?.low_stock_items || 0) > 0 ? 'border-l-orange-500 dark:border-l-orange-600' : 'border-l-green-500 dark:border-l-green-600'
                 }`}>
-                    <CardContent className="p-6 md:p-8">
-                        <div className="flex items-center justify-between mb-4 md:mb-6">
-                            <div className={`p-3 rounded-xl shadow-lg ${
+                    <CardContent className="p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <div className={`p-2 md:p-3 rounded-xl shadow-lg ${
                                 (stats?.low_stock_items || 0) > 0 
-                                    ? 'bg-gradient-to-br from-orange-500 to-orange-600' 
-                                    : 'bg-gradient-to-br from-green-500 to-green-600'
+                                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700' 
+                                    : 'bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700'
                             }`}>
                                 {(stats?.low_stock_items || 0) > 0 ? (
-                                    <AlertCircle className="w-6 h-6 text-white" />
+                                    <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
                                 ) : (
-                                    <Zap className="w-6 h-6 text-white" />
+                                    <Zap className="w-5 h-5 md:w-6 md:h-6 text-white" />
                                 )}
                             </div>
                             {(stats?.low_stock_items || 0) > 0 && (
@@ -406,17 +406,17 @@ export default function Dashboard() {
                             )}
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">
+                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
                                 Low Stock Alerts
                             </p>
-                            <p className={`text-3xl font-bold ${
+                            <p className={`text-lg md:text-2xl font-bold ${
                                 (stats?.low_stock_items || 0) > 0 
                                     ? 'text-orange-600 dark:text-orange-400' 
                                     : 'text-green-600 dark:text-green-400'
                             }`}>
                                 {stats?.low_stock_items || 0}
                             </p>
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2">
                                 {(stats?.low_stock_items || 0) > 0 
                                     ? 'Need attention' 
                                     : 'All products healthy'}
