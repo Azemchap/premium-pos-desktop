@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Store as StoreIcon } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { Skeleton } from "./ui/skeleton";
 
 interface StoreConfig {
@@ -63,16 +64,14 @@ export default function StoreLogo({
 
   const storeName = storeConfig?.name || "ZTAD POS";
   
-  // Convert file path to asset URL for Tauri
-  const getAssetUrl = (path: string) => {
-    if (!path) return null;
-    // For Tauri v2, we need to use the asset protocol
-    // Replace backslashes with forward slashes for URL compatibility
-    const normalizedPath = path.replace(/\\/g, '/');
-    return `asset://localhost/${normalizedPath}`;
-  };
+  // Convert file path to asset URL for Tauri v2
+  const logoUrl = storeConfig?.logo_url ? convertFileSrc(storeConfig.logo_url) : null;
   
-  const logoUrl = storeConfig?.logo_url ? getAssetUrl(storeConfig.logo_url) : null;
+  // Debug logging
+  if (storeConfig?.logo_url) {
+    console.log("StoreLogo - Original path:", storeConfig.logo_url);
+    console.log("StoreLogo - Converted URL:", logoUrl);
+  }
 
   // Desktop variant (sidebar)
   if (variant === "desktop") {
@@ -86,8 +85,14 @@ export default function StoreLogo({
               className="w-full h-full object-cover"
               onError={(e) => {
                 // Fallback to icon if image fails to load
+                console.error("StoreLogo - Desktop variant failed to load:", logoUrl);
                 e.currentTarget.style.display = 'none';
-                e.currentTarget.parentElement!.innerHTML = '<svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+                if (e.currentTarget.parentElement) {
+                  e.currentTarget.parentElement.innerHTML = '<svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+                }
+              }}
+              onLoad={() => {
+                console.log("StoreLogo - Desktop variant loaded successfully:", logoUrl);
               }}
             />
           ) : (
@@ -118,8 +123,14 @@ export default function StoreLogo({
               className="w-full h-full object-cover"
               onError={(e) => {
                 // Fallback to icon if image fails to load
+                console.error("StoreLogo - Mobile variant failed to load:", logoUrl);
                 e.currentTarget.style.display = 'none';
-                e.currentTarget.parentElement!.innerHTML = '<svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+                if (e.currentTarget.parentElement) {
+                  e.currentTarget.parentElement.innerHTML = '<svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+                }
+              }}
+              onLoad={() => {
+                console.log("StoreLogo - Mobile variant loaded successfully:", logoUrl);
               }}
             />
           ) : (
@@ -148,8 +159,14 @@ export default function StoreLogo({
               className="w-full h-full object-cover"
               onError={(e) => {
                 // Fallback to icon if image fails to load
+                console.error("StoreLogo - Compact variant failed to load:", logoUrl);
                 e.currentTarget.style.display = 'none';
-                e.currentTarget.parentElement!.innerHTML = '<svg class="w-3 h-3 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+                if (e.currentTarget.parentElement) {
+                  e.currentTarget.parentElement.innerHTML = '<svg class="w-3 h-3 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+                }
+              }}
+              onLoad={() => {
+                console.log("StoreLogo - Compact variant loaded successfully:", logoUrl);
               }}
             />
           ) : (

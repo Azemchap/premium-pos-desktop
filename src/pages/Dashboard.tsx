@@ -8,6 +8,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import {
     AlertCircle,
     ArrowRight,
@@ -706,8 +707,23 @@ export default function Dashboard() {
                 <CardContent className="p-6 md:p-8">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
                         <div className="flex items-center gap-4 md:gap-6">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                                <Store className="w-6 h-6 text-white" />
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                                {storeConfig?.logo_url ? (
+                                    <img 
+                                        src={convertFileSrc(storeConfig.logo_url)} 
+                                        alt={storeConfig?.name || 'Store logo'} 
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            console.error("Logo failed to load in footer");
+                                            e.currentTarget.style.display = 'none';
+                                            if (e.currentTarget.parentElement) {
+                                                e.currentTarget.parentElement.innerHTML = '<svg class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <Store className="w-6 h-6 text-white" />
+                                )}
                             </div>
                             <div>
                                 <p className="font-semibold text-lg">{storeConfig?.name || 'ZTAD POS'}</p>

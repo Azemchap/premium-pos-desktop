@@ -23,6 +23,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { useAuthStore } from "@/store/authStore";
 import { playSound } from "@/store/settingsStore";
 import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import {
   Bell,
   Image,
@@ -317,10 +318,11 @@ export default function Settings() {
                           <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden border-2 border-border">
                             {storeForm.logo_url ? (
                               <img 
-                                src={`asset://localhost/${storeForm.logo_url.replace(/\\/g, '/')}`}
+                                src={convertFileSrc(storeForm.logo_url)}
                                 alt="Store logo" 
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
+                                  console.error("Logo failed to load:", storeForm.logo_url);
                                   e.currentTarget.style.display = 'none';
                                 }}
                               />
