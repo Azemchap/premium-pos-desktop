@@ -62,7 +62,7 @@ export default function StoreLogo({
     );
   }
 
-  const storeName = storeConfig?.name || "Premium POS";
+  const storeName = storeConfig?.name || "ZTAD POS";
   const logoUrl = storeConfig?.logo_url ? convertFileSrc(storeConfig.logo_url) : null;
 
   // Desktop variant (sidebar)

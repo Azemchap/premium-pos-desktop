@@ -710,7 +710,7 @@ export default function Dashboard() {
                                 <Store className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <p className="font-semibold text-lg">{storeConfig?.name || 'Premium POS'}</p>
+                                <p className="font-semibold text-lg">{storeConfig?.name || 'ZTAD POS'}</p>
                                 <p className="text-sm text-muted-foreground">
                                     {storeConfig?.email} • Tax Rate: {((storeConfig?.tax_rate || 0) * 100).toFixed(1)}%
                                 </p>

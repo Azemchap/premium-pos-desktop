@@ -240,7 +240,7 @@ pub fn get_migrations() -> Vec<Migration> {
 
                 -- Insert default store configuration
                 INSERT OR IGNORE INTO locations (id, name, address, phone, email, tax_rate, currency)
-                VALUES (1, 'Premium POS Store', '123 Main Street', '+1-555-0123', 'info@premiumpos.com', 0.08, 'USD');
+                VALUES (1, 'ZTAD POS', '123 Main Street', '+1-555-0123', 'info@ztadpos.com', 0.08, 'USD');
 
                 -- Insert default receipt templates
                 INSERT OR IGNORE INTO receipt_templates (name, template_type, printer_type, template_content, is_default, paper_width, font_size)

@@ -1,4 +1,4 @@
-use tauri::{command, State, AppHandle};
+use tauri::{command, State, AppHandle, Manager};
 use crate::models::{StoreConfig, UpdateStoreConfigRequest};
 use sqlx::{SqlitePool, Row};
 use std::fs;
