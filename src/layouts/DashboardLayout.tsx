@@ -51,7 +51,7 @@ const navigation: NavigationItem[] = [
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
   { name: "Inventory", href: "/inventory", icon: Database },
   { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Categories", href: "/master-data", icon: Tag, roles: ["Admin", "Manager"] },
+  { name: "Master Data", href: "/master-data", icon: Tag, roles: ["Admin", "Manager"] },
   { name: "Products", href: "/products", icon: Package, roles: ["Admin", "Manager"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["Admin", "Manager"] },
   { name: "Users", href: "/users", icon: Users, roles: ["Admin", "Manager"] },
