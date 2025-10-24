@@ -88,7 +88,8 @@ pub async fn upload_store_logo(
     let extension = PathBuf::from(&file_name)
         .extension()
         .and_then(|s| s.to_str())
-        .unwrap_or("png");
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| "png".to_string());
     let timestamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
