@@ -224,7 +224,7 @@ export default function Notifications() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Notifications</h1>
@@ -248,7 +248,7 @@ export default function Notifications() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 md:gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -302,7 +302,7 @@ export default function Notifications() {
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2">
               <Label>Filter by Type</Label>
               <Select value={filterType} onValueChange={setFilterType}>

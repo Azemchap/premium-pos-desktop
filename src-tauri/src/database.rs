@@ -240,7 +240,7 @@ pub fn get_migrations() -> Vec<Migration> {
 
                 -- Insert default store configuration
                 INSERT OR IGNORE INTO locations (id, name, address, phone, email, tax_rate, currency)
-                VALUES (1, 'Premium POS Store', '123 Main Street', '+1-555-0123', 'info@premiumpos.com', 0.08, 'USD');
+                VALUES (1, 'ZTAD POS', '123 Main Street', '+1-555-0123', 'info@ztadpos.com', 0.08, 'USD');
 
                 -- Insert default receipt templates
                 INSERT OR IGNORE INTO receipt_templates (name, template_type, printer_type, template_content, is_default, paper_width, font_size)
@@ -413,6 +413,15 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Migration v6 is no longer needed since we removed timezone from v1 and v4
                 -- This is a no-op for compatibility with existing databases
                 SELECT 1;
+            "#,
+        kind: MigrationKind::Up,
+    },
+        Migration {
+        version: 7,
+        description: "add_logo_url_to_locations",
+        sql: r#"
+                -- Add logo_url field to locations table
+                ALTER TABLE locations ADD COLUMN logo_url TEXT;
             "#,
         kind: MigrationKind::Up,
     }]

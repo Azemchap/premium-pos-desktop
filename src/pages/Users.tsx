@@ -322,7 +322,7 @@ export default function Users() {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">User Management</h1>
@@ -337,7 +337,7 @@ export default function Users() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 md:gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -396,7 +396,7 @@ export default function Users() {
       {/* Search and Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-2">
               <Label htmlFor="search">Search Users</Label>
               <div className="relative">
@@ -569,7 +569,7 @@ export default function Users() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-2">
               <Label htmlFor="first_name">First Name *</Label>
               <Input

@@ -466,7 +466,7 @@ export default function Inventory() {
   }, [debouncedSearchQuery, filterCategory, filterStatus, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Inventory Management</h1>
@@ -481,7 +481,7 @@ export default function Inventory() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-1 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-6 md:gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -542,7 +542,7 @@ export default function Inventory() {
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
               <Input
@@ -993,7 +993,7 @@ export default function Inventory() {
           </DialogHeader>
           <div className="space-y-2 md:space-y-4">
             <div className="p-4 bg-muted rounded-lg">
-              <div className="grid grid-cols-2 gap-1 md:gap-4 text-xs sm:text-sm">
+              <div className="grid grid-cols-2 gap-4 md:gap-6 text-xs sm:text-sm">
                 <div>
                   <p className="text-muted-foreground">System Count</p>
                   <p className="text-lg sm:text-xl md:text-2xl font-bold">{selectedItem?.current_stock}</p>
@@ -1050,7 +1050,7 @@ export default function Inventory() {
           </DialogHeader>
           <div className="space-y-2 md:space-y-4">
             <div className="p-4 bg-muted rounded-lg">
-              <div className="grid grid-cols-2 gap-1 md:gap-4 text-xs sm:text-sm">
+              <div className="grid grid-cols-2 gap-4 md:gap-6 text-xs sm:text-sm">
                 <div>
                   <p className="text-muted-foreground">Available</p>
                   <p className="text-lg sm:text-xl md:text-2xl font-bold">{selectedItem?.available_stock}</p>

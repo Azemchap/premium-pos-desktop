@@ -226,7 +226,7 @@ export default function Reports() {
   );
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">Financial Reports & Analytics</h1>
@@ -243,7 +243,7 @@ export default function Reports() {
       {/* Date Range Selector */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2">
               <Label>Date Range</Label>
               <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
@@ -286,7 +286,7 @@ export default function Reports() {
       </Card>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 md:gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-32" />
           ))}
@@ -304,7 +304,7 @@ export default function Reports() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-3 sm:space-y-3 md:space-y-6">
             {/* Key Revenue Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 md:gap-6">
               <MetricCard
                 title="Total Sales"
                 value={salesReport ? formatCurrency(salesReport.total_sales) : '0'}
@@ -340,7 +340,7 @@ export default function Reports() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-1 md:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
                   <div className="p-4 bg-green-50 rounded-lg">
                     <p className="text-sm text-green-800 font-medium">Cash</p>
                     <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">
@@ -431,7 +431,7 @@ export default function Reports() {
           {/* Financial Tab */}
           <TabsContent value="financial" className="space-y-3 sm:space-y-3 md:space-y-6">
             {/* Financial Health Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 md:gap-6">
               <MetricCard
                 title="Gross Profit Margin"
                 value={`${financialMetrics?.gross_profit_margin.toFixed(1) || 0}%`}
@@ -505,7 +505,7 @@ export default function Reports() {
                 <CardTitle>Key Performance Indicators (KPIs)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-4 md:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 md:gap-6">
                   <div className="p-4 bg-muted rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">Inventory Turnover Ratio</span>
@@ -533,7 +533,7 @@ export default function Reports() {
 
           {/* Cash Flow Tab */}
           <TabsContent value="cashflow" className="space-y-3 sm:space-y-3 md:space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 md:gap-6">
               <MetricCard
                 title="Cash Inflow"
                 value={formatCurrency(cashFlow?.cash_inflow || 0)}

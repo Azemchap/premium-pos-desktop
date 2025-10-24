@@ -8,6 +8,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import {
     AlertCircle,
     ArrowRight,
@@ -183,13 +184,13 @@ export default function Dashboard() {
 
     if (loading) {
         return (
-            <div className="space-y-3 sm:space-y-3 md:space-y-6">
+            <div className="space-y-6 md:space-y-8">
                 <div className="flex items-center justify-between">
                     <Skeleton className="h-8 w-32" />
                     <Skeleton className="h-10 w-32" />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-4 ">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     {Array.from({ length: 4 }).map((_, i) => (
                         <Card key={i}>
                             <CardContent className="p-6">
@@ -206,7 +207,7 @@ export default function Dashboard() {
                     ))}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 sm:gap-4 ">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                     {Array.from({ length: 2 }).map((_, i) => (
                         <Card key={i}>
                             <CardHeader>
@@ -233,11 +234,11 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="space-y-3 sm:space-y-3 md:space-y-6">
+        <div className="space-y-6 md:space-y-8">
             {/* Enhanced Header with Store Info & Time */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4 md:gap-6">
                         <h1 className="text-xl sm:text-lg  md:text-2xl  font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
                             {getGreeting()}, {user?.first_name}!
                         </h1>
@@ -255,7 +256,7 @@ export default function Dashboard() {
                         )}
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4 md:gap-6">
                     <div className="hidden md:flex flex-col items-end">
                         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
                             <Clock className="w-4 h-4" />
@@ -284,12 +285,12 @@ export default function Dashboard() {
             </div>
 
             {/* Enhanced Stats Grid with Growth Indicators */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-1 md:gap-4 sm:gap-4 ">
-                <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-green-500">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2 md:mb-4">
-                            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg">
-                                <DollarSign className="w-6 h-6 text-white" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-green-500 dark:border-l-green-600 hover:scale-105">
+                    <CardContent className="p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 shadow-lg">
+                                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             </div>
                             {getSalesGrowth() !== 0 && (
                                 <Badge 
@@ -306,13 +307,13 @@ export default function Dashboard() {
                             )}
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">
+                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
                                 Today's Sales
                             </p>
-                            <p className="text-xl sm:text-lg  md:text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+                            <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-400">
                                 {formatCurrency(stats?.today_sales || 0)}
                             </p>
-                            <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1">
+                            <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2 flex items-center gap-1">
                                 <ShoppingCart className="w-3 h-3" />
                                 {stats?.today_transactions || 0} transactions
                             </p>
@@ -320,11 +321,11 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2 md:mb-4">
-                            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                                <BarChart3 className="w-6 h-6 text-white" />
+                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary dark:border-l-primary hover:scale-105">
+                    <CardContent className="p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-primary to-blue-600 dark:from-primary dark:to-blue-600 shadow-lg">
+                                <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             </div>
                             <Badge variant="outline" className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
@@ -332,24 +333,24 @@ export default function Dashboard() {
                             </Badge>
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">
+                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
                                 Week Sales
                             </p>
-                            <p className="text-xl sm:text-lg  md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                            <p className="text-lg md:text-2xl font-bold text-primary">
                                 {formatCurrency(stats?.week_sales || 0)}
                             </p>
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2">
                                 Avg: {formatCurrency((stats?.week_sales || 0) / 7)}/day
                             </p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-purple-500">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2 md:mb-4">
-                            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
-                                <Package className="w-6 h-6 text-white" />
+                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-purple-500 dark:border-l-purple-600 hover:scale-105">
+                    <CardContent className="p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 shadow-lg">
+                                <Package className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             </div>
                             <Button 
                                 variant="ghost" 
@@ -361,13 +362,13 @@ export default function Dashboard() {
                             </Button>
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">
+                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
                                 Products
                             </p>
-                            <p className="text-xl sm:text-lg  md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                            <p className="text-lg md:text-2xl font-bold text-purple-600 dark:text-purple-400">
                                 {stats?.total_products || 0}
                             </p>
-                            <div className="mt-3">
+                            <div className="mt-2 md:mt-3">
                                 <div className="flex justify-between text-xs text-muted-foreground mb-1">
                                     <span>Stock Health</span>
                                     <span>{getStockHealth().toFixed(0)}%</span>
@@ -378,20 +379,20 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className={`hover:shadow-lg transition-all duration-300 border-l-4 ${
-                    (stats?.low_stock_items || 0) > 0 ? 'border-l-orange-500' : 'border-l-green-500'
+                <Card className={`hover:shadow-xl transition-all duration-300 border-l-4 hover:scale-105 ${
+                    (stats?.low_stock_items || 0) > 0 ? 'border-l-orange-500 dark:border-l-orange-600' : 'border-l-green-500 dark:border-l-green-600'
                 }`}>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2 md:mb-4">
-                            <div className={`p-3 rounded-xl shadow-lg ${
+                    <CardContent className="p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                            <div className={`p-2 md:p-3 rounded-xl shadow-lg ${
                                 (stats?.low_stock_items || 0) > 0 
-                                    ? 'bg-gradient-to-br from-orange-500 to-orange-600' 
-                                    : 'bg-gradient-to-br from-green-500 to-green-600'
+                                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700' 
+                                    : 'bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700'
                             }`}>
                                 {(stats?.low_stock_items || 0) > 0 ? (
-                                    <AlertCircle className="w-6 h-6 text-white" />
+                                    <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
                                 ) : (
-                                    <Zap className="w-6 h-6 text-white" />
+                                    <Zap className="w-5 h-5 md:w-6 md:h-6 text-white" />
                                 )}
                             </div>
                             {(stats?.low_stock_items || 0) > 0 && (
@@ -399,24 +400,24 @@ export default function Dashboard() {
                                     variant="ghost" 
                                     size="sm"
                                     onClick={() => navigate('/inventory')}
-                                    className="h-8 text-orange-600"
+                                    className="h-8 text-orange-600 dark:text-orange-400"
                                 >
                                     <ArrowRight className="w-4 h-4" />
                                 </Button>
                             )}
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">
+                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
                                 Low Stock Alerts
                             </p>
-                            <p className={`text-3xl font-bold ${
+                            <p className={`text-lg md:text-2xl font-bold ${
                                 (stats?.low_stock_items || 0) > 0 
-                                    ? 'text-orange-600' 
-                                    : 'text-green-600'
+                                    ? 'text-orange-600 dark:text-orange-400' 
+                                    : 'text-green-600 dark:text-green-400'
                             }`}>
                                 {stats?.low_stock_items || 0}
                             </p>
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2">
                                 {(stats?.low_stock_items || 0) > 0 
                                     ? 'Need attention' 
                                     : 'All products healthy'}
@@ -427,66 +428,74 @@ export default function Dashboard() {
             </div>
 
             {/* Quick Actions */}
-            <Card className="border-2 border-dashed hover:border-primary transition-colors">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-1 sm:gap-2">
+            <Card className="border-2 border-dashed hover:border-primary transition-colors shadow-md">
+                <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 md:gap-3 text-lg md:text-xl">
                         <Zap className="w-5 h-5 text-yellow-500" />
                         Quick Actions
                     </CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-3">
+                <CardContent className="pt-0">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-1 sm:gap-2  hover:border-green-500"
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-green-500 hover:bg-green-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/sales')}
                         >
-                            <ShoppingCart className="w-5 h-5 text-green-600" />
-                            <span className="text-sm font-medium">New Sales</span>
+                            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                                <ShoppingCart className="w-6 h-6 md:w-7 md:h-7 text-green-600 dark:text-green-400" />
+                            </div>
+                            <span className="text-sm md:text-base font-medium">New Sale</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-1 sm:gap-2  hover:border-blue-500 "
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-primary hover:bg-blue-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/products')}
                         >
-                            <Plus className="w-5 h-5 text-blue-600" />
-                            <span className="text-sm font-medium">Add Product</span>
+                            <div className="p-2 rounded-lg bg-blue-100">
+                                <Plus className="w-6 h-6 md:w-7 md:h-7 text-primary" />
+                            </div>
+                            <span className="text-sm md:text-base font-medium">Add Product</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-1 sm:gap-2  hover:border-purple-500 "
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-purple-500 hover:bg-purple-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/inventory')}
                         >
-                            <Package className="w-5 h-5 text-purple-600" />
-                            <span className="text-sm font-medium">Manage Stock</span>
+                            <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                                <Package className="w-6 h-6 md:w-7 md:h-7 text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <span className="text-sm md:text-base font-medium">Manage Stock</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col items-center justify-center gap-1 sm:gap-2  hover:border-orange-500 hover:bg-none "
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-orange-500 hover:bg-orange-50 transition-all hover:shadow-md"
                             onClick={() => navigate('/reports')}
                         >
-                            <BarChart3 className="w-5 h-5 text-orange-600" />
-                            <span className="text-sm font-medium">View Reports</span>
+                            <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                                <BarChart3 className="w-6 h-6 md:w-7 md:h-7 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <span className="text-sm md:text-base font-medium">View Reports</span>
                         </Button>
                     </div>
                 </CardContent>
             </Card>
 
             {/* Additional Stats - Enhanced */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4 sm:gap-4 ">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 <Card className="md:col-span-2">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <TrendingUp className="w-5 h-5 text-green-600" />
+                            <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
                             Sales Performance
                         </CardTitle>
                         <Badge variant="outline">This Month</Badge>
                     </CardHeader>
                     <CardContent className="space-y-2 md:space-y-4">
-                        <div className="grid grid-cols-2 gap-1 md:gap-4">
+                        <div className="grid grid-cols-2 gap-4 md:gap-6">
                             <div className="space-y-2">
                                 <p className="text-sm text-muted-foreground">Month Sales</p>
                                 <p className="text-lg  md:text-2xl font-bold">
@@ -511,7 +520,7 @@ export default function Dashboard() {
                         <div className="pt-4 border-t">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Daily Average</span>
-                                <span className="font-semibold text-blue-600">
+                                <span className="font-semibold text-primary">
                                     {formatCurrency((stats?.month_sales || 0) / 30)}
                                 </span>
                             </div>
@@ -522,7 +531,7 @@ export default function Dashboard() {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <Package className="w-5 h-5 text-purple-600" />
+                            <Package className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                             Inventory
                         </CardTitle>
                     </CardHeader>
@@ -543,11 +552,11 @@ export default function Dashboard() {
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Health Score</span>
                                 <div className="flex items-center gap-1 sm:gap-2">
-                                    <span className="font-bold text-green-600">
+                                    <span className="font-bold text-green-600 dark:text-green-400">
                                         {getStockHealth().toFixed(0)}%
                                     </span>
                                     {getStockHealth() >= 90 ? (
-                                        <Sparkles className="w-4 h-4 text-green-600" />
+                                        <Sparkles className="w-4 h-4 text-green-600 dark:text-green-400" />
                                     ) : getStockHealth() >= 70 ? (
                                         <TrendingUp className="w-4 h-4 text-yellow-600" />
                                     ) : (
@@ -561,11 +570,11 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Activity - Enhanced */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 md:gap-4 sm:gap-4 ">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-3">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <ShoppingCart className="w-5 h-5 text-green-600" />
+                            <ShoppingCart className="w-5 h-5 text-green-600 dark:text-green-400" />
                             Recent Sales
                         </CardTitle>
                         <Button 
@@ -583,11 +592,11 @@ export default function Dashboard() {
                                 recentActivity.sales.map((sale) => (
                                     <div 
                                         key={sale.id} 
-                                        className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border"
+                                        className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 dark:hover:bg-muted transition-colors border border-border"
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
-                                                <DollarSign className="w-4 h-4 text-green-600" />
+                                        <div className="flex items-center gap-4 md:gap-6">
+                                            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                                                <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
                                             </div>
                                             <div>
                                                 <p className="font-medium">{sale.sale_number}</p>
@@ -600,7 +609,7 @@ export default function Dashboard() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <p className="font-bold text-green-600">
+                                        <p className="font-bold text-green-600 dark:text-green-400">
                                             {formatCurrency(sale.total_amount)}
                                         </p>
                                     </div>
@@ -630,7 +639,7 @@ export default function Dashboard() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-3">
                         <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <AlertCircle className="w-5 h-5 text-orange-600" />
+                            <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                             Low Stock Alerts
                         </CardTitle>
                         <Button 
@@ -649,18 +658,18 @@ export default function Dashboard() {
                                     return (
                                         <div 
                                             key={item.id} 
-                                            className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border"
+                                            className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 dark:hover:bg-muted transition-colors border border-border"
                                         >
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-4 md:gap-6">
                                                 <div className={`p-2 rounded-lg ${
                                                     stockStatus.color === 'destructive' 
-                                                        ? 'bg-red-100 dark:bg-red-900/20' 
-                                                        : 'bg-yellow-100 dark:bg-yellow-900/20'
+                                                        ? 'bg-red-100 dark:bg-red-900/30' 
+                                                        : 'bg-yellow-100 dark:bg-yellow-900/30'
                                                 }`}>
                                                     <Package className={`w-4 h-4 ${
                                                         stockStatus.color === 'destructive' 
-                                                            ? 'text-red-600' 
-                                                            : 'text-yellow-600'
+                                                            ? 'text-red-600 dark:text-red-400' 
+                                                            : 'text-yellow-600 dark:text-yellow-400'
                                                     }`} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
@@ -681,10 +690,10 @@ export default function Dashboard() {
                                 })
                             ) : (
                                 <div className="text-center py-6 md:py-12 text-muted-foreground">
-                                    <div className="w-16 h-16 mx-auto mb-2 md:mb-4 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                                        <Zap className="w-8 h-8 text-green-600" />
+                                    <div className="w-16 h-16 mx-auto mb-2 md:mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                        <Zap className="w-8 h-8 text-green-600 dark:text-green-400" />
                                     </div>
-                                    <p className="font-medium text-green-600">All Products Healthy!</p>
+                                    <p className="font-medium text-green-600 dark:text-green-400">All Products Healthy!</p>
                                     <p className="text-sm">Your inventory is well-stocked</p>
                                 </div>
                             )}
@@ -694,20 +703,37 @@ export default function Dashboard() {
             </div>
 
             {/* Footer Info */}
-            <Card className="bg-gradient-to-r from-primary/5 to-blue-600/5 border-dashed">
-                <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-1 md:gap-4">
-                        <div className="flex items-center gap-3">
-                            <Store className="w-8 h-8 text-primary" />
+            <Card className="bg-gradient-to-r from-primary/10 to-blue-600/10 border-dashed border-2 shadow-md">
+                <CardContent className="p-6 md:p-8">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
+                        <div className="flex items-center gap-4 md:gap-6">
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                                {storeConfig?.logo_url ? (
+                                    <img 
+                                        src={convertFileSrc(storeConfig.logo_url)} 
+                                        alt={storeConfig?.name || 'Store logo'} 
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            console.error("Logo failed to load in footer");
+                                            e.currentTarget.style.display = 'none';
+                                            if (e.currentTarget.parentElement) {
+                                                e.currentTarget.parentElement.innerHTML = '<svg class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <Store className="w-6 h-6 text-white" />
+                                )}
+                            </div>
                             <div>
-                                <p className="font-semibold">{storeConfig?.name}</p>
+                                <p className="font-semibold text-lg">{storeConfig?.name || 'ZTAD POS'}</p>
                                 <p className="text-sm text-muted-foreground">
                                     {storeConfig?.email} • Tax Rate: {((storeConfig?.tax_rate || 0) * 100).toFixed(1)}%
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-                            <span>Powered by Premium POS</span>
+                            <span>Point of Sale System</span>
                             <Badge variant="outline">v1.0</Badge>
                         </div>
                     </div>
