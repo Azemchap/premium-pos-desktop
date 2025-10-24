@@ -44,7 +44,7 @@ function App() {
   return (
     <>
       <SettingsApplier />
-      <Toaster position="top-right" richColors />
+      <Toaster position="bottom-right" richColors />
       <DashboardLayout>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
