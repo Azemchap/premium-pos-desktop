@@ -192,7 +192,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               <li className="mt-auto">
                 <div className="space-y-3">
-                  <div className="p-4 bg-gradient-to-br from-primary/5 to-blue-50 rounded-xl border border-primary/10">
+                  <div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/10">
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-8 h-8">
                         {user?.profile_image_url ? (

@@ -442,18 +442,18 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         <Button
                             variant="outline"
-                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-green-500 hover:bg-green-50 transition-all hover:shadow-md"
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-50/5 transition-all hover:shadow-md"
                             onClick={() => navigate('/sales')}
                         >
-                            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-                                <ShoppingCart className="w-6 h-6 md:w-7 md:h-7 text-green-600 dark:text-green-400" />
+                            <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/30">
+                                <ShoppingCart className="w-6 h-6 md:w-7 md:h-7 text-green-700 dark:text-green-400" />
                             </div>
                             <span className="text-sm md:text-base font-medium">New Sale</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-primary hover:bg-blue-50 transition-all hover:shadow-md"
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-primary hover:bg-blue-50 dark:hover:bg-blue-50/5 transition-all hover:shadow-md"
                             onClick={() => navigate('/products')}
                         >
                             <div className="p-2 rounded-lg bg-blue-100">
@@ -464,7 +464,7 @@ export default function Dashboard() {
                         
                         <Button
                             variant="outline"
-                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-purple-500 hover:bg-purple-50 transition-all hover:shadow-md"
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-50/5 transition-all hover:shadow-md"
                             onClick={() => navigate('/inventory')}
                         >
                             <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
@@ -475,7 +475,7 @@ export default function Dashboard() {
                         
                         <Button
                             variant="outline"
-                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-orange-500 hover:bg-orange-50 transition-all hover:shadow-md"
+                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-orange-500 hover:bg-orange-50  dark:hover:bg-orange-50/5 transition-all hover:shadow-md"
                             onClick={() => navigate('/reports')}
                         >
                             <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
