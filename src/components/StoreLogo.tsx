@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Store as StoreIcon } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { Skeleton } from "./ui/skeleton";
 
 interface StoreConfig {
@@ -11,7 +12,7 @@ interface StoreConfig {
   email?: string;
   tax_rate: number;
   currency: string;
-  timezone: string;
+  logo_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -62,13 +63,27 @@ export default function StoreLogo({
   }
 
   const storeName = storeConfig?.name || "Premium POS";
+  const logoUrl = storeConfig?.logo_url ? convertFileSrc(storeConfig.logo_url) : null;
 
   // Desktop variant (sidebar)
   if (variant === "desktop") {
     return (
       <div className={`flex items-center space-x-3 ${className}`}>
-        <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-          <StoreIcon className="text-primary-foreground w-5 h-5" />
+        <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={storeName} 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to icon if image fails to load
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement!.innerHTML = '<svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+              }}
+            />
+          ) : (
+            <StoreIcon className="text-primary-foreground w-5 h-5" />
+          )}
         </div>
         <div>
           <span className="font-bold text-xl bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
@@ -86,8 +101,21 @@ export default function StoreLogo({
   if (variant === "mobile") {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
-        <div className="w-8 h-8 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-          <StoreIcon className="text-primary-foreground w-4 h-4" />
+        <div className="w-8 h-8 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center shadow-lg overflow-hidden">
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={storeName} 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to icon if image fails to load
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement!.innerHTML = '<svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+              }}
+            />
+          ) : (
+            <StoreIcon className="text-primary-foreground w-4 h-4" />
+          )}
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-sm leading-none">{storeName}</span>
@@ -103,8 +131,21 @@ export default function StoreLogo({
   if (variant === "compact") {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
-        <div className="w-6 h-6 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center shadow">
-          <StoreIcon className="text-primary-foreground w-3 h-3" />
+        <div className="w-6 h-6 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center shadow overflow-hidden">
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={storeName} 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to icon if image fails to load
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement!.innerHTML = '<svg class="w-3 h-3 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+              }}
+            />
+          ) : (
+            <StoreIcon className="text-primary-foreground w-3 h-3" />
+          )}
         </div>
         <span className="font-semibold text-sm">{storeName}</span>
       </div>

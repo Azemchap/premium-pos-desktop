@@ -214,6 +214,7 @@ pub struct StoreConfig {
     pub email: Option<String>,
     pub tax_rate: f64,
     pub currency: String,
+    pub logo_url: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -229,6 +230,7 @@ pub struct UpdateStoreConfigRequest {
     pub email: Option<String>,
     pub tax_rate: f64,
     pub currency: String,
+    pub logo_url: Option<String>,
 }
 
 // Shift models

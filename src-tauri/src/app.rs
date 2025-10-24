@@ -218,6 +218,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::sales::search_sales,
             commands::store::get_store_config,
             commands::store::update_store_config,
+            commands::store::upload_store_logo,
+            commands::store::remove_store_logo,
             commands::shifts::create_shift,
             commands::shifts::close_shift,
             commands::shifts::get_current_shift,

@@ -415,5 +415,14 @@ pub fn get_migrations() -> Vec<Migration> {
                 SELECT 1;
             "#,
         kind: MigrationKind::Up,
+    },
+        Migration {
+        version: 7,
+        description: "add_logo_url_to_locations",
+        sql: r#"
+                -- Add logo_url field to locations table
+                ALTER TABLE locations ADD COLUMN logo_url TEXT;
+            "#,
+        kind: MigrationKind::Up,
     }]
 }

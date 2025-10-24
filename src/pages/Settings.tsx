@@ -23,16 +23,20 @@ import { useSettings } from "@/hooks/useSettings";
 import { useAuthStore } from "@/store/authStore";
 import { playSound } from "@/store/settingsStore";
 import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import {
   Bell,
+  Image,
   Palette,
   Receipt,
   RefreshCw,
   Save,
   Settings as SettingsIcon,
-  Store
+  Store,
+  Upload,
+  X
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface StoreConfig {
@@ -46,6 +50,7 @@ interface StoreConfig {
   email?: string;
   tax_rate: number;
   currency: string;
+  logo_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -60,11 +65,13 @@ interface UpdateStoreConfigRequest {
   email?: string;
   tax_rate: number;
   currency: string;
+  logo_url?: string;
 }
 
 export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [storeConfig, setStoreConfig] = useState<StoreConfig | null>(null);
   const [storeForm, setStoreForm] = useState<UpdateStoreConfigRequest>({
     name: "",
@@ -76,7 +83,9 @@ export default function Settings() {
     email: "",
     tax_rate: 0,
     currency: "USD",
+    logo_url: undefined,
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { theme, toggleTheme } = useAuthStore();
   const { currency, changeCurrency, availableCurrencies } = useCurrency();
@@ -97,6 +106,7 @@ export default function Settings() {
         email: result.email || "",
         tax_rate: result.tax_rate,
         currency: result.currency,
+        logo_url: result.logo_url,
       });
     } catch (error) {
       console.error("Failed to load store config:", error);
@@ -145,8 +155,75 @@ export default function Settings() {
         email: storeConfig.email || "",
         tax_rate: storeConfig.tax_rate,
         currency: storeConfig.currency,
+        logo_url: storeConfig.logo_url,
       });
       toast.info("Changes reset to saved values");
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    try {
+      setUploadingLogo(true);
+      
+      // Read file as array buffer
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const fileData = Array.from(uint8Array);
+
+      // Upload to backend
+      const logoUrl = await invoke<string>("upload_store_logo", {
+        fileData,
+        fileName: file.name,
+      });
+
+      setStoreForm({ ...storeForm, logo_url: logoUrl });
+      toast.success("✅ Logo uploaded successfully");
+      playSound('success', preferences);
+      
+      // Reload config to get updated data
+      loadStoreConfig();
+    } catch (error) {
+      console.error("Failed to upload logo:", error);
+      toast.error("❌ Failed to upload logo");
+      playSound('error', preferences);
+    } finally {
+      setUploadingLogo(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    try {
+      setUploadingLogo(true);
+      await invoke("remove_store_logo");
+      setStoreForm({ ...storeForm, logo_url: undefined });
+      toast.success("✅ Logo removed successfully");
+      playSound('success', preferences);
+      loadStoreConfig();
+    } catch (error) {
+      console.error("Failed to remove logo:", error);
+      toast.error("❌ Failed to remove logo");
+      playSound('error', preferences);
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
@@ -230,6 +307,76 @@ export default function Settings() {
                         onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
                         placeholder="My Premium Store"
                       />
+                    </div>
+
+                    {/* Logo Upload Section */}
+                    <div className="space-y-3">
+                      <Label>Store Logo</Label>
+                      <div className="flex items-start gap-4 md:gap-6">
+                        {/* Logo Preview */}
+                        <div className="flex-shrink-0">
+                          <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden border-2 border-border">
+                            {storeForm.logo_url ? (
+                              <img 
+                                src={convertFileSrc(storeForm.logo_url)} 
+                                alt="Store logo" 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <Store className="w-12 h-12 md:w-16 md:h-16 text-white" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Upload Controls */}
+                        <div className="flex-1 space-y-3">
+                          <p className="text-sm text-muted-foreground">
+                            Upload your store logo. Recommended size: 512x512px. Max file size: 5MB.
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={uploadingLogo}
+                            >
+                              {uploadingLogo ? (
+                                <>
+                                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Upload Logo
+                                </>
+                              )}
+                            </Button>
+                            {storeForm.logo_url && (
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                onClick={handleRemoveLogo}
+                                disabled={uploadingLogo}
+                              >
+                                <X className="w-4 h-4 mr-2" />
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="hidden"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
