@@ -1,11 +1,5 @@
 // src-tauri/src/app.rs
 
-pub mod app_logic; // rename your original app module to app_logic to avoid conflict
-pub mod commands;
-pub mod database;
-pub mod models;
-pub mod seeder_building_materials;
-
 use crate::{commands, database, seeder_building_materials as seeder};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
