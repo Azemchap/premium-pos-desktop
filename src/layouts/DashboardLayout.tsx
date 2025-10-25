@@ -51,7 +51,7 @@ const navigation: NavigationItem[] = [
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
   { name: "Inventory", href: "/inventory", icon: Database },
   { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Categories", href: "/master-data", icon: Tag, roles: ["Admin", "Manager"] },
+  { name: "Master Data", href: "/master-data", icon: Tag, roles: ["Admin", "Manager"] },
   { name: "Products", href: "/products", icon: Package, roles: ["Admin", "Manager"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["Admin", "Manager"] },
   { name: "Users", href: "/users", icon: Users, roles: ["Admin", "Manager"] },
@@ -192,7 +192,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               <li className="mt-auto">
                 <div className="space-y-3">
-                  <div className="p-4 bg-gradient-to-br from-primary/5 to-blue-50 rounded-xl border border-primary/10">
+                  <div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/10">
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-8 h-8">
                         {user?.profile_image_url ? (

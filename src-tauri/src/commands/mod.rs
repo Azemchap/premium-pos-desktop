@@ -12,3 +12,4 @@ pub mod reports;
 pub mod notifications;
 pub mod master_data;
 pub mod stock;
+pub mod variants;

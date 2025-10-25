@@ -2,6 +2,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ProductVariantManager, { VariantCombination } from "@/components/ProductVariantManager";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -131,6 +133,10 @@ export default function Products() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Variant management
+  const [hasVariants, setHasVariants] = useState(false);
+  const [variantCombinations, setVariantCombinations] = useState<VariantCombination[]>([]);
+
   // Master data from database
   const [categories, setCategories] = useState<MasterItem[]>([]);
   const [brands, setBrands] = useState<MasterItem[]>([]);
@@ -199,19 +205,61 @@ export default function Products() {
       return;
     }
 
+    // Validate variants if enabled
+    if (hasVariants && variantCombinations.length === 0) {
+      toast.error("Please generate at least one variant or disable variants");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (editingProduct) {
+        // Update existing product
         await invoke("update_product", {
           productId: editingProduct.id,
           request: formData
         });
         toast.success(`✅ Product "${formData.name}" updated successfully!`);
       } else {
-        await invoke("create_product", {
+        // Create new product
+        const productResult = await invoke<Product>("create_product", {
           request: formData
         });
-        toast.success(`✅ Product "${formData.name}" created successfully!`);
+
+        // If variants are enabled, create all variant combinations
+        if (hasVariants && variantCombinations.length > 0) {
+          let successCount = 0;
+          let failCount = 0;
+
+          for (const variant of variantCombinations) {
+            try {
+              await invoke("create_product_variant", {
+                request: {
+                  product_id: productResult.id,
+                  sku: variant.sku,
+                  barcode: variant.barcode || null,
+                  variant_name: variant.variant_name,
+                  cost_price: variant.cost_price,
+                  selling_price: variant.selling_price,
+                  wholesale_price: variant.wholesale_price,
+                  variant_value_ids: variant.variant_value_ids,
+                }
+              });
+              successCount++;
+            } catch (err) {
+              console.error("Failed to create variant:", err);
+              failCount++;
+            }
+          }
+
+          if (failCount > 0) {
+            toast.warning(`Product created with ${successCount}/${variantCombinations.length} variants`);
+          } else {
+            toast.success(`✅ Product "${formData.name}" created with ${successCount} variants!`);
+          }
+        } else {
+          toast.success(`✅ Product "${formData.name}" created successfully!`);
+        }
       }
 
       setIsDialogOpen(false);
@@ -300,6 +348,8 @@ export default function Products() {
     });
     setEditingProduct(null);
     setValidationErrors({});
+    setHasVariants(false);
+    setVariantCombinations([]);
   };
 
   const openCreateDialog = () => {
@@ -982,6 +1032,38 @@ export default function Products() {
               </div>
             </div>
           </div>
+
+          {/* Product Variants Section */}
+          {!editingProduct && (
+            <div className="space-y-4 border-t pt-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="hasVariants"
+                  checked={hasVariants}
+                  onCheckedChange={(checked) => {
+                    setHasVariants(checked as boolean);
+                    if (!checked) {
+                      setVariantCombinations([]);
+                    }
+                  }}
+                />
+                <Label htmlFor="hasVariants" className="cursor-pointer font-semibold">
+                  This product has variants (sizes, colors, etc.)
+                </Label>
+              </div>
+
+              {hasVariants && (
+                <ProductVariantManager
+                  productName={formData.name}
+                  baseSku={formData.sku}
+                  baseCostPrice={formData.cost_price}
+                  baseSellingPrice={formData.selling_price}
+                  baseWholesalePrice={formData.wholesale_price}
+                  onVariantsChange={setVariantCombinations}
+                />
+              )}
+            </div>
+          )}
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
