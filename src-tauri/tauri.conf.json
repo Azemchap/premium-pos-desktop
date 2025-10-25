@@ -28,7 +28,7 @@
             }
         ],
         "security": {
-            "csp": "default-src 'self' tauri: asset: http://asset.localhost",
+            "csp": null,
             "assetProtocol": {
                 "enable": true,
                 "scope": [
@@ -41,7 +41,7 @@
     "bundle": {
         "active": true,
         "category": "Business",
-        "copyright": "© 2024 ZTAD POS",
+        "copyright": " 2024 ZTAD POS",
         "shortDescription": "ZTAD POS System",
         "longDescription": "ZTAD Point of Sale and Inventory Management System for retail locations",
         "targets": "all",

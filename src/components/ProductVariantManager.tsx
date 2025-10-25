@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { invoke } from "@tauri-apps/api/core";
-import { Layers, Plus, Trash2, Wand2 } from "lucide-react";
+import { Layers, Trash2, Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 

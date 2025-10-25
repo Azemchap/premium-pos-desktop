@@ -26,7 +26,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import {
   Bell,
-  Image,
   Palette,
   Receipt,
   RefreshCw,

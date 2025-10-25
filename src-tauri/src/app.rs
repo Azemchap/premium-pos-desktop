@@ -21,10 +21,10 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .level(LevelFilter::Debug)
                 .build(),
         )
-        // Async database initialization in setup hook
+        // Async database initialization in setup hook (blocking)
         .setup(|app| {
             let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
+            tauri::async_runtime::block_on(async move {
                 match initialize_database(&app_handle).await {
                     Ok(pool) => {
                         app_handle.manage(pool);
@@ -32,6 +32,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     Err(e) => {
                         eprintln!("❌ FATAL: Failed to initialize database: {}", e);
+                        std::process::exit(1);
                     }
                 }
             });

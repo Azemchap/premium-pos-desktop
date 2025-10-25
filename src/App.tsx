@@ -37,19 +37,21 @@ useEffect(() => {
 
             // Wait for backend to be ready with retries
             let retries = 0;
-            const maxRetries = 10;
+            const maxRetries = 30; // Increased timeout to 30 seconds
             
             while (retries < maxRetries) {
                 try {
                     // Try a simple command to check if backend is ready
-                    await invoke('verify_session');
+                    await invoke('verify_session', { sessionToken: '' });
+                    console.log(`✅ Backend ready after ${retries} retries`);
                     break; // Backend is ready
                 } catch (error) {
                     retries++;
+                    console.log(`Waiting for backend... attempt ${retries}/${maxRetries}`, error);
                     if (retries >= maxRetries) {
-                        throw new Error('Backend initialization timeout');
+                        throw new Error('Backend initialization timeout. Please check console logs and restart the application.');
                     }
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
 
