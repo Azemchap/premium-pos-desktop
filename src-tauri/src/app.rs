@@ -3,10 +3,10 @@
 use crate::{commands, database, seeder_building_materials as seeder};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
-use directories::ProjectDirs;
 use sqlx::{sqlite::SqlitePoolOptions, Executor, Row, SqlitePool};
 use std::fs::OpenOptions;
 use std::io::Write;
+use tauri::Manager;
 
 /// Apply migrations (simple runner splitting statements by ';')
 async fn apply_migrations(pool: &SqlitePool) -> Result<(), String> {
@@ -89,57 +89,53 @@ async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
     }
 }
 
-/// Main application entry point shared by desktop and mobile
-pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
-    // Determine data directory based on platform
-    let app_dir = if cfg!(target_os = "android") {
-        // On Android, use app-specific internal storage
-        std::path::PathBuf::from("/data/data/com.premiumpos.app/files")
-    } else {
-        // On desktop, use standard directories
-        ProjectDirs::from("com", "premiumpos", "Premium POS")
-            .map(|pd| pd.data_dir().to_path_buf())
-            .or_else(|| {
-                println!("DEBUG(main): ProjectDirs not available; falling back to cwd");
-                std::env::current_dir().ok()
-            })
-            .expect("Failed to determine an application directory")
-    };
+/// Initialize database with proper cross-platform path handling
+async fn initialize_database(
+    app_handle: &tauri::AppHandle,
+) -> Result<SqlitePool, Box<dyn std::error::Error>> {
+    // Use Tauri's path API for cross-platform compatibility
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
 
-    println!("DEBUG(main): resolved app_dir = {:?}", app_dir);
+    println!("DEBUG(main): resolved app_data_dir = {:?}", app_data_dir);
 
-    if let Err(e) = std::fs::create_dir_all(&app_dir) {
-        panic!("Failed to ensure app dir exists {:?}: {}", app_dir, e);
-    }
+    // Ensure directory exists
+    std::fs::create_dir_all(&app_data_dir).map_err(|e| {
+        format!(
+            "Failed to create app data directory {:?}: {}",
+            app_data_dir, e
+        )
+    })?;
 
-    let mut db_path = app_dir.clone();
+    let mut db_path = app_data_dir.clone();
     db_path.push("pos.db");
 
+    // Create database file if it doesn't exist
     if !db_path.exists() {
-        match OpenOptions::new().create(true).write(true).open(&db_path) {
-            Ok(mut f) => {
-                if let Err(e) = f.write_all(b"") {
-                    eprintln!(
-                        "WARN: failed to write to newly created db file {:?}: {}",
-                        db_path, e
-                    );
-                }
-            }
-            Err(e) => {
-                panic!("Failed to create database file {:?}: {}", db_path, e);
-            }
-        }
+        println!("DEBUG(main): creating new database file at {:?}", db_path);
+        OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(&db_path)
+            .and_then(|mut f| f.write_all(b""))
+            .map_err(|e| format!("Failed to create database file {:?}: {}", db_path, e))?;
     }
 
+    // Get absolute path
     let abs_db = db_path.canonicalize().unwrap_or_else(|_| db_path.clone());
     let mut conn_path = abs_db.to_string_lossy().to_string();
 
+    // Handle Windows verbatim prefix
     if cfg!(windows) {
         const VERBATIM_PREFIX: &str = r"\\?\";
         if conn_path.starts_with(VERBATIM_PREFIX) {
             conn_path = conn_path.trim_start_matches(VERBATIM_PREFIX).to_string();
         }
     }
+
+    // Normalize path separators
     conn_path = conn_path.replace('\\', "/");
 
     let conn_str = format!("sqlite:///{}", conn_path);
@@ -147,7 +143,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     println!("DEBUG(main): final db absolute path = {:?}", abs_db);
     println!("DEBUG(main): sqlx connection string = {}", conn_str);
 
-    let pool: SqlitePool = SqlitePoolOptions::new()
+    // Create connection pool
+    let pool = SqlitePoolOptions::new()
         .max_connections(10)
         .min_connections(2)
         .acquire_timeout(std::time::Duration::from_secs(30))
@@ -155,35 +152,55 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .max_lifetime(std::time::Duration::from_secs(1800))
         .connect(&conn_str)
         .await
-        .unwrap_or_else(|e| {
-            panic!("Failed to create SqlitePool for '{}': {}", conn_str, e);
-        });
+        .map_err(|e| format!("Failed to create SqlitePool for '{}': {}", conn_str, e))?;
 
-    if let Err(e) = apply_migrations(&pool).await {
-        panic!("Migration error: {}", e);
-    }
+    // Apply migrations
+    apply_migrations(&pool)
+        .await
+        .map_err(|e| format!("Migration error: {}", e))?;
 
-    if let Err(e) = ensure_admin(&pool).await {
-        panic!("Failed to ensure admin user: {}", e);
-    }
+    // Ensure admin user exists
+    ensure_admin(&pool)
+        .await
+        .map_err(|e| format!("Failed to ensure admin user: {}", e))?;
 
+    // Seed database
     if let Err(e) = seeder::seed_database(&pool).await {
         eprintln!("Warning: Failed to seed database: {}", e);
     }
 
+    Ok(pool)
+}
+
+/// Main application entry point shared by desktop and mobile
+pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     tauri::Builder::default()
-        .plugin(
-            tauri_plugin_sql::Builder::default()
-                .add_migrations(&conn_str, get_migrations())
-                .build(),
-        )
-        .manage(pool)
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_haptics::init())
-        // Barcode scanner doesn't use init() - it's invoked directly via commands
-        // .plugin(tauri_plugin_barcode_scanner::init())
+        .setup(|app| {
+            let app_handle = app.handle().clone();
+
+            // Initialize database in a separate thread to avoid blocking
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                rt.block_on(async move {
+                    match initialize_database(&app_handle).await {
+                        Ok(pool) => {
+                            app_handle.manage(pool);
+                            println!("DEBUG(main): Database initialized successfully");
+                        }
+                        Err(e) => {
+                            eprintln!("FATAL: Failed to initialize database: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                });
+            });
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::auth::login_user,
             commands::auth::register_user,

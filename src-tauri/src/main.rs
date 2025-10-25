@@ -7,7 +7,7 @@ mod models;
 mod seeder_building_materials;
 mod app;
 
-#[tokio::main]
-async fn main() {
-    app::run().await.expect("error while running tauri application");
+fn main() {
+    // Call the synchronous app::run() directly
+    app::run().expect("error while running tauri application");
 }
