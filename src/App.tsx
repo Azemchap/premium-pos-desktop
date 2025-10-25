@@ -15,6 +15,7 @@ import Settings from "@/pages/Settings";
 import Unauthorized from "@/pages/Unauthorized";
 import Users from "@/pages/Users";
 import { useAuthStore } from "@/store/authStore";
+import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -24,34 +25,46 @@ function App() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
 
-  useEffect(() => {
-    console.log("🔧 App component mounted");
-    console.log("🔐 Authentication status:", isAuthenticated);
-
-    // Initialize app
+useEffect(() => {
     const initialize = async () => {
-      try {
-        // Apply theme
-        if (theme === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
+        try {
+            // Apply theme
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            // Wait for backend to be ready with retries
+            let retries = 0;
+            const maxRetries = 10;
+            
+            while (retries < maxRetries) {
+                try {
+                    // Try a simple command to check if backend is ready
+                    await invoke('verify_session');
+                    break; // Backend is ready
+                } catch (error) {
+                    retries++;
+                    if (retries >= maxRetries) {
+                        throw new Error('Backend initialization timeout');
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+
+            setIsInitializing(false);
+            console.log("✅ App initialized successfully");
+        } catch (error) {
+            console.error("❌ App initialization error:", error);
+            setInitError(error instanceof Error ? error.message : "Unknown initialization error");
+            setIsInitializing(false);
         }
-
-        // Give database time to initialize (especially on mobile)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        setIsInitializing(false);
-        console.log("✅ App initialized successfully");
-      } catch (error) {
-        console.error("❌ App initialization error:", error);
-        setInitError(error instanceof Error ? error.message : "Unknown initialization error");
-        setIsInitializing(false);
-      }
     };
 
     initialize();
-  }, [theme]);
+}, [theme]);
+
 
   // Show initialization error
   if (initError) {

@@ -8,7 +8,11 @@ pub mod models;
 pub mod seeder_building_materials;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
-    // Call the synchronous app::run() directly
-    app::run().expect("error while running tauri application");
+pub fn run() -> Result<(), Box<dyn std::error::Error>> {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::default()
+            .level(log::LevelFilter::Debug)
+            .build())
+            app::run().expect("error while running tauri application");
+    Ok(())
 }

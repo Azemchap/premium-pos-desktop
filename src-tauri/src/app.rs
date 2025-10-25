@@ -1,206 +1,51 @@
-// Shared application logic for both desktop and mobile
+pub mod app;
+pub mod commands;
+pub mod database;
+pub mod models;
+pub mod seeder_building_materials;
 
 use crate::{commands, database, seeder_building_materials as seeder};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use database::get_migrations;
+use log::LevelFilter;
 use sqlx::{sqlite::SqlitePoolOptions, Executor, Row, SqlitePool};
 use std::fs::OpenOptions;
 use std::io::Write;
 use tauri::Manager;
 
-/// Apply migrations (simple runner splitting statements by ';')
-async fn apply_migrations(pool: &SqlitePool) -> Result<(), String> {
-    let migrations = get_migrations();
-    println!("DEBUG(main): applying {} migration(s)", migrations.len());
-    for mig in migrations {
-        println!(
-            "DEBUG(main): applying migration version {}: {}",
-            mig.version, mig.description
-        );
-
-        for stmt in mig.sql.split(';') {
-            let s = stmt.trim();
-            if s.is_empty() {
-                continue;
-            }
-            let preview = if s.len() > 80 { &s[..80] } else { s };
-            println!("DEBUG(main): executing statement (preview): {}", preview);
-            pool.execute(s).await.map_err(|e| {
-                format!(
-                    "Migration failed (v{}): {} -- stmt: {}",
-                    mig.version, e, preview
-                )
-            })?;
-        }
-    }
-    println!("DEBUG(main): migrations applied successfully");
-    Ok(())
-}
-
-/// Ensure admin user exists with default password
-async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
-    let row_opt = sqlx::query("SELECT password_hash FROM users WHERE username = 'admin'")
-        .fetch_optional(pool)
-        .await
-        .map_err(|e| format!("Failed to query admin user: {}", e))?;
-
-    if let Some(row) = row_opt {
-        let stored_hash: String = row
-            .try_get("password_hash")
-            .map_err(|e| format!("Failed to get password_hash: {}", e))?;
-        let desired_pass = "admin123";
-        match verify(desired_pass, &stored_hash) {
-            Ok(true) => {
-                println!("DEBUG(main): admin password already matches desired default");
-                return Ok(());
-            }
-            Ok(false) => {
-                println!("DEBUG(main): admin password does NOT match; updating");
-            }
-            Err(e) => {
-                return Err(format!("bcrypt verify error: {}", e));
-            }
-        }
-        let new_hash =
-            hash(desired_pass, DEFAULT_COST).map_err(|e| format!("hash error: {}", e))?;
-        sqlx::query("UPDATE users SET password_hash = ?1, email = 'admin@ztadpos.com' WHERE username = 'admin'")
-            .bind(&new_hash)
-            .execute(pool)
-            .await
-            .map_err(|e| format!("Failed to update admin password: {}", e))?;
-        println!("DEBUG(main): admin password and email updated to default");
-        Ok(())
-    } else {
-        let default_password = "admin123";
-        let pass_hash =
-            hash(default_password, DEFAULT_COST).map_err(|e| format!("hash error: {}", e))?;
-
-        sqlx::query(
-            "INSERT OR IGNORE INTO users (username, email, password_hash, first_name, last_name, role, is_active, profile_image_url, created_at, updated_at)
-             VALUES ('admin', 'admin@ztadpos.com', ?1, 'Admin', 'User', 'Admin', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-        )
-        .bind(&pass_hash)
-        .execute(pool)
-        .await
-        .map_err(|e| format!("Failed to insert default admin: {}", e))?;
-
-        println!("DEBUG(main): inserted default admin user");
-        Ok(())
-    }
-}
-
-/// Initialize database with proper cross-platform path handling
-async fn initialize_database(
-    app_handle: &tauri::AppHandle,
-) -> Result<SqlitePool, Box<dyn std::error::Error>> {
-    // Use Tauri's path API for cross-platform compatibility
-    let app_data_dir = app_handle
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
-
-    println!("DEBUG(main): resolved app_data_dir = {:?}", app_data_dir);
-
-    // Ensure directory exists
-    std::fs::create_dir_all(&app_data_dir).map_err(|e| {
-        format!(
-            "Failed to create app data directory {:?}: {}",
-            app_data_dir, e
-        )
-    })?;
-
-    let mut db_path = app_data_dir.clone();
-    db_path.push("pos.db");
-
-    // Create database file if it doesn't exist
-    if !db_path.exists() {
-        println!("DEBUG(main): creating new database file at {:?}", db_path);
-        OpenOptions::new()
-            .create(true)
-            .write(true)
-            .open(&db_path)
-            .and_then(|mut f| f.write_all(b""))
-            .map_err(|e| format!("Failed to create database file {:?}: {}", db_path, e))?;
-    }
-
-    // Get absolute path
-    let abs_db = db_path.canonicalize().unwrap_or_else(|_| db_path.clone());
-    let mut conn_path = abs_db.to_string_lossy().to_string();
-
-    // Handle Windows verbatim prefix
-    if cfg!(windows) {
-        const VERBATIM_PREFIX: &str = r"\\?\";
-        if conn_path.starts_with(VERBATIM_PREFIX) {
-            conn_path = conn_path.trim_start_matches(VERBATIM_PREFIX).to_string();
-        }
-    }
-
-    // Normalize path separators
-    conn_path = conn_path.replace('\\', "/");
-
-    let conn_str = format!("sqlite:///{}", conn_path);
-
-    println!("DEBUG(main): final db absolute path = {:?}", abs_db);
-    println!("DEBUG(main): sqlx connection string = {}", conn_str);
-
-    // Create connection pool
-    let pool = SqlitePoolOptions::new()
-        .max_connections(10)
-        .min_connections(2)
-        .acquire_timeout(std::time::Duration::from_secs(30))
-        .idle_timeout(std::time::Duration::from_secs(300))
-        .max_lifetime(std::time::Duration::from_secs(1800))
-        .connect(&conn_str)
-        .await
-        .map_err(|e| format!("Failed to create SqlitePool for '{}': {}", conn_str, e))?;
-
-    // Apply migrations
-    apply_migrations(&pool)
-        .await
-        .map_err(|e| format!("Migration error: {}", e))?;
-
-    // Ensure admin user exists
-    ensure_admin(&pool)
-        .await
-        .map_err(|e| format!("Failed to ensure admin user: {}", e))?;
-
-    // Seed database
-    if let Err(e) = seeder::seed_database(&pool).await {
-        eprintln!("Warning: Failed to seed database: {}", e);
-    }
-
-    Ok(pool)
-}
-
-/// Main application entry point shared by desktop and mobile
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     tauri::Builder::default()
+        // Initialize essential plugins
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_haptics::init())
+        .plugin(
+            tauri_plugin_log::Builder::default()
+                .level(LevelFilter::Debug)
+                .build(),
+        )
+        // Setup including asynchronous database initialization without blocking UI thread
         .setup(|app| {
             let app_handle = app.handle().clone();
 
-            // Initialize database in a separate thread to avoid blocking
-            std::thread::spawn(move || {
-                let rt = tokio::runtime::Runtime::new().unwrap();
-                rt.block_on(async move {
-                    match initialize_database(&app_handle).await {
-                        Ok(pool) => {
-                            app_handle.manage(pool);
-                            println!("DEBUG(main): Database initialized successfully");
-                        }
-                        Err(e) => {
-                            eprintln!("FATAL: Failed to initialize database: {}", e);
-                            std::process::exit(1);
-                        }
+            // Use Tauri's async runtime instead of std::thread::spawn
+            tauri::async_runtime::spawn(async move {
+                match initialize_database(&app_handle).await {
+                    Ok(pool) => {
+                        app_handle.manage(pool);
+                        println!("✅ DEBUG(main): Database initialized successfully");
                     }
-                });
+                    Err(e) => {
+                        eprintln!("❌ FATAL: Failed to initialize database: {}", e);
+                    }
+                }
             });
 
             Ok(())
         })
+        // Setup the invoke_handler with all command modules
         .invoke_handler(tauri::generate_handler![
             commands::auth::login_user,
             commands::auth::register_user,
@@ -306,4 +151,187 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         .run(tauri::generate_context!())?;
 
     Ok(())
+}
+
+/// Apply migrations (runs all migration SQL statements)
+async fn apply_migrations(pool: &SqlitePool) -> Result<(), String> {
+    let migrations = get_migrations();
+    println!("DEBUG(main): applying {} migration(s)", migrations.len());
+
+    for mig in migrations {
+        println!(
+            "DEBUG(main): applying migration version {}: {}",
+            mig.version, mig.description
+        );
+
+        for stmt in mig.sql.split(';') {
+            let s = stmt.trim();
+            if s.is_empty() {
+                continue;
+            }
+            let preview = if s.len() > 80 { &s[..80] } else { s };
+            println!("DEBUG(main): executing statement (preview): {}", preview);
+
+            pool.execute(s).await.map_err(|e| {
+                format!(
+                    "Migration failed (v{}): {} -- stmt: {}",
+                    mig.version, e, preview
+                )
+            })?;
+        }
+    }
+
+    println!("✅ DEBUG(main): migrations applied successfully");
+    Ok(())
+}
+
+/// Ensure admin user exists with default password
+async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
+    let row_opt = sqlx::query("SELECT password_hash FROM users WHERE username = 'admin'")
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| format!("Failed to query admin user: {}", e))?;
+
+    if let Some(row) = row_opt {
+        let stored_hash: String = row
+            .try_get("password_hash")
+            .map_err(|e| format!("Failed to get password_hash: {}", e))?;
+        let desired_pass = "admin123";
+
+        match verify(desired_pass, &stored_hash) {
+            Ok(true) => {
+                println!("DEBUG(main): admin password already matches desired default");
+                return Ok(());
+            }
+            Ok(false) => {
+                println!("DEBUG(main): admin password does NOT match; updating");
+            }
+            Err(e) => {
+                return Err(format!("bcrypt verify error: {}", e));
+            }
+        }
+
+        let new_hash =
+            hash(desired_pass, DEFAULT_COST).map_err(|e| format!("hash error: {}", e))?;
+
+        sqlx::query("UPDATE users SET password_hash = ?1, email = 'admin@ztadpos.com' WHERE username = 'admin'")
+            .bind(&new_hash)
+            .execute(pool)
+            .await
+            .map_err(|e| format!("Failed to update admin password: {}", e))?;
+
+        println!("✅ DEBUG(main): admin password and email updated to default");
+        Ok(())
+    } else {
+        let default_password = "admin123";
+        let pass_hash =
+            hash(default_password, DEFAULT_COST).map_err(|e| format!("hash error: {}", e))?;
+
+        sqlx::query(
+            "INSERT OR IGNORE INTO users (username, email, password_hash, first_name, last_name, role, is_active, profile_image_url, created_at, updated_at)
+             VALUES ('admin', 'admin@ztadpos.com', ?1, 'Admin', 'User', 'Admin', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        )
+        .bind(&pass_hash)
+        .execute(pool)
+        .await
+        .map_err(|e| format!("Failed to insert default admin: {}", e))?;
+
+        println!("✅ DEBUG(main): inserted default admin user");
+        Ok(())
+    }
+}
+
+/// Initialize database with proper cross-platform path handling
+async fn initialize_database(
+    app_handle: &tauri::AppHandle,
+) -> Result<SqlitePool, Box<dyn std::error::Error>> {
+    println!("🔄 DEBUG(main): Starting database initialization...");
+
+    // Use Tauri's path API for cross-platform compatibility
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
+
+    println!("DEBUG(main): resolved app_data_dir = {:?}", app_data_dir);
+
+    // Ensure directory exists
+    std::fs::create_dir_all(&app_data_dir).map_err(|e| {
+        format!(
+            "Failed to create app data directory {:?}: {}",
+            app_data_dir, e
+        )
+    })?;
+
+    let db_path = app_data_dir.join("pos.db");
+
+    // Create database file if it doesn't exist
+    if !db_path.exists() {
+        println!("DEBUG(main): creating new database file at {:?}", db_path);
+        OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(&db_path)
+            .and_then(|mut f| f.write_all(b""))
+            .map_err(|e| format!("Failed to create database file {:?}: {}", db_path, e))?;
+    }
+
+    // Platform-specific connection string handling
+    let conn_str = if cfg!(target_os = "android") {
+        // For Android, use simple path without canonicalize
+        format!("sqlite:{}", db_path.to_string_lossy())
+    } else {
+        // For desktop platforms
+        let abs_db = db_path.canonicalize().unwrap_or_else(|_| db_path.clone());
+        let mut conn_path = abs_db.to_string_lossy().to_string();
+
+        // Handle Windows verbatim prefix
+        if cfg!(windows) {
+            const VERBATIM_PREFIX: &str = r"\\?\";
+            if conn_path.starts_with(VERBATIM_PREFIX) {
+                conn_path = conn_path.trim_start_matches(VERBATIM_PREFIX).to_string();
+            }
+        }
+
+        // Normalize path separators
+        conn_path = conn_path.replace('\\', "/");
+        format!("sqlite:///{}", conn_path)
+    };
+
+    println!("DEBUG(main): final db path = {:?}", db_path);
+    println!("DEBUG(main): sqlx connection string = {}", conn_str);
+
+    // Create connection pool with settings optimized for mobile
+    let pool = SqlitePoolOptions::new()
+        .max_connections(5)
+        .min_connections(1)
+        .acquire_timeout(std::time::Duration::from_secs(10))
+        .idle_timeout(std::time::Duration::from_secs(300))
+        .max_lifetime(std::time::Duration::from_secs(1800))
+        .connect(&conn_str)
+        .await
+        .map_err(|e| format!("Failed to create SqlitePool for '{}': {}", conn_str, e))?;
+
+    println!("✅ DEBUG(main): Database connection pool created");
+
+    // Apply migrations
+    apply_migrations(&pool)
+        .await
+        .map_err(|e| format!("Migration error: {}", e))?;
+
+    // Ensure admin user exists
+    ensure_admin(&pool)
+        .await
+        .map_err(|e| format!("Failed to ensure admin user: {}", e))?;
+
+    // Seed database with initial data
+    println!("DEBUG(main): Starting database seeding...");
+    if let Err(e) = seeder::seed_database(&pool).await {
+        eprintln!("⚠️  Warning: Failed to seed database: {}", e);
+    } else {
+        println!("✅ DEBUG(main): Database seeded successfully");
+    }
+
+    println!("✅ DEBUG(main): Database initialization complete");
+    Ok(pool)
 }
