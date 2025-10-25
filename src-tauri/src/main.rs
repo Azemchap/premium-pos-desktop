@@ -1,13 +1,10 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
+// src-tauri/src/main.rs
+
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod commands;
-mod database;
-mod models;
-mod seeder_building_materials;
 mod app;
 
 fn main() {
-    // Call the synchronous app::run() directly
+    // Call the same app run function synchronously
     app::run().expect("error while running tauri application");
 }

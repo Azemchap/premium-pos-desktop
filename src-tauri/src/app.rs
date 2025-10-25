@@ -1,4 +1,6 @@
-pub mod app;
+// src-tauri/src/app.rs
+
+pub mod app_logic; // rename your original app module to app_logic to avoid conflict
 pub mod commands;
 pub mod database;
 pub mod models;
@@ -13,10 +15,9 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use tauri::Manager;
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     tauri::Builder::default()
-        // Initialize essential plugins
+        // Essential plugins
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
@@ -26,11 +27,9 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .level(LevelFilter::Debug)
                 .build(),
         )
-        // Setup including asynchronous database initialization without blocking UI thread
+        // Async database initialization in setup hook
         .setup(|app| {
             let app_handle = app.handle().clone();
-
-            // Use Tauri's async runtime instead of std::thread::spawn
             tauri::async_runtime::spawn(async move {
                 match initialize_database(&app_handle).await {
                     Ok(pool) => {
@@ -42,10 +41,9 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             });
-
             Ok(())
         })
-        // Setup the invoke_handler with all command modules
+        // Command handlers
         .invoke_handler(tauri::generate_handler![
             commands::auth::login_user,
             commands::auth::register_user,
@@ -149,7 +147,6 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::variants::get_variant_inventory,
         ])
         .run(tauri::generate_context!())?;
-
     Ok(())
 }
 
