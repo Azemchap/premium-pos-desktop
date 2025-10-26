@@ -36,7 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 // import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import { Edit, MoreHorizontal, Package, Plus, Ruler, Tag, Trash2, Palette, Layers } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { z } from "zod";

@@ -24,6 +24,14 @@ android {
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
     }
+    signingConfigs {
+      release {
+        storeFile file("C:/Users/Azem/release.jks")
+        storePassword System.getenv("RELEASE_STORE_PASSWORD")
+        keyAlias "premiumpos"
+        keyPassword System.getenv("RELEASE_KEY_PASSWORD")
+      }
+    }
     buildTypes {
         getByName("debug") {
             manifestPlaceholders["usesCleartextTraffic"] = "true"
@@ -43,6 +51,9 @@ android {
                     .plus(getDefaultProguardFile("proguard-android-optimize.txt"))
                     .toList().toTypedArray()
             )
+        }
+        release {
+          signingConfig signingConfigs.release
         }
     }
     kotlinOptions {
