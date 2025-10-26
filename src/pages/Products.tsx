@@ -2,6 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageHeader from "@/components/PageHeader";
 import ProductVariantManager, { VariantCombination } from "@/components/ProductVariantManager";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -454,61 +455,67 @@ export default function Products() {
   const inactiveProducts = products.filter(p => !p.is_active).length;
 
   return (
-    <div className="space-y-6 md:space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your product catalog and pricing
-          </p>
-        </div>
-        <Button onClick={openCreateDialog}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Product
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        icon={Package}
+        title="Products"
+        subtitle="Manage your product catalog and pricing"
+        badge={{ text: `${totalProducts} items`, variant: "secondary" }}
+        actions={
+          <Button onClick={openCreateDialog} size="lg" className="shadow-lg">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Product
+          </Button>
+        }
+      />
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 md:gap-6">
-        <Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-2 border-blue-200 dark:border-blue-800 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Products</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold">{totalProducts}</p>
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Products</p>
+                <p className="text-2xl md:text-3xl font-bold text-blue-900 dark:text-blue-100">{totalProducts}</p>
               </div>
-              <Package className="w-8 h-8 text-blue-600" />
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                <Package className="w-7 h-7 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-2 border-green-200 dark:border-green-800 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{activeProducts}</p>
+                <p className="text-sm font-medium text-green-700 dark:text-green-300">Active</p>
+                <p className="text-2xl md:text-3xl font-bold text-green-900 dark:text-green-100">{activeProducts}</p>
               </div>
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
+                <CheckCircle className="w-7 h-7 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-2 border-red-200 dark:border-red-800 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Inactive</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600">{inactiveProducts}</p>
+                <p className="text-sm font-medium text-red-700 dark:text-red-300">Inactive</p>
+                <p className="text-2xl md:text-3xl font-bold text-red-900 dark:text-red-100">{inactiveProducts}</p>
               </div>
-              <XCircle className="w-8 h-8 text-red-600" />
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
+                <XCircle className="w-7 h-7 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Search and Filters - Auto-filtering */}
-      <Card>
+      <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow duration-300">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
             <div className="space-y-2 md:col-span-4">
@@ -580,11 +587,11 @@ export default function Products() {
       </Card>
 
       {/* Products Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Catalog</CardTitle>
+      <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow duration-300">
+        <CardHeader className="bg-gradient-to-r from-muted/30 to-muted/10 border-b-2">
+          <CardTitle className="text-xl font-bold">Product Catalog</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {loading ? (
             <div className="space-y-2 md:space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -593,83 +600,84 @@ export default function Products() {
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                      Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('sku')}>
-                      SKU {sortColumn === 'sku' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('category')}>
-                      Category {sortColumn === 'category' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('selling_price')}>
-                      Price {sortColumn === 'selling_price' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('is_active')}>
-                      Status {sortColumn === 'is_active' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                    </TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedProducts.map((product) => (
-                    <TableRow key={product.id} className={!product.is_active ? "opacity-60" : ""}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {product.brand && `${product.brand} • `}
-                            {product.description && product.description.length > 50
-                              ? `${product.description.substring(0, 50)}...`
-                              : product.description}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-mono text-xs sm:text-sm">{product.sku}</div>
-                          {product.barcode && (
-                            <div className="text-xs text-muted-foreground">
-                              {product.barcode}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {product.category ? (
+              <div className="rounded-xl border-2 border-border/50 overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-gradient-to-r from-muted/50 to-muted/30">
+                    <TableRow>
+                      <TableHead className="cursor-pointer px-6 py-4 text-sm font-semibold uppercase tracking-wider" onClick={() => handleSort('name')}>
+                        Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="cursor-pointer px-6 py-4 text-sm font-semibold uppercase tracking-wider hidden md:table-cell" onClick={() => handleSort('sku')}>
+                        SKU {sortColumn === 'sku' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="cursor-pointer px-6 py-4 text-sm font-semibold uppercase tracking-wider hidden lg:table-cell" onClick={() => handleSort('category')}>
+                        Category {sortColumn === 'category' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="cursor-pointer px-6 py-4 text-sm font-semibold uppercase tracking-wider" onClick={() => handleSort('selling_price')}>
+                        Price {sortColumn === 'selling_price' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="cursor-pointer px-6 py-4 text-sm font-semibold uppercase tracking-wider hidden md:table-cell" onClick={() => handleSort('is_active')}>
+                        Status {sortColumn === 'is_active' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border/30">
+                    {paginatedProducts.map((product) => (
+                      <TableRow key={product.id} className={`hover:bg-primary/5 transition-all duration-200 ${!product.is_active ? "opacity-60" : ""}`}>
+                        <TableCell className="px-6 py-4">
                           <div>
-                            <Badge variant="outline">{product.category}</Badge>
-                            {product.subcategory && (
-                              <div className="text-sm text-muted-foreground mt-1">
-                                {product.subcategory}
+                            <div className="font-semibold text-base">{product.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {product.brand && `${product.brand} • `}
+                              {product.description && product.description.length > 50
+                                ? `${product.description.substring(0, 50)}...`
+                                : product.description}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-6 py-4 hidden md:table-cell">
+                          <div>
+                            <div className="font-mono text-sm">{product.sku}</div>
+                            {product.barcode && (
+                              <div className="text-xs text-muted-foreground">
+                                {product.barcode}
                               </div>
                             )}
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {format(product.selling_price)}
-                          </div>
-                          {product.cost_price > 0 && (
-                            <div className="text-sm text-muted-foreground">
-                              Cost: {format(product.cost_price)}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 hidden lg:table-cell">
+                          {product.category ? (
+                            <div>
+                              <Badge variant="outline">{product.category}</Badge>
+                              {product.subcategory && (
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {product.subcategory}
+                                </div>
+                              )}
                             </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={product.is_active ? "default" : "secondary"}>
-                          {product.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
+                          <div>
+                            <div className="font-bold text-lg bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                              {format(product.selling_price)}
+                            </div>
+                            {product.cost_price > 0 && (
+                              <div className="text-sm text-muted-foreground">
+                                Cost: {format(product.cost_price)}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-6 py-4 hidden md:table-cell">
+                          <Badge variant={product.is_active ? "default" : "secondary"} className="px-3 py-1">
+                            {product.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
@@ -705,6 +713,7 @@ export default function Products() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
               {totalPages > 1 && (
                 <div className="flex justify-center mt-4">
                   {loading ? (
@@ -776,7 +785,7 @@ export default function Products() {
 
       {/* Create/Edit Product Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar">
           <DialogHeader>
             <DialogTitle>
               {editingProduct ? "Edit Product" : "Create New Product"}

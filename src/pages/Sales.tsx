@@ -31,14 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
 import { printReceipt } from "@/lib/receipt-printer";
@@ -46,14 +38,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   Check,
   CheckCircle2,
-  DollarSign,
-  GridIcon,
-  List,
   Minus,
   Package,
   Plus,
@@ -128,7 +114,7 @@ interface CreateSaleRequest {
   notes?: string;
 }
 
-type ViewMode = "grid" | "list";
+// type ViewMode = "grid" | "list";
 type SortColumn = 'name' | 'sku' | 'category' | 'selling_price' | 'available_stock';
 type SortDirection = 'asc' | 'desc';
 
@@ -159,26 +145,26 @@ export default function Sales() {
   const [completedSaleNumber, setCompletedSaleNumber] = useState("");
   const [completedSaleData, setCompletedSaleData] = useState<any>(null);
 
-  // View mode with localStorage persistence
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    const saved = localStorage.getItem("salesViewMode");
-    return (saved as ViewMode) || "grid";
-  });
+  // View mode with localStorage persistence (commented out - grid is always used)
+  // const [viewMode, setViewMode] = useState<ViewMode>(() => {
+  //   const saved = localStorage.getItem("salesViewMode");
+  //   return (saved as ViewMode) || "grid";
+  // });
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 20;
 
   // Sorting
-  const [sortColumn, setSortColumn] = useState<SortColumn>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortColumn] = useState<SortColumn>('name');
+  const [sortDirection] = useState<SortDirection>('asc');
 
-  const toggleViewMode = () => {
-    const newMode = viewMode === "grid" ? "list" : "grid";
-    setViewMode(newMode);
-    localStorage.setItem("salesViewMode", newMode);
-    toast.success(`Switched to ${newMode} view`);
-  };
+  // const toggleViewMode = () => {
+  //   const newMode = viewMode === "grid" ? "list" : "grid";
+  //   setViewMode(newMode);
+  //   localStorage.setItem("salesViewMode", newMode);
+  //   toast.success(`Switched to ${newMode} view`);
+  // };
 
   const loadProducts = async () => {
     try {
@@ -458,14 +444,14 @@ export default function Sales() {
     currentPage * productsPerPage
   );
 
-  const handleSort = (column: SortColumn) => {
-    if (column === sortColumn) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('asc');
-    }
-  };
+  // const handleSort = (column: SortColumn) => {
+  //   if (column === sortColumn) {
+  //     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  //   } else {
+  //     setSortColumn(column);
+  //     setSortDirection('asc');
+  //   }
+  // };
 
   // Calculate cart totals
   const cartSubtotal = getSubtotal();
@@ -654,100 +640,6 @@ export default function Sales() {
                 </Pagination>
               )}
             </>
-          ) : (
-            <>
-              <Card className="max-h-[calc(100vh-300px)] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                        Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('category')}>
-                        Category {sortColumn === 'category' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('available_stock')}>
-                        Stock {sortColumn === 'available_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                      </TableHead>
-                      <TableHead className="cursor-pointer text-right" onClick={() => handleSort('selling_price')}>
-                        Price {sortColumn === 'selling_price' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                      </TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedProducts?.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{product.name}</div>
-                            <div className="text-sm text-muted-foreground">{product.sku}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {product.category && (
-                            <Badge variant="secondary">{product.category}</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={product.available_stock <= product.minimum_stock ? "destructive" : "outline"}>
-                            {product.available_stock}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-bold">
-                          {format(product.selling_price)}
-                        </TableCell>
-                        <TableCell>
-                          <Button size="sm" onClick={() => addToCart(product)}>
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
-              {totalPages > 1 && (
-                <Pagination className="mt-4">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage > 1) setCurrentPage(currentPage - 1);
-                        }}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          href="#"
-                          isActive={currentPage === page}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCurrentPage(page);
-                          }}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                        }}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              )}
-            </>
           )}
 
           {!loading && (filteredAndSortedProducts?.length || 0) === 0 && (
@@ -763,104 +655,136 @@ export default function Sales() {
           )}
         </div>
 
-        {/* Cart Section */}
-        <div className="space-y-2 md:space-y-4 lg:col-span-2">
-          <Card>
-            <CardHeader>
+        {/* Premium Cart Sidebar */}
+        <div className="lg:col-span-1 space-y-4">
+          <Card className="sticky top-6 border-2 shadow-2xl bg-gradient-to-br from-card via-card to-primary/5">
+            <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
               <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  Cart
+                <span className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <ShoppingCart className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="text-xl">Cart</span>
                 </span>
-                <Badge>{cart.length} items</Badge>
+                <Badge variant="secondary" className="px-3 py-1 text-sm font-bold">
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 md:space-y-4">
-              {/* Cart Items */}
-              <div className="space-y-3 max-h-60 overflow-y-auto">
+            <CardContent className="space-y-4 p-6">
+              {/* Premium Cart Items */}
+              <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar pr-2">
                 {cart.length === 0 ? (
-                  <div className="text-center py-4 md:py-8 text-muted-foreground">
-                    <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Cart is empty</p>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-muted/50 flex items-center justify-center">
+                      <ShoppingCart className="w-10 h-10 opacity-30" />
+                    </div>
+                    <p className="font-medium text-lg">Your cart is empty</p>
+                    <p className="text-sm mt-1">Start adding products to checkout</p>
                   </div>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.product.id} className="flex gap-1 flex-col  p-3 bg-muted/50 dark:bg-muted border border-border rounded-lg">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{item.product.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(item.price)} each
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateCartItemQuantity(item.product.id, item.quantity - 1)}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateCartItemQuantity(item.product.id, item.quantity + 1)}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFromCart(item.product.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
+                    <div 
+                      key={item.product.id} 
+                      className="group relative overflow-hidden p-4 bg-gradient-to-br from-muted/30 to-muted/10 hover:from-muted/50 hover:to-muted/30 border-2 border-border hover:border-primary/30 rounded-xl transition-all duration-300"
+                    >
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
+                      <div className="relative space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm line-clamp-2">{item.product.name}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {format(item.price)} × {item.quantity}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => removeFromCart(item.product.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 bg-background/50 rounded-lg p-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 hover:bg-primary/10"
+                              onClick={() => updateCartItemQuantity(item.product.id, item.quantity - 1)}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </Button>
+                            <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 hover:bg-primary/10"
+                              onClick={() => updateCartItemQuantity(item.product.id, item.quantity + 1)}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <span className="text-base font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                            {format(item.total)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))
                 )}
               </div>
 
-              {/* Cart Totals */}
+              {/* Premium Cart Totals & Actions */}
               {cart.length > 0 && (
                 <>
-                  <div className="border-t pt-4 space-y-2">
-                    <div className="flex justify-between text-xs sm:text-sm">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium">{format(cartSubtotal)}</span>
+                  <div className="border-t-2 border-dashed pt-4 space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="font-semibold">{format(cartSubtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Tax</span>
+                        <span className="font-semibold">{format(cartTax)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-xs sm:text-sm">
-                      <span className="text-muted-foreground">Tax</span>
-                      <span className="font-medium">{format(cartTax)}</span>
-                    </div>
-                    <div className="flex justify-between text-base sm:text-lg font-bold border-t pt-2">
-                      <span>Total</span>
-                      <span className="text-primary">{format(cartTotal)}</span>
+                    <div className="flex justify-between items-baseline p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border-2 border-primary/20">
+                      <span className="text-lg font-bold">Total</span>
+                      <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                        {format(cartTotal)}
+                      </span>
                     </div>
                   </div>
 
                   {/* Customer Info Button */}
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full h-12 border-2 hover:border-primary/50 hover:bg-primary/5"
                     onClick={() => setIsCustomerDialogOpen(true)}
                   >
                     <User className="w-4 h-4 mr-2" />
-                    {customerInfo.name ? customerInfo.name : "Add Customer (Optional)"}
+                    {customerInfo.name || "Add Customer (Optional)"}
                   </Button>
 
                   {/* Notes */}
                   <Textarea
-                    placeholder="Notes (optional)"
+                    placeholder="Add notes for this sale..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={2}
+                    className="border-2 focus:border-primary resize-none"
                   />
 
-                  {/* Checkout Button */}
-                  <Button className="w-full" size="lg" onClick={proceedToPayment}>
-                    <DollarSign className="w-5 h-5 mr-2" />
-                    Proceed to Payment
+                  {/* Premium Checkout Button */}
+                  <Button 
+                    className="w-full h-14 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary" 
+                    size="lg" 
+                    onClick={proceedToPayment}
+                  >
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    Proceed to Checkout
                   </Button>
                 </>
               )}

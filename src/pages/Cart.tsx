@@ -42,6 +42,7 @@ import {
   CreditCard,
   DollarSign,
   Minus,
+  Package,
   Plus,
   Printer,
   ReceiptIcon,
@@ -262,102 +263,150 @@ export default function Cart() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" onClick={() => navigate("/sales")}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ShoppingBag className="w-6 h-6" />
-              Shopping Cart
-            </h1>
-            <p className="text-muted-foreground text-sm">Review and complete your sale</p>
+      {/* Premium Header with Gradient */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 p-6 md:p-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              size="icon"
+              className="h-12 w-12 rounded-xl border-2 hover:border-primary/50 hover:bg-primary/5"
+              onClick={() => navigate("/sales")}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-primary/10 ring-2 ring-primary/20">
+                  <ShoppingBag className="w-6 h-6 text-primary" />
+                </div>
+                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  Shopping Cart
+                </h1>
+              </div>
+              <p className="text-muted-foreground text-sm md:text-base ml-14">
+                Review your items and complete your purchase
+              </p>
+            </div>
           </div>
+          {items.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="px-3 py-1.5 text-sm font-semibold">
+                {items.reduce((sum, item) => sum + item.quantity, 0)} items
+              </Badge>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsClearCartDialogOpen(true)}
+                className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear Cart
+              </Button>
+            </div>
+          )}
         </div>
-        {items.length > 0 && (
-          <Button variant="outline" onClick={() => setIsClearCartDialogOpen(true)}>
-            <Trash2 className="w-4 h-4 mr-2" />
-            Clear Cart
-          </Button>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cart Items */}
+        {/* Premium Cart Items Section */}
         <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
+          <Card className="border-2 shadow-xl bg-gradient-to-br from-card to-card/50">
+            <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
               <CardTitle className="flex items-center justify-between">
-                <span>Cart Items ({items.length})</span>
-                <Badge variant="secondary">{items.reduce((sum, item) => sum + item.quantity, 0)} items</Badge>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Package className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="text-xl">Cart Items</span>
+                </div>
+                <Badge variant="secondary" className="px-3 py-1.5 text-sm font-bold">
+                  {items.reduce((sum, item) => sum + item.quantity, 0)} items
+                </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               {items.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                    <ShoppingBag className="w-8 h-8 opacity-50" />
+                <div className="text-center py-16">
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                    <ShoppingBag className="w-12 h-12 opacity-30" />
                   </div>
-                  <p className="text-muted-foreground mb-4">Your cart is empty</p>
-                  <Button onClick={() => navigate("/sales")}>
+                  <h3 className="text-xl font-semibold mb-2">Your cart is empty</h3>
+                  <p className="text-muted-foreground mb-6">Start adding products to your cart</p>
+                  <Button 
+                    size="lg"
+                    onClick={() => navigate("/sales")}
+                    className="shadow-lg hover:shadow-xl transition-all"
+                  >
+                    <ShoppingBag className="w-4 h-4 mr-2" />
                     Start Shopping
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {items.map((item) => (
                     <div
                       key={item.product.id}
-                      className="flex gap-4 p-4 bg-muted/50 dark:bg-muted border border-border rounded-lg"
+                      className="group relative overflow-hidden p-5 bg-gradient-to-br from-muted/30 to-muted/10 hover:from-muted/50 hover:to-muted/30 border-2 border-border hover:border-primary/30 rounded-xl transition-all duration-300"
                     >
-                      <div className="flex-1">
-                        <p className="font-medium">{item.product.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          SKU: {item.product.sku} • {format(item.price)} each
-                        </p>
-                        {item.product.is_taxable && (
-                          <p className="text-xs text-muted-foreground">
-                            Tax: {format(item.tax_amount * item.quantity)}
-                          </p>
-                        )}
-                      </div>
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
+                      <div className="relative flex flex-col md:flex-row gap-4">
+                        <div className="flex-1 space-y-2">
+                          <h3 className="font-semibold text-lg">{item.product.name}</h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="text-xs font-mono">
+                              SKU: {item.product.sku}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {format(item.price)} each
+                            </span>
+                          </div>
+                          {item.product.is_taxable && (
+                            <p className="text-xs text-muted-foreground">
+                              Tax: {format(item.tax_amount * item.quantity)}
+                            </p>
+                          )}
+                        </div>
 
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                        <span className="w-12 text-center font-medium">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => {
-                            if (!updateQuantity(item.product.id, item.quantity + 1)) {
-                              toast.error(`Only ${item.product.available_stock} available`);
-                            }
-                          }}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
+                        <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-4">
+                          <div className="flex items-center gap-2 bg-background/50 rounded-lg p-1.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 hover:bg-primary/10"
+                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            >
+                              <Minus className="w-4 h-4" />
+                            </Button>
+                            <span className="w-12 text-center font-bold text-base">{item.quantity}</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 hover:bg-primary/10"
+                              onClick={() => {
+                                if (!updateQuantity(item.product.id, item.quantity + 1)) {
+                                  toast.error(`Only ${item.product.available_stock} available`);
+                                }
+                              }}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
 
-                      <div className="flex flex-col items-end justify-between">
-                        <p className="font-bold">{format(item.total)}</p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeItem(item.product.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          <div className="flex md:flex-col items-center md:items-end gap-2">
+                            <p className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                              {format(item.total)}
+                            </p>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => removeItem(item.product.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -367,31 +416,38 @@ export default function Cart() {
           </Card>
         </div>
 
-        {/* Order Summary */}
+        {/* Premium Order Summary */}
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+          <Card className="sticky top-6 border-2 shadow-2xl bg-gradient-to-br from-card via-card to-primary/5">
+            <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <ReceiptIcon className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-xl">Order Summary</span>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
+            <CardContent className="space-y-6 p-6">
+              <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{format(cartSubtotal)}</span>
+                  <span className="font-semibold">{format(cartSubtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax</span>
-                  <span className="font-medium">{format(cartTax)}</span>
+                  <span className="font-semibold">{format(cartTax)}</span>
                 </div>
-                <div className="border-t pt-2 flex justify-between">
-                  <span className="font-semibold">Total</span>
-                  <span className="text-xl font-bold text-primary">{format(cartTotal)}</span>
+                <div className="border-t-2 border-dashed pt-3 flex justify-between items-baseline p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border-2 border-primary/20">
+                  <span className="text-lg font-bold">Total</span>
+                  <span className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                    {format(cartTotal)}
+                  </span>
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Button
-                  className="w-full"
+                  className="w-full h-14 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary"
                   size="lg"
                   disabled={items.length === 0}
                   onClick={() => setIsCustomerDialogOpen(true)}
@@ -401,9 +457,10 @@ export default function Cart() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full"
+                  className="w-full h-12 border-2 hover:border-primary/50 hover:bg-primary/5"
                   onClick={() => navigate("/sales")}
                 >
+                  <ShoppingBag className="w-4 h-4 mr-2" />
                   Continue Shopping
                 </Button>
               </div>

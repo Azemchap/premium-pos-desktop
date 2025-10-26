@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageHeader from "@/components/PageHeader";
 import {
   Dialog,
   DialogContent,
@@ -344,18 +345,16 @@ export default function SalesRecords() {
   };
 
   return (
-    <div className="space-y-6 md:space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Sales Records</h1>
-          <p className="text-muted-foreground mt-1">
-            View and analyze sales transactions
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        icon={Calendar}
+        title="Sales Records"
+        subtitle="View and analyze sales transactions"
+        badge={stats ? { text: `${stats.total_transactions} transactions`, variant: "secondary" } : undefined}
+      />
 
       {/* Date Range Selector */}
-      <Card>
+      <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow duration-300">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2">
@@ -400,68 +399,74 @@ export default function SalesRecords() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 md:gap-6">
-          <Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-2 border-green-200 dark:border-green-800 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Sales</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{formatCurrency(stats.total_sales)}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-sm font-medium text-green-700 dark:text-green-300">Total Sales</p>
+                  <p className="text-2xl md:text-3xl font-bold text-green-900 dark:text-green-100">{formatCurrency(stats.total_sales)}</p>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                     {stats.total_transactions} transactions
                   </p>
                 </div>
-                <DollarSign className="w-8 h-8 text-green-600" />
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
+                  <DollarSign className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border-2 border-emerald-200 dark:border-emerald-800 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Profit</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{formatCurrency(stats.total_profit)}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Total Profit</p>
+                  <p className="text-2xl md:text-3xl font-bold text-emerald-900 dark:text-emerald-100">{formatCurrency(stats.total_profit)}</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
                     {stats.profit_margin.toFixed(1)}% margin
                   </p>
                 </div>
-                <TrendingUp className="w-8 h-8 text-green-600" />
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                  <TrendingUp className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-2 border-blue-200 dark:border-blue-800 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Avg Transaction</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{formatCurrency(stats.average_transaction)}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Avg Transaction</p>
+                  <p className="text-2xl md:text-3xl font-bold text-blue-900 dark:text-blue-100">{formatCurrency(stats.average_transaction)}</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                     per sale
                   </p>
                 </div>
-                <CreditCard className="w-8 h-8 text-blue-600" />
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                  <CreditCard className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-2 border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardContent className="p-6">
               <div>
-                <p className="text-sm text-muted-foreground mb-2">Payment Methods</p>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span>Cash</span>
-                    <span className="font-medium">{formatCurrency(stats.cash_sales)}</span>
+                <p className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-3">Payment Methods</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-600 dark:text-purple-400">Cash</span>
+                    <span className="font-semibold text-purple-900 dark:text-purple-100">{formatCurrency(stats.cash_sales)}</span>
                   </div>
-                  <div className="flex justify-between text-xs">
-                    <span>Card</span>
-                    <span className="font-medium">{formatCurrency(stats.card_sales)}</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-600 dark:text-purple-400">Card</span>
+                    <span className="font-semibold text-purple-900 dark:text-purple-100">{formatCurrency(stats.card_sales)}</span>
                   </div>
-                  <div className="flex justify-between text-xs">
-                    <span>Mobile</span>
-                    <span className="font-medium">{formatCurrency(stats.mobile_sales)}</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-600 dark:text-purple-400">Mobile</span>
+                    <span className="font-semibold text-purple-900 dark:text-purple-100">{formatCurrency(stats.mobile_sales)}</span>
                   </div>
                 </div>
               </div>
@@ -471,11 +476,11 @@ export default function SalesRecords() {
       )}
 
       {/* Sales Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sales Transactions</CardTitle>
+      <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow duration-300">
+        <CardHeader className="bg-gradient-to-r from-muted/30 to-muted/10 border-b-2">
+          <CardTitle className="text-xl font-bold">Sales Transactions</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {loading ? (
             <div className="space-y-2 md:space-y-4">
               {Array.from({ length: 10 }).map((_, i) => (
@@ -484,34 +489,35 @@ export default function SalesRecords() {
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('created_at')}>
-                      Date & Time {sortColumn === 'created_at' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('sale_number')}>
-                      Sale # {sortColumn === 'sale_number' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                    </TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Cashier</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead className="text-right cursor-pointer" onClick={() => handleSort('total_amount')}>
-                      Total {sortColumn === 'total_amount' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                    </TableHead>
-                    <TableHead className="text-right cursor-pointer" onClick={() => handleSort('profit')}>
-                      Profit {sortColumn === 'profit' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                    </TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <div className="rounded-xl border-2 border-border/50 overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-gradient-to-r from-muted/50 to-muted/30">
+                    <TableRow>
+                      <TableHead className="cursor-pointer px-6 py-4 text-sm font-semibold uppercase tracking-wider" onClick={() => handleSort('created_at')}>
+                        Date {sortColumn === 'created_at' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="cursor-pointer px-6 py-4 text-sm font-semibold uppercase tracking-wider" onClick={() => handleSort('sale_number')}>
+                        Sale # {sortColumn === 'sale_number' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="px-6 py-4 text-sm font-semibold uppercase tracking-wider hidden lg:table-cell">Customer</TableHead>
+                      <TableHead className="px-6 py-4 text-sm font-semibold uppercase tracking-wider hidden lg:table-cell">Cashier</TableHead>
+                      <TableHead className="px-6 py-4 text-sm font-semibold uppercase tracking-wider hidden md:table-cell">Items</TableHead>
+                      <TableHead className="px-6 py-4 text-sm font-semibold uppercase tracking-wider hidden md:table-cell">Payment</TableHead>
+                      <TableHead className="text-right cursor-pointer px-6 py-4 text-sm font-semibold uppercase tracking-wider" onClick={() => handleSort('total_amount')}>
+                        Total {sortColumn === 'total_amount' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="text-right cursor-pointer px-6 py-4 text-sm font-semibold uppercase tracking-wider hidden lg:table-cell" onClick={() => handleSort('profit')}>
+                        Profit {sortColumn === 'profit' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4" /> : <ArrowDown className="inline w-4 h-4" />) : <ArrowUpDown className="inline w-4 h-4" />}
+                      </TableHead>
+                      <TableHead className="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                <TableBody className="divide-y divide-border/30">
                   {paginatedSales.map((sale) => (
-                    <TableRow key={sale.id} className={sale.is_voided ? "opacity-50" : ""}>
-                      <TableCell>
+                    <TableRow key={sale.id} className={`hover:bg-primary/5 transition-all duration-200 ${sale.is_voided ? "opacity-50" : ""}`}>
+                      <TableCell className="px-6 py-4">
                         <div>
-                          <div className="font-medium">
+                          <div className="font-semibold text-base">
                             {formatLocalDate(sale.created_at, "short-date")}
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -519,15 +525,15 @@ export default function SalesRecords() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="font-mono text-xs sm:text-sm">{sale.sale_number}</div>
+                      <TableCell className="px-6 py-4">
+                        <div className="font-mono text-sm">{sale.sale_number}</div>
                         {sale.is_voided && (
                           <Badge variant="destructive" className="mt-1">
                             Voided
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-6 py-4 hidden lg:table-cell">
                         {sale.customer_name ? (
                           <div>
                             <div className="font-medium">{sale.customer_name}</div>
@@ -541,34 +547,34 @@ export default function SalesRecords() {
                           <span className="text-muted-foreground">Walk-in</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-6 py-4 hidden lg:table-cell">
                         <span className="text-sm">{sale.cashier_name || `Cashier #${sale.cashier_id}`}</span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-6 py-4 hidden md:table-cell">
                         <Badge variant="outline">{sale.items_count} items</Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-6 py-4 hidden md:table-cell">
                         <Badge className={paymentMethodColors[sale.payment_method] || ""}>
                           {sale.payment_method.charAt(0).toUpperCase() + sale.payment_method.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="font-medium">{formatCurrency(sale.total_amount)}</div>
+                      <TableCell className="px-6 py-4 text-right">
+                        <div className="font-bold text-lg bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{formatCurrency(sale.total_amount)}</div>
                         {sale.discount_amount > 0 && (
                           <div className="text-xs text-red-600">
                             -{formatCurrency(sale.discount_amount)}
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className={`font-medium ${sale.profit > 0 ? "text-green-600" : "text-red-600"}`}>
+                      <TableCell className="px-6 py-4 text-right hidden lg:table-cell">
+                        <div className={`font-semibold ${sale.profit > 0 ? "text-green-600" : "text-red-600"}`}>
                           {formatCurrency(sale.profit)}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {sale.total_amount > 0 ? ((sale.profit / sale.total_amount) * 100).toFixed(1) : 0}% margin
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="px-6 py-4 text-right">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -581,6 +587,7 @@ export default function SalesRecords() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
               {totalPages > 1 && (
                 <Pagination className="mt-4">
                   <PaginationContent>
@@ -638,7 +645,7 @@ export default function SalesRecords() {
 
       {/* Sale Details Dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar">
           <DialogHeader>
             <DialogTitle>Sale Details</DialogTitle>
             <DialogDescription>
