@@ -288,11 +288,6 @@ export default function Users() {
     loadUsers();
   }, []);
 
-  const getRoleBadgeVariant = (role: string) => {
-    const roleConfig = roles.find(r => r.value === role);
-    return roleConfig?.color as "default" | "secondary" | "destructive" || "default";
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
@@ -322,99 +317,107 @@ export default function Users() {
   }
 
   return (
-    <div className="space-y-6 md:space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-lg sm:text-xl md:text-3xl font-bold">User Management</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold">User Management</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Manage user accounts, roles, and permissions
           </p>
         </div>
-        <Button onClick={openCreateDialog}>
+        <Button onClick={openCreateDialog} size="sm" className="w-full sm:w-auto">
           <UserPlus className="w-4 h-4 mr-2" />
           Add User
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 md:gap-6">
-        <Card>
-          <CardContent className="p-6">
+      {/* Stats - Compact & Responsive */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 sm:p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Users</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold">{users.length}</p>
+              <div className="text-white">
+                <p className="text-[10px] sm:text-xs opacity-90 font-medium">Total Users</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{users.length}</p>
               </div>
-              <Shield className="w-8 h-8 text-blue-600" />
+              <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300">
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 sm:p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">
+              <div className="text-white">
+                <p className="text-[10px] sm:text-xs opacity-90 font-medium">Active</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">
                   {users.filter(u => u.is_active).length}
                 </p>
               </div>
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300">
+          <div className="bg-gradient-to-br from-red-500 to-rose-600 p-4 sm:p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Inactive</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600">
+              <div className="text-white">
+                <p className="text-[10px] sm:text-xs opacity-90 font-medium">Inactive</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">
                   {users.filter(u => !u.is_active).length}
                 </p>
               </div>
-              <XCircle className="w-8 h-8 text-red-600" />
+              <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300">
+          <div className="bg-gradient-to-br from-orange-500 to-pink-600 p-4 sm:p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Admins</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold text-orange-600">
+              <div className="text-white">
+                <p className="text-[10px] sm:text-xs opacity-90 font-medium">Admins</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">
                   {users.filter(u => u.role === "Admin").length}
                 </p>
               </div>
-              <Shield className="w-8 h-8 text-orange-600" />
+              <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="search">Search Users</Label>
+      {/* Search and Filters - Compact */}
+      <Card className="shadow-md">
+        <CardContent className="p-3 sm:p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="search" className="text-xs sm:text-sm">Search Users</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <Input
                   id="search"
-                  placeholder="Search by name, email, or username..."
+                  placeholder="Search by name, email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-9 sm:pl-10 h-9 text-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role">Filter by Role</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="role" className="text-xs sm:text-sm">Filter by Role</Label>
               <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -431,121 +434,139 @@ export default function Users() {
         </CardContent>
       </Card>
 
-      {/* Users Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Users ({filteredUsers.length})</CardTitle>
-          <CardDescription>
+      {/* Users Table - Compact */}
+      <Card className="shadow-md">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 sm:p-4">
+          <CardTitle className="flex items-center text-base sm:text-lg">
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-primary" />
+            Users
+            <Badge className="ml-2 text-xs" variant="secondary">{filteredUsers.length}</Badge>
+          </CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             Manage user accounts and their access levels
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-3">
           {loading ? (
-            <div className="space-y-2 md:space-y-4">
+            <div className="space-y-2 p-3 sm:p-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
+                <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {user.first_name} {user.last_name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          @{user.username}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center text-xs sm:text-sm">
-                        <Mail className="w-3 h-3 mr-2 text-muted-foreground" />
-                        {user.email}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.is_active ? "default" : "secondary"}>
-                        {user.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-muted-foreground">
-                        {user.last_login ? formatDate(user.last_login) : "Never"}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
-                        <Calendar className="w-3 h-3 mr-2" />
-                        {formatDate(user.created_at)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openPasswordDialog(user)}>
-                            <Key className="w-4 h-4 mr-2" />
-                            Change Password
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => openDeleteDialog(user)}
-                            className="text-destructive"
-                            disabled={user.username === "admin" || user.id === currentUser?.id}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Deactivate User
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b">
+                    <TableHead className="h-9 px-2 sm:px-4 text-xs">User</TableHead>
+                    <TableHead className="h-9 px-2 sm:px-4 text-xs hidden md:table-cell">Email</TableHead>
+                    <TableHead className="h-9 px-2 sm:px-4 text-xs">Role</TableHead>
+                    <TableHead className="h-9 px-2 sm:px-4 text-xs">Status</TableHead>
+                    <TableHead className="h-9 px-2 sm:px-4 text-xs hidden lg:table-cell">Last Login</TableHead>
+                    <TableHead className="h-9 px-2 sm:px-4 text-xs hidden xl:table-cell">Created</TableHead>
+                    <TableHead className="h-9 px-2 sm:px-4 text-right text-xs">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id} className="hover:bg-muted/50 transition-colors border-b h-12">
+                      <TableCell className="py-2 px-2 sm:px-4">
+                        <div>
+                          <div className="font-medium text-xs sm:text-sm">
+                            {user.first_name} {user.last_name}
+                          </div>
+                          <div className="text-[10px] sm:text-xs text-muted-foreground">
+                            @{user.username}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 px-2 sm:px-4 hidden md:table-cell">
+                        <div className="flex items-center text-xs">
+                          <Mail className="w-3 h-3 mr-1.5 text-muted-foreground flex-shrink-0" />
+                          <span className="truncate max-w-[150px] lg:max-w-[200px]">{user.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 px-2 sm:px-4">
+                        <Badge 
+                          variant="outline"
+                          className={`text-[10px] sm:text-xs px-1.5 py-0 h-5 ${
+                            user.role === "Admin" ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400" :
+                            user.role === "Manager" ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400" :
+                            "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400"
+                          }`}
+                        >
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-2 px-2 sm:px-4">
+                        <Badge 
+                          variant="outline"
+                          className={`text-[10px] sm:text-xs px-1.5 py-0 h-5 ${user.is_active ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400"}`}
+                        >
+                          {user.is_active ? "✓" : "○"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-2 px-2 sm:px-4 hidden lg:table-cell">
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">
+                          {user.last_login ? formatDate(user.last_login) : "Never"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 px-2 sm:px-4 hidden xl:table-cell">
+                        <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground">
+                          <Calendar className="w-3 h-3 mr-1 flex-shrink-0" />
+                          {formatDate(user.created_at)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2 px-2 sm:px-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                              <MoreHorizontal className="w-3.5 h-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel className="text-xs">Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleEditUser(user)} className="text-xs">
+                              <Edit className="w-3.5 h-3.5 mr-2" />
+                              Edit Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openPasswordDialog(user)} className="text-xs">
+                              <Key className="w-3.5 h-3.5 mr-2" />
+                              Change Password
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => openDeleteDialog(user)}
+                              className="text-destructive text-xs"
+                              disabled={user.username === "admin" || user.id === currentUser?.id}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-2" />
+                              Deactivate User
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
 
           {!loading && filteredUsers.length === 0 && (
-            <div className="text-center py-6 md:py-12">
-              <Shield className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No users found</h3>
-              <p className="text-muted-foreground mb-2 md:mb-4">
+            <div className="text-center py-8 sm:py-12 px-4">
+              <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-muted rounded-full flex items-center justify-center mb-3">
+                <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-base sm:text-lg font-semibold mb-2">No users found</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-4">
                 {searchQuery || selectedRole !== "all"
                   ? "Try adjusting your search criteria"
                   : "Get started by creating your first user"}
               </p>
               {!searchQuery && selectedRole === "all" && (
-                <Button onClick={openCreateDialog}>
+                <Button onClick={openCreateDialog} size="sm">
                   <Plus className="w-4 h-4 mr-2" />
                   Add User
                 </Button>
@@ -555,74 +576,78 @@ export default function Users() {
         </CardContent>
       </Card>
 
-      {/* Create/Edit User Dialog */}
+      {/* Create/Edit User Dialog - Responsive */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">
               {editingUser ? "Edit User" : "Create New User"}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               {editingUser
                 ? "Update user information and role"
                 : "Add a new user to the system"}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">First Name *</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="first_name" className="text-xs sm:text-sm">First Name *</Label>
               <Input
                 id="first_name"
                 value={formData.first_name}
                 onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                 placeholder="John"
+                className="h-9 text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="last_name">Last Name *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="last_name" className="text-xs sm:text-sm">Last Name *</Label>
               <Input
                 id="last_name"
                 value={formData.last_name}
                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                 placeholder="Doe"
+                className="h-9 text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="username">Username *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="username" className="text-xs sm:text-sm">Username *</Label>
               <Input
                 id="username"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 placeholder="johndoe"
                 disabled={!!editingUser}
+                className="h-9 text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs sm:text-sm">Email *</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="john@example.com"
+                className="h-9 text-sm"
               />
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="role">Role *</Label>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="role" className="text-xs sm:text-sm">Role *</Label>
               <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((role) => (
                     <SelectItem key={role.value} value={role.value}>
                       <div>
-                        <div className="font-medium">{role.label}</div>
+                        <div className="text-sm font-medium">{role.label}</div>
                         <div className="text-xs text-muted-foreground">{role.description}</div>
                       </div>
                     </SelectItem>
@@ -632,91 +657,94 @@ export default function Users() {
             </div>
 
             {!editingUser && (
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="password">Password *</Label>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="password" className="text-xs sm:text-sm">Password *</Label>
                 <Input
                   id="password"
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="Minimum 6 characters"
+                  className="h-9 text-sm"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
                   Password must be at least 6 characters long
                 </p>
               </div>
             )}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} size="sm" className="flex-1 sm:flex-none">
               Cancel
             </Button>
-            <Button onClick={handleCreateUser}>
+            <Button onClick={handleCreateUser} size="sm" className="flex-1 sm:flex-none">
               {editingUser ? "Update User" : "Create User"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Change Password Dialog */}
+      {/* Change Password Dialog - Responsive */}
       <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Change Password</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Change password for {editingUser?.first_name} {editingUser?.last_name}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2 md:space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new_password">New Password</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="new_password" className="text-xs sm:text-sm">New Password</Label>
               <Input
                 id="new_password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
+                className="h-9 text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirm_password">Confirm Password</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="confirm_password" className="text-xs sm:text-sm">Confirm Password</Label>
               <Input
                 id="confirm_password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
+                className="h-9 text-sm"
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)} size="sm" className="flex-1 sm:flex-none">
               Cancel
             </Button>
-            <Button onClick={handleChangePassword}>
+            <Button onClick={handleChangePassword} size="sm" className="flex-1 sm:flex-none">
               Change Password
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation Dialog - Responsive */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate User</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg sm:text-xl">Deactivate User</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm">
               Are you sure you want to deactivate {userToDelete?.first_name} {userToDelete?.last_name}?
               This user will no longer be able to access the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="flex-1 sm:flex-none">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex-1 sm:flex-none">
               Deactivate
             </AlertDialogAction>
           </AlertDialogFooter>

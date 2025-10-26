@@ -101,7 +101,7 @@ export default function Cart() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { format } = useCurrency();
-  const { items, removeItem, updateQuantity, clearCart, getSubtotal, getTaxAmount, getTotal } = useCartStore();
+  const { items, removeItem, updateQuantity, updatePrice, clearCart, getSubtotal, getTaxAmount, getTotal } = useCartStore();
 
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -262,25 +262,39 @@ export default function Cart() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-16 sm:pb-0">
       {/* Premium Header with Gradient */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 p-6 md:p-8">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-6">
             <Button 
               variant="outline" 
               size="icon"
-              className="h-12 w-12 rounded-xl border-2 hover:border-primary/50 hover:bg-primary/5"
+              className="h-8 w-12 rounded-xl border-2 hover:border-primary/50 hover:bg-primary/5"
               onClick={() => navigate("/sales")}
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-primary/10 ring-2 ring-primary/20">
+                <div className="p-3 rounded-xl bg-primary/10 ring-2 ring-primary/20">
                   <ShoppingBag className="w-6 h-6 text-primary" />
                 </div>
+
+      {/* Sticky Mobile Checkout Bar */}
+      {items.length > 0 && (
+        <div className="fixed bottom-0 inset-x-0 sm:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t px-3 py-2 flex items-center justify-between gap-3 z-40">
+          <div className="flex flex-col leading-tight">
+            <span className="text-[10px] text-muted-foreground">Total</span>
+            <span className="text-base font-bold">{format(cartTotal)}</span>
+          </div>
+          <Button onClick={() => setIsCustomerDialogOpen(true)} className="h-9 text-sm font-semibold flex-1" size="sm" disabled={items.length === 0}>
+            <CheckCircle2 className="w-4 h-4 mr-2" />
+            Checkout
+          </Button>
+        </div>
+      )}
                 <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                   Shopping Cart
                 </h1>
@@ -312,8 +326,8 @@ export default function Cart() {
         {/* Premium Cart Items Section */}
         <div className="lg:col-span-2 space-y-4">
           <Card className="border-2 shadow-xl bg-gradient-to-br from-card to-card/50">
-            <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
-              <CardTitle className="flex items-center justify-between">
+            <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent p-4 sm:p-6">
+              <CardTitle className="flex items-center justify-between text-base sm:text-lg">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-primary/10">
                     <Package className="w-5 h-5 text-primary" />
@@ -325,7 +339,7 @@ export default function Cart() {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               {items.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
@@ -343,11 +357,11 @@ export default function Cart() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {items.map((item) => (
                     <div
                       key={item.product.id}
-                      className="group relative overflow-hidden p-5 bg-gradient-to-br from-muted/30 to-muted/10 hover:from-muted/50 hover:to-muted/30 border-2 border-border hover:border-primary/30 rounded-xl transition-all duration-300"
+                      className="group relative overflow-hidden p-4 sm:p-5 bg-gradient-to-br from-muted/30 to-muted/10 hover:from-muted/50 hover:to-muted/30 border-2 border-border hover:border-primary/30 rounded-xl transition-all duration-300"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
                       <div className="relative flex flex-col md:flex-row gap-4">
@@ -368,21 +382,28 @@ export default function Cart() {
                           )}
                         </div>
 
-                        <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-4">
-                          <div className="flex items-center gap-2 bg-background/50 rounded-lg p-1.5">
+                        <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 sm:gap-4">
+                          <div className="flex items-center gap-1.5 bg-background/50 rounded-lg p-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 hover:bg-primary/10"
+                              className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-primary/10"
                               onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                             >
                               <Minus className="w-4 h-4" />
                             </Button>
-                            <span className="w-12 text-center font-bold text-base">{item.quantity}</span>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={item.product.available_stock}
+                              value={item.quantity}
+                              onChange={(e) => updateQuantity(item.product.id, Math.max(1, parseInt(e.target.value) || 1))}
+                              className="w-14 h-8 sm:h-9 text-center text-sm"
+                            />
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 hover:bg-primary/10"
+                              className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-primary/10"
                               onClick={() => {
                                 if (!updateQuantity(item.product.id, item.quantity + 1)) {
                                   toast.error(`Only ${item.product.available_stock} available`);
@@ -392,15 +413,25 @@ export default function Cart() {
                               <Plus className="w-4 h-4" />
                             </Button>
                           </div>
-
                           <div className="flex md:flex-col items-center md:items-end gap-2">
-                            <p className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min={0}
+                                value={item.price}
+                                onChange={(e) => updatePrice(item.product.id, Math.max(0, parseFloat(e.target.value) || 0))}
+                                className="w-24 h-8 sm:h-9 text-sm"
+                              />
+                              <span className="text-xs text-muted-foreground">Unit</span>
+                            </div>
+                            <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                               {format(item.total)}
                             </p>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive"
+                              className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-destructive/10 hover:text-destructive"
                               onClick={() => removeItem(item.product.id)}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -469,99 +500,99 @@ export default function Cart() {
         </div>
       </div>
 
-      {/* Customer Info Dialog */}
+      {/* Customer Info Dialog - Compact */}
       <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg">
               <User className="w-5 h-5" />
               Customer Information
             </DialogTitle>
-            <DialogDescription>Optional: Add customer details for this sale</DialogDescription>
+            <DialogDescription className="text-xs">Optional: Add customer details for this sale</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="customer-name">Customer Name</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="customer-name" className="text-xs">Customer Name</Label>
               <Input
                 id="customer-name"
                 placeholder="John Doe"
                 value={customerInfo.name}
                 onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                className={validationErrors.name ? "border-destructive" : ""}
+                className={`h-9 text-sm ${validationErrors.name ? 'border-destructive' : ''}`}
               />
               {validationErrors.name && (
-                <p className="text-sm text-destructive">{validationErrors.name}</p>
+                <p className="text-xs text-destructive">{validationErrors.name}</p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="customer-phone">Phone Number</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="customer-phone" className="text-xs">Phone Number</Label>
               <Input
                 id="customer-phone"
                 placeholder="+1 234 567 8900"
                 value={customerInfo.phone}
                 onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                className={validationErrors.phone ? "border-destructive" : ""}
+                className={`h-9 text-sm ${validationErrors.phone ? 'border-destructive' : ''}`}
               />
               {validationErrors.phone && (
-                <p className="text-sm text-destructive">{validationErrors.phone}</p>
+                <p className="text-xs text-destructive">{validationErrors.phone}</p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="customer-email">Email Address</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="customer-email" className="text-xs">Email Address</Label>
               <Input
                 id="customer-email"
                 type="email"
                 placeholder="john@example.com"
                 value={customerInfo.email}
                 onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                className={validationErrors.email ? "border-destructive" : ""}
+                className={`h-9 text-sm ${validationErrors.email ? 'border-destructive' : ''}`}
               />
               {validationErrors.email && (
-                <p className="text-sm text-destructive">{validationErrors.email}</p>
+                <p className="text-xs text-destructive">{validationErrors.email}</p>
               )}
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCustomerDialogOpen(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsCustomerDialogOpen(false)} size="sm" className="flex-1 sm:flex-none">
               Cancel
             </Button>
-            <Button onClick={handleProceedToPayment}>
+            <Button onClick={handleProceedToPayment} size="sm" className="flex-1 sm:flex-none">
               Proceed to Payment
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Payment Dialog */}
+      {/* Payment Dialog - Compact */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg">
               <CreditCard className="w-5 h-5" />
               Payment
             </DialogTitle>
-            <DialogDescription>Select payment method and complete the sale</DialogDescription>
+            <DialogDescription className="text-xs">Select payment method and complete the sale</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">Total Amount</span>
-                <span className="text-2xl font-bold text-primary">{format(cartTotal)}</span>
+          <div className="space-y-3">
+            <div className="p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-xs sm:text-sm text-muted-foreground">Total Amount</span>
+                <span className="text-xl sm:text-2xl font-bold text-primary">{format(cartTotal)}</span>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Payment Method</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Payment Method</Label>
               <Select
                 value={paymentInfo.method}
                 onValueChange={(value) => setPaymentInfo({ ...paymentInfo, method: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -574,19 +605,20 @@ export default function Cart() {
             </div>
 
             {paymentInfo.method === "cash" && (
-              <div className="space-y-2">
-                <Label htmlFor="amount-received">Amount Received</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="amount-received" className="text-xs">Amount Received</Label>
                 <Input
                   id="amount-received"
                   type="number"
                   step="0.01"
+                  className="h-9 text-sm"
                   value={paymentInfo.amountReceived}
                   onChange={(e) =>
                     setPaymentInfo({ ...paymentInfo, amountReceived: parseFloat(e.target.value) || 0 })
                   }
                 />
                 {change >= 0 && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs sm:text-sm">
                     <span className="text-muted-foreground">Change</span>
                     <span className="font-bold text-green-600 dark:text-green-400">
                       {format(change)}
@@ -596,45 +628,46 @@ export default function Cart() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (Optional)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="notes" className="text-xs">Notes (Optional)</Label>
               <Textarea
                 id="notes"
                 placeholder="Add any notes for this sale..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
+                className="text-sm"
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)} size="sm" className="flex-1 sm:flex-none">
               Back
             </Button>
-            <Button onClick={completeSale} disabled={items.length === 0}>
-              <Check className="w-4 h-4 mr-2" />
+            <Button onClick={completeSale} disabled={items.length === 0} size="sm" className="flex-1 sm:flex-none">
+              <Check className="w-3.5 h-3.5 mr-1.5" />
               Complete Sale
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Sale Completion Dialog */}
+      {/* Sale Completion Dialog - Compact */}
       <Dialog open={isCompletionDialogOpen} onOpenChange={setIsCompletionDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+            <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <CheckCircle2 className="w-7 h-7 text-green-600 dark:text-green-400" />
             </div>
-            <DialogTitle className="text-center text-2xl">Sale Completed!</DialogTitle>
-            <DialogDescription className="text-center">
+            <DialogTitle className="text-center text-xl">Sale Completed!</DialogTitle>
+            <DialogDescription className="text-center text-xs">
               Transaction #{completedSaleNumber} has been recorded successfully
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="p-4 bg-muted rounded-lg space-y-2">
+          <div className="space-y-3 py-3">
+            <div className="p-3 bg-muted rounded-lg space-y-1.5">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Amount</span>
                 <span className="font-bold">{format(cartTotal)}</span>
@@ -655,43 +688,44 @@ export default function Cart() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" onClick={handlePrintReceipt}>
-                <Printer className="w-4 h-4 mr-2" />
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" onClick={handlePrintReceipt} size="sm">
+                <Printer className="w-3.5 h-3.5 mr-1.5" />
                 Print Receipt
               </Button>
-              <Button variant="outline" onClick={() => toast.info("Email feature coming soon!")}>
-                <ReceiptIcon className="w-4 h-4 mr-2" />
+              <Button variant="outline" onClick={() => toast.info("Email feature coming soon!")} size="sm"> 
+                <ReceiptIcon className="w-3.5 h-3.5 mr-1.5" />
                 Email Receipt
               </Button>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button onClick={handleNewSale} className="w-full" size="lg">
-              <DollarSign className="w-4 h-4 mr-2" />
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button onClick={handleNewSale} className="w-full" size="sm">
+              <DollarSign className="w-3.5 h-3.5 mr-1.5" />
               New Sale
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Clear Cart Confirmation */}
+      {/* Clear Cart Confirmation - Compact */}
       <AlertDialog open={isClearCartDialogOpen} onOpenChange={setIsClearCartDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Clear Cart?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg">Clear Cart?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
               This will remove all items from your cart. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="h-9 text-sm">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 clearCart();
                 toast.success("🗑️ Cart cleared");
               }}
+              className="h-9 text-sm"
             >
               Clear Cart
             </AlertDialogAction>

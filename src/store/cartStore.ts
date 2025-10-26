@@ -32,6 +32,7 @@ interface CartState {
   addItem: (product: Product) => boolean;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => boolean;
+  updatePrice: (productId: number, price: number) => boolean;
   clearCart: () => void;
   getItemCount: () => number;
   getSubtotal: () => number;
@@ -94,6 +95,33 @@ export const useCartStore = create<CartState>()(
             ],
           });
         }
+
+        return true;
+      },
+
+      updatePrice: (productId: number, newPrice: number) => {
+        if (newPrice < 0) return false;
+
+        const state = get();
+        const item = state.items.find((ci) => ci.product.id === productId);
+        if (!item) return false;
+
+        const taxAmount = item.product.is_taxable
+          ? newPrice * (item.product.tax_rate / 100)
+          : 0;
+
+        set({
+          items: state.items.map((ci) =>
+            ci.product.id === productId
+              ? {
+                  ...ci,
+                  price: newPrice,
+                  tax_amount: taxAmount,
+                  total: ci.quantity * (newPrice + taxAmount),
+                }
+              : ci
+          ),
+        });
 
         return true;
       },

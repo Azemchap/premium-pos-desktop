@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import PageHeader from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useSettings } from "@/hooks/useSettings";
@@ -17,7 +18,6 @@ import {
     Clock,
     DollarSign,
     Eye,
-    MapPin,
     Package,
     Plus,
     RefreshCw,
@@ -149,13 +149,7 @@ export default function Dashboard() {
         return "Good evening";
     };
 
-    const getCurrentTime = () => {
-        return new Date().toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
-    };
+    
 
     const getSalesGrowth = () => {
         if (!stats || stats.week_sales === 0) return 0;
@@ -237,62 +231,30 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="space-y-6 md:space-y-8">
-            {/* Enhanced Header with Store Info & Time */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-4 md:gap-6">
-                        <h1 className="text-xl sm:text-lg  md:text-2xl  font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                            {getGreeting()}, {user?.first_name}!
-                        </h1>
-                        <Sparkles className="w-6 h-6 text-yellow-500 animate-pulse" />
-                    </div>
-                    <p className="text-muted-foreground flex items-center gap-1 sm:gap-2">
-                        <Store className="w-4 h-4" />
-                        <span className="font-medium">{storeConfig?.name || 'Loading...'}</span>
-                        {storeConfig?.address && (
-                            <>
-                                <span>•</span>
-                                <MapPin className="w-3 h-3" />
-                                <span className="text-xs">{storeConfig.address}</span>
-                            </>
-                        )}
-                    </p>
-                </div>
-                <div className="flex items-center gap-4 md:gap-6">
-                    <div className="hidden md:flex flex-col items-end">
-                        <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-                            <Clock className="w-4 h-4" />
-                            <span>{getCurrentTime()}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                            {new Date().toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                            })}
-                        </div>
-                    </div>
+        <div className="space-y-4 sm:space-y-6">
+            <PageHeader
+                icon={Store}
+                title="Dashboard"
+                subtitle={`${getGreeting()}, ${user?.first_name || ''}! • ${storeConfig?.name || 'Loading...'}${storeConfig?.address ? ' • ' + storeConfig.address : ''}`}
+                actions={
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={refreshData}
                         disabled={refreshing}
-                        className="shadow-sm"
                     >
                         <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Enhanced Stats Grid with Growth Indicators */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-green-500 dark:border-l-green-600 hover:scale-105">
-                    <CardContent className="p-4 md:p-6">
-                        <div className="flex items-center justify-between mb-3 md:mb-4">
-                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 shadow-lg">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                <Card className="hover:shadow-md transition-all duration-200 border-l-4 border-l-green-500 dark:border-l-green-600">
+                    <CardContent className="p-3 md:p-4">
+                        <div className="flex items-center justify-between mb-2 md:mb-3">
+                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 shadow-md">
                                 <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             </div>
                             {getSalesGrowth() !== 0 && (
@@ -324,10 +286,10 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-primary dark:border-l-primary hover:scale-105">
-                    <CardContent className="p-4 md:p-6">
-                        <div className="flex items-center justify-between mb-3 md:mb-4">
-                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-primary to-blue-600 dark:from-primary dark:to-blue-600 shadow-lg">
+                <Card className="hover:shadow-md transition-all duration-200 border-l-4 border-l-primary dark:border-l-primary">
+                    <CardContent className="p-3 md:p-4">
+                        <div className="flex items-center justify-between mb-2 md:mb-3">
+                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-primary to-blue-600 dark:from-primary dark:to-blue-600 shadow-md">
                                 <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             </div>
                             <Badge variant="outline" className="flex items-center gap-1">
@@ -349,17 +311,17 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-purple-500 dark:border-l-purple-600 hover:scale-105">
-                    <CardContent className="p-4 md:p-6">
-                        <div className="flex items-center justify-between mb-3 md:mb-4">
-                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 shadow-lg">
+                <Card className="hover:shadow-md transition-all duration-200 border-l-4 border-l-purple-500 dark:border-l-purple-600">
+                    <CardContent className="p-3 md:p-4">
+                        <div className="flex items-center justify-between mb-2 md:mb-3">
+                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 shadow-md">
                                 <Package className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             </div>
                             <Button 
                                 variant="ghost" 
-                                size="sm" 
+                                aria-label="View products"
+                                className="h-9 min-w-[36px]"
                                 onClick={() => navigate('/products')}
-                                className="h-8"
                             >
                                 <Eye className="w-4 h-4" />
                             </Button>
@@ -376,18 +338,18 @@ export default function Dashboard() {
                                     <span>Stock Health</span>
                                     <span>{getStockHealth().toFixed(0)}%</span>
                                 </div>
-                                <Progress value={getStockHealth()} className="h-1.5" />
+                                <Progress value={getStockHealth()} className="h-1" />
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className={`hover:shadow-xl transition-all duration-300 border-l-4 hover:scale-105 ${
+                <Card className={`hover:shadow-md transition-all duration-200 border-l-4 ${
                     (stats?.low_stock_items || 0) > 0 ? 'border-l-orange-500 dark:border-l-orange-600' : 'border-l-green-500 dark:border-l-green-600'
                 }`}>
-                    <CardContent className="p-4 md:p-6">
-                        <div className="flex items-center justify-between mb-3 md:mb-4">
-                            <div className={`p-2 md:p-3 rounded-xl shadow-lg ${
+                    <CardContent className="p-3 md:p-4">
+                        <div className="flex items-center justify-between mb-2 md:mb-3">
+                            <div className={`p-2 md:p-3 rounded-xl shadow-md ${
                                 (stats?.low_stock_items || 0) > 0 
                                     ? 'bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700' 
                                     : 'bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700'
@@ -401,9 +363,9 @@ export default function Dashboard() {
                             {(stats?.low_stock_items || 0) > 0 && (
                                 <Button 
                                     variant="ghost" 
-                                    size="sm"
+                                    aria-label="View low stock inventory"
+                                    className="h-9 min-w-[36px] text-orange-600 dark:text-orange-400"
                                     onClick={() => navigate('/inventory')}
-                                    className="h-8 text-orange-600 dark:text-orange-400"
                                 >
                                     <ArrowRight className="w-4 h-4" />
                                 </Button>
@@ -431,98 +393,95 @@ export default function Dashboard() {
             </div>
 
             {/* Quick Actions */}
-            <Card className="border-2 border-dashed hover:border-primary transition-colors shadow-md">
-                <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 md:gap-3 text-lg md:text-xl">
+            <Card className="border-2 border-dashed hover:border-primary transition-colors shadow-sm">
+                <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 md:gap-3 text-base md:text-lg">
                         <Zap className="w-5 h-5 text-yellow-500" />
                         Quick Actions
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                         <Button
                             variant="outline"
-                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-50/5 transition-all hover:shadow-md"
+                            className="h-20 md:h-24 flex flex-col items-center justify-center gap-2 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-50/5 transition-all hover:shadow-sm"
                             onClick={() => navigate('/sales')}
                         >
                             <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/30">
-                                <ShoppingCart className="w-6 h-6 md:w-7 md:h-7 text-green-700 dark:text-green-400" />
+                                <ShoppingCart className="w-6 h-6 text-green-700 dark:text-green-400" />
                             </div>
-                            <span className="text-sm md:text-base font-medium">New Sale</span>
+                            <span className="text-sm font-medium">New Sale</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-primary hover:bg-blue-50 dark:hover:bg-blue-50/5 transition-all hover:shadow-md"
+                            className="h-20 md:h-24 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-blue-50 dark:hover:bg-blue-50/5 transition-all hover:shadow-sm"
                             onClick={() => navigate('/products')}
                         >
                             <div className="p-2 rounded-lg bg-blue-100">
-                                <Plus className="w-6 h-6 md:w-7 md:h-7 text-primary" />
+                                <Plus className="w-6 h-6 text-primary" />
                             </div>
-                            <span className="text-sm md:text-base font-medium">Add Product</span>
+                            <span className="text-sm font-medium">Add Product</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-50/5 transition-all hover:shadow-md"
+                            className="h-20 md:h-24 flex flex-col items-center justify-center gap-2 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-50/5 transition-all hover:shadow-sm"
                             onClick={() => navigate('/inventory')}
                         >
                             <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                                <Package className="w-6 h-6 md:w-7 md:h-7 text-purple-600 dark:text-purple-400" />
+                                <Package className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                             </div>
-                            <span className="text-sm md:text-base font-medium">Manage Stock</span>
+                            <span className="text-sm font-medium">Manage Stock</span>
                         </Button>
                         
                         <Button
                             variant="outline"
-                            className="h-24 md:h-28 flex flex-col items-center justify-center gap-2 md:gap-3 hover:border-orange-500 hover:bg-orange-50  dark:hover:bg-orange-50/5 transition-all hover:shadow-md"
+                            className="h-20 md:h-24 flex flex-col items-center justify-center gap-2 hover:border-orange-500 hover:bg-orange-50  dark:hover:bg-orange-50/5 transition-all hover:shadow-sm"
                             onClick={() => navigate('/reports')}
                         >
                             <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                                <BarChart3 className="w-6 h-6 md:w-7 md:h-7 text-orange-600 dark:text-orange-400" />
+                                <BarChart3 className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                             </div>
-                            <span className="text-sm md:text-base font-medium">View Reports</span>
+                            <span className="text-sm font-medium">View Reports</span>
                         </Button>
                     </div>
                 </CardContent>
             </Card>
 
             {/* Additional Stats - Enhanced */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                 <Card className="md:col-span-2">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        <CardTitle className="flex items-center gap-1.5 text-sm sm:text-base">
+                            <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
                             Sales Performance
                         </CardTitle>
-                        <Badge variant="outline">This Month</Badge>
+                        <Badge variant="outline" className="text-[11px]">This Month</Badge>
                     </CardHeader>
-                    <CardContent className="space-y-2 md:space-y-4">
-                        <div className="grid grid-cols-2 gap-4 md:gap-6">
+                    <CardContent className="space-y-2 md:space-y-3">
+                        <div className="grid grid-cols-2 gap-3 md:gap-4">
                             <div className="space-y-2">
-                                <p className="text-sm text-muted-foreground">Month Sales</p>
-                                <p className="text-lg  md:text-2xl font-bold">
+                                <p className="text-xs sm:text-sm text-muted-foreground">Month Sales</p>
+                                <p className="text-lg  md:text-xl font-bold">
                                     {formatCurrency(stats?.month_sales || 0)}
                                 </p>
-                                <Progress 
-                                    value={((stats?.month_sales || 0) / 100000) * 100} 
-                                    className="h-2"
-                                />
+                                <Progress value={((stats?.month_sales || 0) / 100000) * 100} className="h-1.5" />
                             </div>
                             <div className="space-y-2">
-                                <p className="text-sm text-muted-foreground">Avg Transaction</p>
-                                <p className="text-lg  md:text-2xl font-bold">
+                                <p className="text-xs sm:text-sm text-muted-foreground">Avg Transaction</p>
+                                <p className="text-lg  md:text-xl font-bold">
                                     {formatCurrency(stats?.average_transaction_value || 0)}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-[11px] sm:text-xs text-muted-foreground">
                                     {stats?.today_transactions || 0} transactions today
                                 </p>
                             </div>
                         </div>
                         
-                        <div className="pt-4 border-t">
+                        <div className="pt-3 border-t">
                             <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">Daily Average</span>
+                                <span className="text-xs sm:text-sm font-medium">Daily Average</span>
                                 <span className="font-semibold text-primary">
                                     {formatCurrency((stats?.month_sales || 0) / 30)}
                                 </span>
@@ -533,29 +492,29 @@ export default function Dashboard() {
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <Package className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <CardTitle className="flex items-center gap-1.5 text-sm sm:text-base">
+                            <Package className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                             Inventory
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2 md:space-y-4">
+                    <CardContent className="space-y-2 md:space-y-3">
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Total Products</span>
-                                <span className="font-bold">{stats?.total_products || 0}</span>
+                                <span className="text-xs sm:text-sm text-muted-foreground">Total Products</span>
+                                <span className="font-semibold">{stats?.total_products || 0}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Low Stock</span>
+                                <span className="text-xs sm:text-sm text-muted-foreground">Low Stock</span>
                                 <Badge variant={
                                     (stats?.low_stock_items || 0) > 0 ? "destructive" : "default"
-                                }>
+                                } className="text-[11px]">
                                     {stats?.low_stock_items || 0}
                                 </Badge>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Health Score</span>
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                    <span className="font-bold text-green-600 dark:text-green-400">
+                                <span className="text-xs sm:text-sm text-muted-foreground">Health Score</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="font-semibold text-green-600 dark:text-green-400">
                                         {getStockHealth().toFixed(0)}%
                                     </span>
                                     {getStockHealth() >= 90 ? (
@@ -573,11 +532,11 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Activity - Enhanced */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-3">
-                        <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <ShoppingCart className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="flex items-center gap-1.5 text-sm sm:text-base">
+                            <ShoppingCart className="w-4 h-4 text-green-600 dark:text-green-400" />
                             Recent Sales
                         </CardTitle>
                         <Button 
@@ -590,20 +549,20 @@ export default function Dashboard() {
                         </Button>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-3">
+                        <div className="space-y-2.5">
                             {recentActivity?.sales && recentActivity.sales.length > 0 ? (
                                 recentActivity.sales.map((sale) => (
                                     <div 
                                         key={sale.id} 
-                                        className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 dark:hover:bg-muted transition-colors border border-border"
+                                        className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 dark:hover:bg-muted transition-colors border border-border"
                                     >
-                                        <div className="flex items-center gap-4 md:gap-6">
+                                        <div className="flex items-center gap-3 md:gap-4">
                                             <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
                                                 <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
                                             </div>
                                             <div>
-                                                <p className="font-medium">{sale.sale_number}</p>
-                                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                <p className="font-medium text-sm">{sale.sale_number}</p>
+                                                <p className="text-[11px] sm:text-xs text-muted-foreground flex items-center gap-1">
                                                     <Users className="w-3 h-3" />
                                                     {sale.customer_name || 'Walk-in'}
                                                     <span>•</span>
@@ -612,7 +571,7 @@ export default function Dashboard() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <p className="font-bold text-green-600 dark:text-green-400">
+                                        <p className="font-semibold text-green-600 dark:text-green-400 text-sm">
                                             {formatCurrency(sale.total_amount)}
                                         </p>
                                     </div>
@@ -622,8 +581,8 @@ export default function Dashboard() {
                                     <div className="w-16 h-16 mx-auto mb-2 md:mb-4 rounded-full bg-muted flex items-center justify-center">
                                         <ShoppingCart className="w-8 h-8 opacity-50" />
                                     </div>
-                                    <p className="font-medium">No recent sales</p>
-                                    <p className="text-sm">Start selling to see transactions here</p>
+                                    <p className="font-medium text-sm">No recent sales</p>
+                                    <p className="text-xs sm:text-sm">Start selling to see transactions here</p>
                                     <Button 
                                         variant="outline" 
                                         size="sm" 
@@ -640,9 +599,9 @@ export default function Dashboard() {
                 </Card>
 
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-3">
-                        <CardTitle className="flex items-center gap-1 sm:gap-2">
-                            <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="flex items-center gap-1.5 text-sm sm:text-base">
+                            <AlertCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                             Low Stock Alerts
                         </CardTitle>
                         <Button 
@@ -650,20 +609,21 @@ export default function Dashboard() {
                             size="sm"
                             onClick={() => navigate('/inventory')}
                         >
-                            <ArrowRight className="w-4 h-4" />
+                            <Eye className="w-4 h-4 mr-1" />
+                            View All
                         </Button>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-3">
+                        <div className="space-y-2.5">
                             {recentActivity?.low_stock_items && recentActivity.low_stock_items.length > 0 ? (
                                 recentActivity.low_stock_items.map((item) => {
                                     const stockStatus = getStockStatus(item.current_stock, item.minimum_stock);
                                     return (
                                         <div 
                                             key={item.id} 
-                                            className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 dark:hover:bg-muted transition-colors border border-border"
+                                            className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 dark:hover:bg-muted transition-colors border border-border"
                                         >
-                                            <div className="flex items-center gap-4 md:gap-6">
+                                            <div className="flex items-center gap-3 md:gap-4">
                                                 <div className={`p-2 rounded-lg ${
                                                     stockStatus.color === 'destructive' 
                                                         ? 'bg-red-100 dark:bg-red-900/30' 
@@ -676,16 +636,16 @@ export default function Dashboard() {
                                                     }`} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-medium truncate">
+                                                    <p className="font-medium text-sm truncate">
                                                         {item.product?.name || 'Unknown Product'}
                                                     </p>
-                                                    <p className="text-xs text-muted-foreground">
+                                                    <p className="text-[11px] sm:text-xs text-muted-foreground">
                                                         SKU: {item.product?.sku} • 
                                                         Stock: {item.current_stock}/{item.minimum_stock}
                                                     </p>
                                                 </div>
                                             </div>
-                                            <Badge variant={stockStatus.color} className="shrink-0">
+                                            <Badge variant={stockStatus.color} className="shrink-0 text-[11px]">
                                                 {stockStatus.status}
                                             </Badge>
                                         </div>
@@ -697,7 +657,7 @@ export default function Dashboard() {
                                         <Zap className="w-8 h-8 text-green-600 dark:text-green-400" />
                                     </div>
                                     <p className="font-medium text-green-600 dark:text-green-400">All Products Healthy!</p>
-                                    <p className="text-sm">Your inventory is well-stocked</p>
+                                    <p className="text-xs sm:text-sm">Your inventory is well-stocked</p>
                                 </div>
                             )}
                         </div>

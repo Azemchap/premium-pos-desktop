@@ -36,7 +36,8 @@ import { Textarea } from "@/components/ui/textarea";
 // import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import { Edit, MoreHorizontal, Package, Plus, Ruler, Tag, Trash2, Palette, Layers } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -539,102 +540,109 @@ export default function MasterData() {
   }, []);
 
   return (
-    <div className="space-y-6 md:space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-lg md:text-3xl font-bold">Master Data</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage categories, brands, units, and product variants
-          </p>
-        </div>
-      </div>
+    <div className="space-y-4 sm:space-y-6">
+      <PageHeader
+        icon={Layers}
+        title="Master Data"
+        subtitle="Manage categories, brands, units, and product variants"
+      />
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-        <Card>
-          <CardContent className="p-6">
+      {/* Statistics - Enhanced with Gradients */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Categories</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold">{categories.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-white">
+                <p className="text-xs sm:text-sm opacity-90 font-medium">Categories</p>
+                <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{categories.length}</p>
+                <p className="text-xs opacity-80 mt-1">
                   {categories.filter(c => c.is_active).length} active
                 </p>
               </div>
-              <Tag className="w-8 h-8 text-blue-600" />
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Tag className="w-7 h-7 text-white" />
+              </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Brands</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold">{brands.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-white">
+                <p className="text-xs sm:text-sm opacity-90 font-medium">Brands</p>
+                <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{brands.length}</p>
+                <p className="text-xs opacity-80 mt-1">
                   {brands.filter(b => b.is_active).length} active
                 </p>
               </div>
-              <Package className="w-8 h-8 text-green-600" />
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Package className="w-7 h-7 text-white" />
+              </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
+          <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Units</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold">{units.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-white">
+                <p className="text-xs sm:text-sm opacity-90 font-medium">Units</p>
+                <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{units.length}</p>
+                <p className="text-xs opacity-80 mt-1">
                   {units.filter(u => u.is_active).length} active
                 </p>
               </div>
-              <Ruler className="w-8 h-8 text-purple-600" />
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Ruler className="w-7 h-7 text-white" />
+              </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
+          <div className="bg-gradient-to-br from-orange-500 to-pink-600 p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Variant Types</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold">{variantTypes.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-white">
+                <p className="text-xs sm:text-sm opacity-90 font-medium">Variant Types</p>
+                <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{variantTypes.length}</p>
+                <p className="text-xs opacity-80 mt-1">
                   {variantTypes.filter(v => v.is_active).length} active
                 </p>
               </div>
-              <Layers className="w-8 h-8 text-orange-600" />
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Layers className="w-7 h-7 text-white" />
+              </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
+          <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Variant Values</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold">{variantValues.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-white">
+                <p className="text-xs sm:text-sm opacity-90 font-medium">Variant Values</p>
+                <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{variantValues.length}</p>
+                <p className="text-xs opacity-80 mt-1">
                   {variantValues.filter(v => v.is_active).length} active
                 </p>
               </div>
-              <Palette className="w-8 h-8 text-pink-600" />
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Palette className="w-7 h-7 text-white" />
+              </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
 
       {/* Tabbed Interface */}
-      <Card>
-        <CardHeader>
+      <Card className="shadow-md w-full">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
           <CardTitle>Manage Master Data</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="py-4">
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EntityType)}>
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+            <TabsList className="grid w-full grid-cols-3 md:grid-cols-3 lg:grid-cols-5 h-full">
               <TabsTrigger value="category">Categories</TabsTrigger>
               <TabsTrigger value="brand">Brands</TabsTrigger>
               <TabsTrigger value="unit">Units</TabsTrigger>
@@ -651,25 +659,29 @@ export default function MasterData() {
                 </Button>
               </div>
 
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-xs">Name</TableHead>
+                    <TableHead className="text-xs">Description</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {categories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
+                    <TableRow key={category.id} className="hover:bg-primary/5 transition-colors duration-150">
+                      <TableCell className="font-semibold text-foreground text-sm">{category.name}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
                         {category.description || "—"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={category.is_active ? "default" : "secondary"}>
-                          {category.is_active ? "Active" : "Inactive"}
+                        <Badge 
+                          variant="outline"
+                          className={category.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}
+                        >
+                          {category.is_active ? "✓ Active" : "○ Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -698,6 +710,7 @@ export default function MasterData() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </TabsContent>
 
             {/* BRANDS TAB */}
@@ -712,22 +725,25 @@ export default function MasterData() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-xs">Name</TableHead>
+                    <TableHead className="text-xs">Description</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {brands.map((brand) => (
-                    <TableRow key={brand.id}>
-                      <TableCell className="font-medium">{brand.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
+                    <TableRow key={brand.id} className="hover:bg-primary/5 transition-colors duration-150">
+                      <TableCell className="font-semibold text-foreground text-sm">{brand.name}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
                         {brand.description || "—"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={brand.is_active ? "default" : "secondary"}>
-                          {brand.is_active ? "Active" : "Inactive"}
+                        <Badge 
+                          variant="outline"
+                          className={brand.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}
+                        >
+                          {brand.is_active ? "✓ Active" : "○ Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -770,24 +786,27 @@ export default function MasterData() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Abbreviation</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-xs">Name</TableHead>
+                    <TableHead className="text-xs">Abbreviation</TableHead>
+                    <TableHead className="text-xs">Description</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {units.map((unit) => (
-                    <TableRow key={unit.id}>
-                      <TableCell className="font-medium">{unit.name}</TableCell>
-                      <TableCell>{unit.abbreviation || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">
+                    <TableRow key={unit.id} className="hover:bg-primary/5 transition-colors duration-150">
+                      <TableCell className="font-semibold text-foreground text-sm">{unit.name}</TableCell>
+                      <TableCell><Badge variant="outline" className="font-mono text-xs">{unit.abbreviation || "—"}</Badge></TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
                         {unit.description || "—"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={unit.is_active ? "default" : "secondary"}>
-                          {unit.is_active ? "Active" : "Inactive"}
+                        <Badge 
+                          variant="outline"
+                          className={unit.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}
+                        >
+                          {unit.is_active ? "✓ Active" : "○ Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -830,24 +849,27 @@ export default function MasterData() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Display Order</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-xs">Name</TableHead>
+                    <TableHead className="text-xs">Description</TableHead>
+                    <TableHead className="text-xs">Display Order</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {variantTypes.map((variantType) => (
-                    <TableRow key={variantType.id}>
-                      <TableCell className="font-medium">{variantType.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
+                    <TableRow key={variantType.id} className="hover:bg-primary/5 transition-colors duration-150">
+                      <TableCell className="font-semibold text-foreground text-sm">{variantType.name}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
                         {variantType.description || "—"}
                       </TableCell>
-                      <TableCell>{variantType.display_order}</TableCell>
+                      <TableCell><Badge variant="secondary" className="text-xs px-2">{variantType.display_order}</Badge></TableCell>
                       <TableCell>
-                        <Badge variant={variantType.is_active ? "default" : "secondary"}>
-                          {variantType.is_active ? "Active" : "Inactive"}
+                        <Badge 
+                          variant="outline"
+                          className={variantType.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}
+                        >
+                          {variantType.is_active ? "✓ Active" : "○ Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -890,40 +912,49 @@ export default function MasterData() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Color</TableHead>
-                    <TableHead>Order</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-xs">Type</TableHead>
+                    <TableHead className="text-xs">Value</TableHead>
+                    <TableHead className="text-xs">Code</TableHead>
+                    <TableHead className="text-xs">Color</TableHead>
+                    <TableHead className="text-xs">Order</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {variantValues.map((variantValue) => (
-                    <TableRow key={variantValue.id}>
-                      <TableCell className="font-medium">
-                        {getVariantTypeName(variantValue.variant_type_id)}
+                    <TableRow key={variantValue.id} className="hover:bg-primary/5 transition-colors duration-150">
+                      <TableCell>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {getVariantTypeName(variantValue.variant_type_id)}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">{variantValue.value}</TableCell>
-                      <TableCell>{variantValue.code || "—"}</TableCell>
+                      <TableCell className="font-semibold text-foreground text-sm">{variantValue.value}</TableCell>
+                      <TableCell>
+                        {variantValue.code ? (
+                          <Badge variant="outline" className="font-mono text-xs">{variantValue.code}</Badge>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
                       <TableCell>
                         {variantValue.hex_color ? (
                           <div className="flex items-center gap-2">
                             <div 
-                              className="w-6 h-6 rounded border"
+                              className="w-8 h-8 rounded-lg border-2 shadow-sm"
                               style={{ backgroundColor: variantValue.hex_color }}
                             />
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground font-mono">
                               {variantValue.hex_color}
                             </span>
                           </div>
-                        ) : "—"}
+                        ) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
-                      <TableCell>{variantValue.display_order}</TableCell>
+                      <TableCell><Badge variant="secondary" className="text-xs px-2">{variantValue.display_order}</Badge></TableCell>
                       <TableCell>
-                        <Badge variant={variantValue.is_active ? "default" : "secondary"}>
-                          {variantValue.is_active ? "Active" : "Inactive"}
+                        <Badge 
+                          variant="outline"
+                          className={variantValue.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}
+                        >
+                          {variantValue.is_active ? "✓ Active" : "○ Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -959,33 +990,34 @@ export default function MasterData() {
 
       {/* Category Dialog */}
       <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingCategory ? "Edit Category" : "Create Category"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg">{editingCategory ? "Edit Category" : "Create Category"}</DialogTitle>
+            <DialogDescription className="text-xs">
               {editingCategory ? "Update category details" : "Add a new category"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="category-name">Name *</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="category-name" className="text-xs">Name *</Label>
               <Input
                 id="category-name"
                 value={categoryForm.name}
                 onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                className={validationErrors.name ? "border-red-500" : ""}
+                className={`h-9 text-sm ${validationErrors.name ? "border-red-500" : ""}`}
               />
               {validationErrors.name && (
                 <p className="text-xs text-red-500">{validationErrors.name}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="category-desc">Description</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="category-desc" className="text-xs">Description</Label>
               <Textarea
                 id="category-desc"
                 value={categoryForm.description}
                 onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
                 rows={3}
+                className="text-sm"
               />
             </div>
           </div>
@@ -1000,33 +1032,34 @@ export default function MasterData() {
 
       {/* Brand Dialog */}
       <Dialog open={isBrandDialogOpen} onOpenChange={setIsBrandDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingBrand ? "Edit Brand" : "Create Brand"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg">{editingBrand ? "Edit Brand" : "Create Brand"}</DialogTitle>
+            <DialogDescription className="text-xs">
               {editingBrand ? "Update brand details" : "Add a new brand"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="brand-name">Name *</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="brand-name" className="text-xs">Name *</Label>
               <Input
                 id="brand-name"
                 value={brandForm.name}
                 onChange={(e) => setBrandForm({ ...brandForm, name: e.target.value })}
-                className={validationErrors.name ? "border-red-500" : ""}
+                className={`h-9 text-sm ${validationErrors.name ? "border-red-500" : ""}`}
               />
               {validationErrors.name && (
                 <p className="text-xs text-red-500">{validationErrors.name}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="brand-desc">Description</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="brand-desc" className="text-xs">Description</Label>
               <Textarea
                 id="brand-desc"
                 value={brandForm.description}
                 onChange={(e) => setBrandForm({ ...brandForm, description: e.target.value })}
                 rows={3}
+                className="text-sm"
               />
             </div>
           </div>
@@ -1041,42 +1074,44 @@ export default function MasterData() {
 
       {/* Unit Dialog */}
       <Dialog open={isUnitDialogOpen} onOpenChange={setIsUnitDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingUnit ? "Edit Unit" : "Create Unit"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg">{editingUnit ? "Edit Unit" : "Create Unit"}</DialogTitle>
+            <DialogDescription className="text-xs">
               {editingUnit ? "Update unit details" : "Add a new unit of measurement"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="unit-name">Name *</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="unit-name" className="text-xs">Name *</Label>
               <Input
                 id="unit-name"
                 value={unitForm.name}
                 onChange={(e) => setUnitForm({ ...unitForm, name: e.target.value })}
-                className={validationErrors.name ? "border-red-500" : ""}
+                className={`h-9 text-sm ${validationErrors.name ? "border-red-500" : ""}`}
               />
               {validationErrors.name && (
                 <p className="text-xs text-red-500">{validationErrors.name}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="unit-abbr">Abbreviation</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="unit-abbr" className="text-xs">Abbreviation</Label>
               <Input
                 id="unit-abbr"
                 value={unitForm.abbreviation}
                 onChange={(e) => setUnitForm({ ...unitForm, abbreviation: e.target.value })}
                 placeholder="e.g. kg, lb, ea"
+                className="h-9 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="unit-desc">Description</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="unit-desc" className="text-xs">Description</Label>
               <Textarea
                 id="unit-desc"
                 value={unitForm.description}
                 onChange={(e) => setUnitForm({ ...unitForm, description: e.target.value })}
                 rows={3}
+                className="text-sm"
               />
             </div>
           </div>
@@ -1091,45 +1126,47 @@ export default function MasterData() {
 
       {/* Variant Type Dialog */}
       <Dialog open={isVariantTypeDialogOpen} onOpenChange={setIsVariantTypeDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingVariantType ? "Edit Variant Type" : "Create Variant Type"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg">{editingVariantType ? "Edit Variant Type" : "Create Variant Type"}</DialogTitle>
+            <DialogDescription className="text-xs">
               {editingVariantType ? "Update variant type details" : "Add a new variant type (e.g., Size, Color, Material)"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="variant-type-name">Name *</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="variant-type-name" className="text-xs">Name *</Label>
               <Input
                 id="variant-type-name"
                 value={variantTypeForm.name}
                 onChange={(e) => setVariantTypeForm({ ...variantTypeForm, name: e.target.value })}
                 placeholder="e.g., Size, Color, Material"
-                className={validationErrors.name ? "border-red-500" : ""}
+                className={`h-9 text-sm ${validationErrors.name ? "border-red-500" : ""}`}
               />
               {validationErrors.name && (
                 <p className="text-xs text-red-500">{validationErrors.name}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="variant-type-desc">Description</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="variant-type-desc" className="text-xs">Description</Label>
               <Textarea
                 id="variant-type-desc"
                 value={variantTypeForm.description}
                 onChange={(e) => setVariantTypeForm({ ...variantTypeForm, description: e.target.value })}
                 rows={3}
                 placeholder="Optional description"
+                className="text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="variant-type-order">Display Order</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="variant-type-order" className="text-xs">Display Order</Label>
               <Input
                 id="variant-type-order"
                 type="number"
                 value={variantTypeForm.display_order}
                 onChange={(e) => setVariantTypeForm({ ...variantTypeForm, display_order: parseInt(e.target.value) || 0 })}
                 placeholder="0"
+                className="h-9 text-sm"
               />
             </div>
           </div>
@@ -1144,21 +1181,21 @@ export default function MasterData() {
 
       {/* Variant Value Dialog */}
       <Dialog open={isVariantValueDialogOpen} onOpenChange={setIsVariantValueDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingVariantValue ? "Edit Variant Value" : "Create Variant Value"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg">{editingVariantValue ? "Edit Variant Value" : "Create Variant Value"}</DialogTitle>
+            <DialogDescription className="text-xs">
               {editingVariantValue ? "Update variant value details" : "Add a new variant value (e.g., Small, Red, Cotton)"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="variant-value-type">Variant Type *</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="variant-value-type" className="text-xs">Variant Type *</Label>
               <select
                 id="variant-value-type"
                 value={variantValueForm.variant_type_id}
                 onChange={(e) => setVariantValueForm({ ...variantValueForm, variant_type_id: parseInt(e.target.value) })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {variantTypes.map((type) => (
                   <option key={type.id} value={type.id}>
@@ -1170,53 +1207,56 @@ export default function MasterData() {
                 <p className="text-xs text-red-500">{validationErrors.variant_type_id}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="variant-value-name">Value *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="variant-value-name" className="text-xs">Value *</Label>
               <Input
                 id="variant-value-name"
                 value={variantValueForm.value}
                 onChange={(e) => setVariantValueForm({ ...variantValueForm, value: e.target.value })}
                 placeholder="e.g., Small, Red, Cotton"
-                className={validationErrors.value ? "border-red-500" : ""}
+                className={`h-9 text-sm ${validationErrors.value ? "border-red-500" : ""}`}
               />
               {validationErrors.value && (
                 <p className="text-xs text-red-500">{validationErrors.value}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="variant-value-code">Code</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="variant-value-code" className="text-xs">Code</Label>
               <Input
                 id="variant-value-code"
                 value={variantValueForm.code}
                 onChange={(e) => setVariantValueForm({ ...variantValueForm, code: e.target.value })}
                 placeholder="e.g., SM, RED, COT"
+                className="h-9 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="variant-value-color">Hex Color (for colors only)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="variant-value-color" className="text-xs">Hex Color (for colors only)</Label>
               <div className="flex gap-2">
                 <Input
                   id="variant-value-color"
                   value={variantValueForm.hex_color}
                   onChange={(e) => setVariantValueForm({ ...variantValueForm, hex_color: e.target.value })}
                   placeholder="#000000"
+                  className="h-9 text-sm"
                 />
                 <input
                   type="color"
                   value={variantValueForm.hex_color || "#000000"}
                   onChange={(e) => setVariantValueForm({ ...variantValueForm, hex_color: e.target.value })}
-                  className="w-12 h-10 rounded border cursor-pointer"
+                  className="w-10 h-9 rounded border cursor-pointer"
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="variant-value-order">Display Order</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="variant-value-order" className="text-xs">Display Order</Label>
               <Input
                 id="variant-value-order"
                 type="number"
                 value={variantValueForm.display_order}
                 onChange={(e) => setVariantValueForm({ ...variantValueForm, display_order: parseInt(e.target.value) || 0 })}
                 placeholder="0"
+                className="h-9 text-sm"
               />
             </div>
           </div>
