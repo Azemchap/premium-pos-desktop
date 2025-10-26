@@ -7,7 +7,10 @@ pub mod models;
 pub mod seeder_building_materials;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() -> Result<(), Box<dyn std::error::Error>> {
-    // Call the async-aware app main run function
-    app::run()
+pub fn run() {
+    // Call the async-aware app main run function and handle the result
+    if let Err(e) = app::run() {
+        eprintln!("Error running application: {}", e);
+        std::process::exit(1);
+    }
 }

@@ -43,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
 import { printReceipt } from "@/lib/receipt-printer";
 import { useAuthStore } from "@/store/authStore";
+import { useCartStore } from "@/store/cartStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
   ArrowDown,
@@ -97,14 +98,6 @@ interface Product {
   unit_of_measure: string;
 }
 
-interface CartItem {
-  product: Product;
-  quantity: number;
-  price: number;
-  tax_amount: number;
-  total: number;
-}
-
 interface CustomerInfo {
   name: string;
   phone: string;
@@ -142,12 +135,12 @@ type SortDirection = 'asc' | 'desc';
 export default function Sales() {
   const { user } = useAuthStore();
   const { format } = useCurrency();
-  const [products, setProducts] = useState<Product[]>([]);
+  const { items: cart, addItem, removeItem, updateQuantity: updateCartQuantity, clearCart, getSubtotal, getTaxAmount, getTotal } = useCartStore();
+  const [products, setProducts] = useState<Product[]>();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
@@ -202,84 +195,39 @@ export default function Sales() {
   };
 
   const addToCart = (product: Product) => {
-    // CRITICAL: Check available_stock from inventory (not current_stock)
-    if (product.available_stock <= 0) {
-      toast.error(`❌ ${product.name} is out of stock!`);
-      return;
-    }
-
-    const existingItem = cart.find((item) => item.product.id === product.id);
-    const currentCartQuantity = existingItem ? existingItem.quantity : 0;
-    const newTotalQuantity = currentCartQuantity + 1;
-
-    // Validate against available_stock (accounting for what's already in cart)
-    if (newTotalQuantity > product.available_stock) {
-      toast.error(`❌ Cannot add more - only ${product.available_stock} available (${currentCartQuantity} already in cart)`);
-      return;
-    }
-
-    if (existingItem) {
-      updateCartItemQuantity(product.id, existingItem.quantity + 1);
-    } else {
-      const taxAmount = product.is_taxable ? product.selling_price * (product.tax_rate / 100) : 0;
-      const total = product.selling_price + taxAmount;
-
-      setCart([
-        ...cart,
-        {
-          product,
-          quantity: 1,
-          price: product.selling_price,
-          tax_amount: taxAmount,
-          total,
-        },
-      ]);
+    if (addItem(product)) {
       toast.success(`✅ Added ${product.name} to cart`);
+    } else {
+      const existingItem = cart.find((item) => item.product.id === product.id);
+      const currentCartQuantity = existingItem ? existingItem.quantity : 0;
+      if (product.available_stock <= 0) {
+        toast.error(`❌ ${product.name} is out of stock!`);
+      } else {
+        toast.error(`❌ Cannot add more - only ${product.available_stock} available (${currentCartQuantity} already in cart)`);
+      }
     }
   };
 
   const updateCartItemQuantity = (productId: number, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-
     const item = cart.find((item) => item.product.id === productId);
     if (!item) return;
 
-    // CRITICAL: Validate against available_stock from inventory
-    if (newQuantity > item.product.available_stock) {
-      toast.error(`❌ Only ${item.product.available_stock} available in stock`);
-      return;
+    if (!updateCartQuantity(productId, newQuantity)) {
+      if (newQuantity > item.product.available_stock) {
+        toast.error(`❌ Only ${item.product.available_stock} available in stock`);
+      }
     }
-
-    setCart(
-      cart.map((item) =>
-        item.product.id === productId
-          ? {
-            ...item,
-            quantity: newQuantity,
-            total: item.price * newQuantity + item.tax_amount * newQuantity,
-          }
-          : item
-      )
-    );
   };
 
   const removeFromCart = (productId: number) => {
     const item = cart.find((item) => item.product.id === productId);
-    setCart(cart.filter((item) => item.product.id !== productId));
+    removeItem(productId);
     toast.success(`🗑️ Removed ${item?.product.name} from cart`);
   };
 
-  const clearCart = () => {
-    setCart([]);
-    setCustomerInfo({ name: "", phone: "", email: "" });
-    setPaymentInfo({ method: "cash", amountReceived: 0 });
-    setNotes("");
-    setValidationErrors({});
-    setIsClearCartDialogOpen(false);
-    toast.success("🧹 Cart cleared");
+  const clearCartHandler = () => {
+    clearCart();
+    toast.success("🗑️ Cart cleared");
   };
 
   const validateCustomerInfo = (): boolean => {
@@ -305,7 +253,7 @@ export default function Sales() {
   const validatePayment = (): boolean => {
     try {
       paymentSchema.parse(paymentInfo);
-      if (paymentInfo.amountReceived < cartTotal) {
+      if (paymentInfo.amountReceived < getSubtotal() + getTaxAmount()) {
         toast.error("❌ Payment amount is less than total");
         return false;
       }
@@ -332,7 +280,7 @@ export default function Sales() {
       return;
     }
     setIsPaymentDialogOpen(true);
-    setPaymentInfo({ ...paymentInfo, amountReceived: cartTotal });
+    setPaymentInfo({ ...paymentInfo, amountReceived: getSubtotal() + getTaxAmount() });
   };
 
   const completeSale = async () => {
@@ -349,10 +297,10 @@ export default function Sales() {
           discount_amount: 0,
           line_total: item.price * item.quantity,
         })),
-        subtotal: cartSubtotal,
-        tax_amount: cartTax,
+        subtotal: getSubtotal(),
+        tax_amount: getTaxAmount(),
         discount_amount: 0,
-        total_amount: cartTotal,
+        total_amount: getTotal(),
         payment_method: paymentInfo.method,
         customer_name: customerInfo.name || undefined,
         customer_phone: customerInfo.phone || undefined,
@@ -385,7 +333,7 @@ export default function Sales() {
         customer_phone: customerInfo.phone,
         cashier_name: `${user?.first_name} ${user?.last_name}`,
         amount_received: paymentInfo.amountReceived,
-        change: change,
+        change: paymentInfo.amountReceived - getTotal(),
       };
 
       setCompletedSaleData(receiptData);
@@ -409,14 +357,14 @@ export default function Sales() {
 
   const startNewSale = () => {
     setIsCompletionDialogOpen(false);
-    clearCart();
+    clearCartHandler();
     loadProducts();
     toast.success("✨ Ready for new sale");
   };
 
   const handleCloseCompletion = () => {
     setIsCompletionDialogOpen(false);
-    clearCart();
+    clearCartHandler();
     loadProducts();
   };
 
@@ -451,7 +399,7 @@ export default function Sales() {
 
   // Filtered and sorted products
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = products.filter((product) => {
+    let filtered = products?.filter((product) => {
       const matchesSearch =
         !debouncedSearchQuery ||
         product.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
@@ -463,7 +411,7 @@ export default function Sales() {
       return matchesSearch && matchesCategory;
     });
 
-    filtered.sort((a, b) => {
+    filtered?.sort((a, b) => {
       let aValue: any, bValue: any;
       switch (sortColumn) {
         case 'name':
@@ -500,12 +448,12 @@ export default function Sales() {
 
   // Unique categories
   const categories = useMemo(() => {
-    return [...new Set(products.map((p) => p.category).filter(Boolean))];
+    return [...new Set(products?.map((p) => p.category).filter(Boolean))];
   }, [products]);
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredAndSortedProducts.length / productsPerPage);
-  const paginatedProducts = filteredAndSortedProducts.slice(
+  const totalPages = Math.ceil((filteredAndSortedProducts?.length || 0) / productsPerPage);
+  const paginatedProducts = filteredAndSortedProducts?.slice(
     (currentPage - 1) * productsPerPage,
     currentPage * productsPerPage
   );
@@ -519,9 +467,10 @@ export default function Sales() {
     }
   };
 
-  const cartSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const cartTax = cart.reduce((sum, item) => sum + item.tax_amount * item.quantity, 0);
-  const cartTotal = cartSubtotal + cartTax;
+  // Calculate cart totals
+  const cartSubtotal = getSubtotal();
+  const cartTax = getTaxAmount();
+  const cartTotal = getTotal();
   const change = paymentInfo.amountReceived - cartTotal;
 
   useEffect(() => {
@@ -534,115 +483,131 @@ export default function Sales() {
   }, [debouncedSearchQuery, selectedCategory, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-6 md:space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Point of Sale</h1>
-          <p className="text-muted-foreground mt-1">
-            Process sales and manage transactions
-          </p>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          {cart.length > 0 && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setIsClearCartDialogOpen(true)}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear Cart
-            </Button>
-          )}
+    <div className="space-y-6">
+      {/* Premium Header with Gradient */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 p-6 md:p-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-primary/10 ring-2 ring-primary/20">
+                <ShoppingCart className="w-6 h-6 text-primary" />
+              </div>
+              <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                Point of Sale
+              </h1>
+            </div>
+            <p className="text-muted-foreground text-sm md:text-base ml-14">
+              Process sales and manage transactions effortlessly
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {cart.length > 0 && (
+              <>
+                <Badge variant="outline" className="px-3 py-1.5 text-sm font-semibold">
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsClearCartDialogOpen(true)}
+                  className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5  gap-4 md:gap-6 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Products Section */}
-        <div className="lg:col-span-3 space-y-2 md:space-y-4">
-          {/* Search and Filters */}
-          <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
-            <div className="relative col-span-2">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
-              <Input
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category || "uncategorized"} value={category || "uncategorized"}>
-                    {category || "Uncategorized"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="lg:col-span-2 space-y-4">
+          {/* Search and Filters - Premium Design */}
+          <Card className="border-none shadow-lg bg-gradient-to-br from-card to-card/50">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="relative md:col-span-2">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                  <Input
+                    placeholder="Search products by name, SKU, or barcode..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-11 h-11 border-2 focus:border-primary transition-colors"
+                  />
+                </div>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="h-11 border-2">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category || "uncategorized"} value={category || "uncategorized"}>
+                        {category || "Uncategorized"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleViewMode}
-            >
-              {viewMode === "grid" ? (
-                <>
-                  <List className="w-4 h-4 mr-2" />
-                  List View
-                </>
-              ) : (
-                <>
-                  <GridIcon className="w-4 h-4 mr-2" />
-                  Grid View
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Products Grid/List */}
+          {/* Products Grid - Premium Cards */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1  gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-40" />
+                <Skeleton key={i} className="h-48 rounded-xl" />
               ))}
             </div>
-          ) : viewMode === "grid" ? (
+          ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1  gap-4 md:gap-6 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
-                {paginatedProducts.map((product) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[calc(100vh-350px)] overflow-y-auto pr-2 custom-scrollbar">
+                {paginatedProducts?.map((product) => (
                   <Card
                     key={product.id}
-                    className="hover:shadow-lg transition-shadow cursor-pointer"
+                    className="group relative overflow-hidden border-2 hover:border-primary/50 hover:shadow-2xl transition-all duration-300 cursor-pointer bg-gradient-to-br from-card to-card/80"
                     onClick={() => addToCart(product)}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <h3 className="font-medium line-clamp-1">{product.name}</h3>
-                          <p className="text-sm text-muted-foreground">{product.sku}</p>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
+                    <CardContent className="p-5 relative">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-base line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+                            {product.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground font-mono">{product.sku}</p>
                         </div>
                         {product.available_stock <= product.minimum_stock && (
-                          <Badge variant="destructive" className="text-xs">
-                            Low Stock
+                          <Badge variant="destructive" className="text-xs ml-2 animate-pulse">
+                            Low
                           </Badge>
                         )}
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-lg sm:text-xl md:text-2xl font-bold text-primary">
-                            {format(product.selling_price)}
-                          </span>
-                          <Badge variant="outline">{product.available_stock} in stock</Badge>
+                      <div className="space-y-3">
+                        <div className="flex items-baseline justify-between">
+                          <div>
+                            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                              {format(product.selling_price)}
+                            </span>
+                          </div>
+                          <Badge variant="outline" className="font-semibold">
+                            {product.available_stock} left
+                          </Badge>
                         </div>
                         {product.category && (
                           <Badge variant="secondary" className="text-xs">
                             {product.category}
                           </Badge>
                         )}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button size="sm" className="w-full" variant="secondary">
+                            <Plus className="w-4 h-4 mr-1" />
+                            Add to Cart
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -711,7 +676,7 @@ export default function Sales() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedProducts.map((product) => (
+                    {paginatedProducts?.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>
                           <div>
@@ -785,7 +750,7 @@ export default function Sales() {
             </>
           )}
 
-          {!loading && filteredAndSortedProducts.length === 0 && (
+          {!loading && (filteredAndSortedProducts?.length || 0) === 0 && (
             <Card>
               <CardContent className="text-center py-6 md:py-12">
                 <Package className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />

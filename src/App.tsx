@@ -1,6 +1,7 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SettingsApplier from "@/components/SettingsApplier";
 import DashboardLayout from "@/layouts/DashboardLayout";
+import Cart from "@/pages/Cart";
 import Dashboard from "@/pages/Dashboard";
 import Inventory from "@/pages/Inventory";
 import LoginPage from "@/pages/LoginPage";
@@ -157,6 +158,7 @@ useEffect(() => {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/sales" element={<Sales />} />
+          <Route path="/cart" element={<Cart />} />
           <Route path="/sales-records" element={<SalesRecords />} />
           <Route
             path="/products"

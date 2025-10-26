@@ -1134,9 +1134,10 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
 
     // Create 15 sample sales for building materials
     for i in 0i32..15i32 {
+        let uuid_str = Uuid::new_v4().to_string();
         let sale_number = format!(
             "SALE-{}",
-            Uuid::new_v4().to_string().split('-').next().unwrap()
+            uuid_str.split('-').next().unwrap_or(&uuid_str[..8])
         );
 
         let payment_methods = vec!["cash", "card", "check", "bank_transfer"];
