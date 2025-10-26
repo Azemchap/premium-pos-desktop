@@ -25,12 +25,12 @@ android {
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
     }
     signingConfigs {
-      release {
-        storeFile file("C:/Users/Azem/release.jks")
-        storePassword System.getenv("RELEASE_STORE_PASSWORD")
-        keyAlias "premiumpos"
-        keyPassword System.getenv("RELEASE_KEY_PASSWORD")
-      }
+        create("release") {
+            storeFile = file("C:/Users/Azem/release.jks")
+            storePassword = System.getenv("RELEASE_STORE_PASSWORD") ?: ""
+            keyAlias = "premiumpos"
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: ""
+        }
     }
     buildTypes {
         getByName("debug") {
@@ -38,7 +38,8 @@ android {
             isDebuggable = true
             isJniDebuggable = true
             isMinifyEnabled = false
-            packaging {                jniLibs.keepDebugSymbols.add("*/arm64-v8a/*.so")
+            packaging {
+                jniLibs.keepDebugSymbols.add("*/arm64-v8a/*.so")
                 jniLibs.keepDebugSymbols.add("*/armeabi-v7a/*.so")
                 jniLibs.keepDebugSymbols.add("*/x86/*.so")
                 jniLibs.keepDebugSymbols.add("*/x86_64/*.so")
@@ -51,9 +52,7 @@ android {
                     .plus(getDefaultProguardFile("proguard-android-optimize.txt"))
                     .toList().toTypedArray()
             )
-        }
-        release {
-          signingConfig signingConfigs.release
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     kotlinOptions {
