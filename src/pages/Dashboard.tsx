@@ -404,8 +404,8 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                         <Button
                             variant="outline"
-                            className="h-20 md:h-24 flex flex-col items-center justify-center gap-2 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-50/5 transition-all hover:shadow-sm"
-                            onClick={() => navigate('/sales')}
+                            className="h-20 md:h-24 flex flex-col items-center justify-center gap-2 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-none transition-all hover:shadow-sm"
+                            onClick={() => navigate('/sales ')}
                         >
                             <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/30">
                                 <ShoppingCart className="w-6 h-6 text-green-700 dark:text-green-400" />

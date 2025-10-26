@@ -262,92 +262,76 @@ export default function Cart() {
   };
 
   return (
-    <div className="space-y-6 pb-16 sm:pb-0">
+    <div className="space-y-6 ">
       {/* Premium Header with Gradient */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 p-4 md:p-6">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-start gap-6">
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="h-8 w-12 rounded-xl border-2 hover:border-primary/50 hover:bg-primary/5"
-              onClick={() => navigate("/sales")}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-primary/10 ring-2 ring-primary/20">
-                  <ShoppingBag className="w-6 h-6 text-primary" />
+                <div className="p-2 rounded-xl bg-primary/10 ring-2 ring-primary/20">
+                  <ShoppingBag className="w-4 h-4 text-primary" />
                 </div>
 
-      {/* Sticky Mobile Checkout Bar */}
-      {items.length > 0 && (
-        <div className="fixed bottom-0 inset-x-0 sm:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t px-3 py-2 flex items-center justify-between gap-3 z-40">
-          <div className="flex flex-col leading-tight">
-            <span className="text-[10px] text-muted-foreground">Total</span>
-            <span className="text-base font-bold">{format(cartTotal)}</span>
-          </div>
-          <Button onClick={() => setIsCustomerDialogOpen(true)} className="h-9 text-sm font-semibold flex-1" size="sm" disabled={items.length === 0}>
-            <CheckCircle2 className="w-4 h-4 mr-2" />
-            Checkout
-          </Button>
-        </div>
-      )}
-                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                  Shopping Cart
-                </h1>
+                {/* Sticky Mobile Checkout Bar */}
+                {items.length > 0 && (
+                  <div className="fixed bottom-0 inset-x-0 sm:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t px-3 py-2 flex items-center justify-between gap-3 z-40">
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-[10px] text-muted-foreground">Total</span>
+                      <span className="text-base font-bold">{format(cartTotal)}</span>
+                    </div>
+                    <Button onClick={() => setIsCustomerDialogOpen(true)} className="h-6 text-sm font-semibold flex-1" size="sm" disabled={items.length === 0}>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Checkout
+                    </Button>
+                  </div>
+                )}
+                <div>
+                  <h2 className="text-xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    Shopping Cart
+                  </h2>
+                  <p className="text-muted-foreground text-sm md:text-base line-clamp-1">
+                    Review your items and complete purchase
+                  </p>
+                </div>
               </div>
-              <p className="text-muted-foreground text-sm md:text-base ml-14">
-                Review your items and complete your purchase
-              </p>
             </div>
           </div>
-          {items.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="px-3 py-1.5 text-sm font-semibold">
-                {items.reduce((sum, item) => sum + item.quantity, 0)} items
-              </Badge>
-              <Button 
-                variant="outline" 
-                onClick={() => setIsClearCartDialogOpen(true)}
-                className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear Cart
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Premium Cart Items Section */}
         <div className="lg:col-span-2 space-y-4">
-          <Card className="border-2 shadow-xl bg-gradient-to-br from-card to-card/50">
+          <Card className="border-2 shadow-xl bg-gradient-to-br from-card to-card/50 overflow-hidden">
             <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent p-4 sm:p-6">
               <CardTitle className="flex items-center justify-between text-base sm:text-lg">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Package className="w-5 h-5 text-primary" />
-                  </div>
-                  <span className="text-xl">Cart Items</span>
+                  <Badge variant="secondary" className="px-3 py-1.5 text-sm font-bold">
+                    {items.reduce((sum, item) => sum + item.quantity, 0)}
+                  </Badge>
+                  <span className="text-lg">Cart Items</span>
                 </div>
-                <Badge variant="secondary" className="px-3 py-1.5 text-sm font-bold">
-                  {items.reduce((sum, item) => sum + item.quantity, 0)} items
-                </Badge>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsClearCartDialogOpen(true)}
+                  className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Clear Cart
+                </Button>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="p-0 ">
               {items.length === 0 ? (
-                <div className="text-center py-16">
+                <div className="text-center p-4 py-16 ">
                   <div className="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                     <ShoppingBag className="w-12 h-12 opacity-30" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">Your cart is empty</h3>
                   <p className="text-muted-foreground mb-6">Start adding products to your cart</p>
-                  <Button 
+                  <Button
                     size="lg"
                     onClick={() => navigate("/sales")}
                     className="shadow-lg hover:shadow-xl transition-all"
@@ -357,11 +341,11 @@ export default function Cart() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-3 sm:space-y-4 overflow-hidden">
                   {items.map((item) => (
                     <div
                       key={item.product.id}
-                      className="group relative overflow-hidden p-4 sm:p-5 bg-gradient-to-br from-muted/30 to-muted/10 hover:from-muted/50 hover:to-muted/30 border-2 border-border hover:border-primary/30 rounded-xl transition-all duration-300"
+                      className="group relative overflow-hidden p-4 sm:p-5 bg-gradient-to-br from-muted/30 to-muted/10 hover:from-muted/50 hover:to-muted/30 border-1 border-border hover:border-primary/30 transition-all duration-300 "
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
                       <div className="relative flex flex-col md:flex-row gap-4">
@@ -382,7 +366,7 @@ export default function Cart() {
                           )}
                         </div>
 
-                        <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 sm:gap-4">
+                        <div className="flex flex-col items-start justify-between  gap-3 sm:gap-4">
                           <div className="flex items-center gap-1.5 bg-background/50 rounded-lg p-1">
                             <Button
                               variant="ghost"
@@ -423,9 +407,9 @@ export default function Cart() {
                                 onChange={(e) => updatePrice(item.product.id, Math.max(0, parseFloat(e.target.value) || 0))}
                                 className="w-24 h-8 sm:h-9 text-sm"
                               />
-                              <span className="text-xs text-muted-foreground">Unit</span>
+                              <span className="text-xs text-muted-foreground">/ Unit</span>
                             </div>
-                            <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                            <p className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                               {format(item.total)}
                             </p>
                             <Button
@@ -450,15 +434,15 @@ export default function Cart() {
         {/* Premium Order Summary */}
         <div className="space-y-4">
           <Card className="sticky top-6 border-2 shadow-2xl bg-gradient-to-br from-card via-card to-primary/5">
-            <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+            <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent p-4">
               <CardTitle className="flex items-center gap-2">
                 <div className="p-2 rounded-lg bg-primary/10">
                   <ReceiptIcon className="w-5 h-5 text-primary" />
                 </div>
-                <span className="text-xl">Order Summary</span>
+                <span className="text-lg">Order Summary</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6 p-6">
+            <CardContent className="space-y-6 p-4">
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
@@ -470,7 +454,7 @@ export default function Cart() {
                 </div>
                 <div className="border-t-2 border-dashed pt-3 flex justify-between items-baseline p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border-2 border-primary/20">
                   <span className="text-lg font-bold">Total</span>
-                  <span className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                     {format(cartTotal)}
                   </span>
                 </div>
@@ -693,7 +677,7 @@ export default function Cart() {
                 <Printer className="w-3.5 h-3.5 mr-1.5" />
                 Print Receipt
               </Button>
-              <Button variant="outline" onClick={() => toast.info("Email feature coming soon!")} size="sm"> 
+              <Button variant="outline" onClick={() => toast.info("Email feature coming soon!")} size="sm">
                 <ReceiptIcon className="w-3.5 h-3.5 mr-1.5" />
                 Email Receipt
               </Button>

@@ -233,11 +233,11 @@ export default function Reports() {
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         icon={Activity}
-        title="Financial Reports & Analytics"
+        title="Reports & Analytics"
         subtitle="Comprehensive business insights and accounting metrics"
         actions={
           <Button onClick={loadReports} variant="outline" size="sm" className="w-full sm:w-auto">
-            <RefreshCw className="w-4 h-4 mr-2" />
+            <RefreshCw className="w-4 h-4" />
             Refresh
           </Button>
         }

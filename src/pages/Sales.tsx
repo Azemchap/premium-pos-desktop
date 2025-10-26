@@ -521,7 +521,7 @@ export default function Sales() {
   }, [debouncedSearchQuery, selectedCategory, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-6 p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6 sm:pb-6 sm:p-6">
       <PageHeader icon={ShoppingCart} title="Point of Sale" subtitle="Process sales and manage transactions" />
 
       {/* Sticky Mobile Checkout Bar */}
@@ -546,8 +546,8 @@ export default function Sales() {
           {/* Search and Filters */}
           <Card className="shadow-md border-2 hover:shadow-lg transition-shadow duration-200">
             <CardContent className="p-3 sm:p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="relative md:col-span-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="relative col-span-2">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
                     placeholder="Search products..."
@@ -569,42 +569,42 @@ export default function Sales() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="mt-3">
-                <Input
-                  placeholder="Scan barcode or enter SKU..."
-                  value={barcodeEntry}
-                  onChange={(e) => setBarcodeEntry(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && barcodeEntry.trim()) {
-                      const code = barcodeEntry.trim().toLowerCase();
-                      const found = products.find(
-                        (p) => (p.barcode && p.barcode.toLowerCase() === code) || p.sku.toLowerCase() === code
-                      );
-                      if (found) {
-                        addToCart(found);
-                        setBarcodeEntry("");
-                      } else {
-                        toast.error("❌ No product matches that barcode/SKU");
+                <div className="">
+                  <Input
+                    placeholder="Scan barcode or enter SKU..."
+                    value={barcodeEntry}
+                    onChange={(e) => setBarcodeEntry(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && barcodeEntry.trim()) {
+                        const code = barcodeEntry.trim().toLowerCase();
+                        const found = products.find(
+                          (p) => (p.barcode && p.barcode.toLowerCase() === code) || p.sku.toLowerCase() === code
+                        );
+                        if (found) {
+                          addToCart(found);
+                          setBarcodeEntry("");
+                        } else {
+                          toast.error("❌ No product matches that barcode/SKU");
+                        }
                       }
-                    }
-                  }}
-                  className="h-9 text-sm"
-                />
+                    }}
+                    className="h-9 text-sm"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Products Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-40 rounded-lg" />
               ))}
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[calc(100vh-380px)] sm:max-h-[calc(100vh-320px)] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 max-h-[calc(100vh-380px)] sm:max-h-[calc(100vh-320px)] overflow-y-auto pr-1 custom-scrollbar">
                 {paginatedProducts.map((product) => (
                   <Card
                     key={product.id}
@@ -637,12 +637,12 @@ export default function Sales() {
                             {product.category}
                           </Badge>
                         )}
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button size="sm" className="w-full h-8 text-xs" variant="secondary">
                             <Plus className="w-3 h-3 mr-1.5" />
                             Add to Cart
                           </Button>
-                        </div>
+                        </div> */}
                       </div>
                     </CardContent>
                   </Card>
@@ -760,11 +760,10 @@ export default function Sales() {
                     <div
                       key={item.product.id}
                       onClick={() => setActiveCartProductId(item.product.id)}
-                      className={`group p-3 bg-muted/30 hover:bg-muted/50 border rounded-lg transition-all cursor-pointer ${
-                        activeCartProductId === item.product.id
+                      className={`group p-3 bg-muted/30 hover:bg-muted/50 border rounded-lg transition-all cursor-pointer ${activeCartProductId === item.product.id
                           ? "border-primary/50 ring-2 ring-primary/20"
                           : "border-transparent hover:border-primary/30"
-                      }`}
+                        }`}
                     >
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-2">
@@ -787,11 +786,10 @@ export default function Sales() {
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-start gap-2">
                           <div
-                            className={`flex items-center gap-1 bg-background rounded-md p-1 transition-transform duration-150 ${
-                              animatedItemId === item.product.id ? "scale-105" : ""
-                            }`}
+                            className={`flex  items-center gap-1 bg-background rounded-md p-1 transition-transform duration-150 ${animatedItemId === item.product.id ? "scale-105" : ""
+                              }`}
                           >
                             <Button
                               variant="ghost"

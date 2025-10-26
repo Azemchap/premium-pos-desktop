@@ -479,7 +479,7 @@ export default function Inventory() {
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         icon={Package}
-        title="Inventory Management"
+        title="Inventory"
         subtitle="Manage stock levels, receive inventory, and track movements"
         actions={
           <Button onClick={loadInventory} variant="outline" size="sm" className="w-full sm:w-auto">
@@ -490,10 +490,10 @@ export default function Inventory() {
       />
 
       {/* Statistics - Compact & Responsive */}
-      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
         <Card className="overflow-hidden border-none shadow-md hover:shadow-md transition-all duration-200">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 sm:p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start gap-1 justify-between">
               <div className="text-white">
                 <p className="text-[10px] sm:text-xs opacity-90 font-medium">Total Items</p>
                 <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{totalItems}</p>
@@ -507,7 +507,7 @@ export default function Inventory() {
         
         <Card className="overflow-hidden border-none shadow-md hover:shadow-md transition-all duration-200">
           <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-3 sm:p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start gap-1 justify-between">
               <div className="text-white">
                 <p className="text-[10px] sm:text-xs opacity-90 font-medium">In Stock</p>
                 <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{inStock}</p>
@@ -521,7 +521,7 @@ export default function Inventory() {
         
         <Card className="overflow-hidden border-none shadow-md hover:shadow-md transition-all duration-200">
           <div className="bg-gradient-to-br from-yellow-500 to-orange-500 p-3 sm:p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start gap-1 justify-between">
               <div className="text-white">
                 <p className="text-[10px] sm:text-xs opacity-90 font-medium">Low Stock</p>
                 <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{lowStock}</p>
@@ -535,9 +535,9 @@ export default function Inventory() {
         
         <Card className="overflow-hidden border-none shadow-md hover:shadow-md transition-all duration-200">
           <div className="bg-gradient-to-br from-red-500 to-pink-600 p-3 sm:p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start gap-1 justify-between">
               <div className="text-white">
-                <p className="text-[10px] sm:text-xs opacity-90 font-medium">Out of Stock</p>
+                <p className="text-[10px] sm:text-xs opacity-90 font-medium">Shortage</p>
                 <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{outOfStock}</p>
               </div>
               <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">

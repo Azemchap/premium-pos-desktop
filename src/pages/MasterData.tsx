@@ -640,7 +640,7 @@ export default function MasterData() {
         <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
           <CardTitle>Manage Master Data</CardTitle>
         </CardHeader>
-        <CardContent className="py-4">
+        <CardContent className="p-0 py-4">
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EntityType)}>
             <TabsList className="grid w-full grid-cols-3 md:grid-cols-3 lg:grid-cols-5 h-full">
               <TabsTrigger value="category">Categories</TabsTrigger>

@@ -36,20 +36,22 @@ useEffect(() => {
                 document.documentElement.classList.remove('dark');
             }
 
-            // Perform a single lightweight readiness check; don't block UI
+            // Perform a single lightweight readiness check with timeout; never block UI
             try {
-                // Rust command signature: verify_session(_session_token: String)
-                await invoke('verify_session', { _session_token: '' });
+                const readiness = invoke('verify_session', { _session_token: '' });
+                await Promise.race([
+                    readiness,
+                    new Promise((resolve) => setTimeout(resolve, 2000)), // 2s max wait
+                ]);
             } catch (error) {
-                console.warn('Backend not ready yet; proceeding to UI. Details:', error);
+                console.warn('Backend readiness check failed; continuing to UI.', error);
+            } finally {
+                setIsInitializing(false);
+                console.log("✅ App initialized (UI released)");
             }
-
-            setIsInitializing(false);
-            console.log("✅ App initialized successfully");
         } catch (error) {
             console.error("❌ App initialization error:", error);
             setInitError(error instanceof Error ? error.message : "Unknown initialization error");
-            setIsInitializing(false);
         }
     };
 

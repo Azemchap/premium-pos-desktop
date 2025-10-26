@@ -142,7 +142,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-60">
           <div className="space-y-6">
@@ -248,7 +248,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       <div className="lg:pl-64">
-        <div className="sticky top-0 z-40 flex h-16 md:h-20 shrink-0 items-center gap-x-4 sm:gap-x-6 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 md:px-8 lg:px-10 shadow-sm safe-top">
+        <div className="sticky top-0 z-40 flex h-24 md:h-20 shrink-0 items-end gap-x-4 sm:gap-x-6 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:px-6 md:px-8 lg:px-10 shadow-sm safe-top ">
           <Button
             variant="ghost"
             size="sm"
@@ -263,7 +263,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="h-6 w-px bg-border lg:hidden" />
 
-          <div className="flex justify-end flex-1 gap-x-4 self-stretch lg:gap-x-6">
+          <div className="flex justify-end flex-1 gap-x-4 lg:gap-x-6">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <Button
                 variant="ghost"
@@ -302,7 +302,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     : 'text-gray-600 dark:text-gray-400'
                   }`} />
                 {cartItemCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 flex h-6 w-6 md:h-5 md:w-5 items-center justify-center">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/50 opacity-75"></span>
                     <Badge className="relative inline-flex bg-primary hover:bg-primary/90 text-white px-1 md:px-1.5 min-w-[16px] md:min-w-[20px] h-4 md:h-5 text-[10px] md:text-xs font-bold shadow-lg border-2 border-background">
                       {cartItemCount > 99 ? '99+' : cartItemCount}
@@ -352,7 +352,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        <main className="py-8 md:py-10 pb-24 md:pb-10 safe-bottom">
+        <main className="py-4 md:py-6 md:pb-10 safe-bottom">
           <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 md:px-8 lg:px-10">
             {children}
           </div>

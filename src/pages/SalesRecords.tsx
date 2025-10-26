@@ -358,7 +358,7 @@ export default function SalesRecords() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6 ">
       <PageHeader
         icon={Calendar}
         title="Sales Records"
@@ -414,13 +414,13 @@ export default function SalesRecords() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-2 border-green-200 dark:border-green-800 shadow-md hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-300">Total Sales</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-900 dark:text-green-100 truncate">
+                  <p className="text-sm sm:text-xl md:text-2xl font-bold text-green-900 dark:text-green-100 truncate">
                     {formatCurrency(stats.total_sales)}
                   </p>
                   <p className="text-[11px] sm:text-xs text-green-600 dark:text-green-400 mt-1">
@@ -435,11 +435,11 @@ export default function SalesRecords() {
           </Card>
 
           <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border-2 border-emerald-200 dark:border-emerald-800 shadow-md hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs sm:text-sm font-medium text-emerald-700 dark:text-emerald-300">Total Profit</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-emerald-900 dark:text-emerald-100 truncate">
+                  <p className="text-sm sm:text-xl md:text-2xl font-bold text-emerald-900 dark:text-emerald-100 truncate">
                     {formatCurrency(stats.total_profit)}
                   </p>
                   <p className="text-[11px] sm:text-xs text-emerald-600 dark:text-emerald-400 mt-1">
@@ -454,11 +454,11 @@ export default function SalesRecords() {
           </Card>
 
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-2 border-blue-200 dark:border-blue-800 shadow-md hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300">Avg Transaction</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-blue-900 dark:text-blue-100 truncate">
+                  <p className="text-sm sm:text-xl md:text-2xl font-bold text-blue-900 dark:text-blue-100 truncate">
                     {formatCurrency(stats.average_transaction)}
                   </p>
                   <p className="text-[11px] sm:text-xs text-blue-600 dark:text-blue-400 mt-1">per sale</p>
@@ -471,7 +471,7 @@ export default function SalesRecords() {
           </Card>
 
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-2 border-purple-200 dark:border-purple-800 shadow-md hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div>
                 <p className="text-xs sm:text-sm font-medium text-purple-700 dark:text-purple-300 mb-2">
                   Payment Methods
@@ -504,10 +504,12 @@ export default function SalesRecords() {
 
       {/* Sales Table */}
       <Card className="shadow-md border-2 hover:shadow-lg transition-shadow duration-200">
-        <CardHeader className="bg-gradient-to-r from-muted/30 to-muted/10 border-b-2">
-          <CardTitle className="text-lg font-bold">Sales Transactions</CardTitle>
+        <CardHeader className="bg-gradient-to-r from-muted/30 to-muted/10 border-b-2 p-3">
+          <CardTitle className=" text-lg font-bold flex items-center gap-1">
+            <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 bg-primary rounded-full p-1 text-white" />
+            Sales Transactions</CardTitle>
         </CardHeader>
-        <CardContent className="p-4">
+        <CardContent className="p-3">
           {loading ? (
             <div className="space-y-2 md:space-y-3">
               {Array.from({ length: 10 }).map((_, i) => (

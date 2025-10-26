@@ -477,58 +477,57 @@ export default function Products() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6 ">
       <PageHeader
         icon={Package}
         title="Products"
-        subtitle="Manage your product catalog and pricing"
-        badge={{ text: `${totalProducts} items`, variant: "secondary" }}
+        subtitle="Manage your products"
         actions={
-          <Button onClick={openCreateDialog} size="lg" className="shadow-md">
-            <Plus className="w-4 h-4 mr-2" /> Add
+          <Button onClick={openCreateDialog} size="sm" className="shadow-md">
+            <Plus className="w-4 h-4" /> Create Product
           </Button>
         }
       />
 
       {/* Statistics */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-3 gap-3 md:gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-2 border-blue-200 dark:border-blue-800 shadow-md hover:shadow-lg transition-all duration-200">
-          <CardContent className="p-4">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300">Total </p>
                 <p className="text-xl md:text-2xl font-bold text-blue-900 dark:text-blue-100">{totalProducts}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-                <Package className="w-6 h-6 text-white" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                <Package className="w-5 h-5 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-2 border-green-200 dark:border-green-800 shadow-md hover:shadow-lg transition-all duration-200">
-          <CardContent className="p-4">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-300">Active</p>
                 <p className="text-xl md:text-2xl font-bold text-green-900 dark:text-green-100">{activeProducts}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
-                <CheckCircle className="w-6 h-6 text-white" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
+                <CheckCircle className="w-5 h-5 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-2 border-red-200 dark:border-red-800 shadow-md hover:shadow-lg transition-all duration-200">
-          <CardContent className="p-4">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm font-medium text-red-700 dark:text-red-300">Inactive</p>
                 <p className="text-xl md:text-2xl font-bold text-red-900 dark:text-red-100">{inactiveProducts}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
-                <XCircle className="w-6 h-6 text-white" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
+                <XCircle className="w-5 h-5 text-white" />
               </div>
             </div>
           </CardContent>
@@ -536,9 +535,9 @@ export default function Products() {
       </div>
 
       {/* Search and Filters */}
-      <Card className="shadow-md border-2 hover:shadow-lg transition-shadow duration-200">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4">
+      <Card className="border-none shadow-none">
+        <CardContent className="p-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div className="space-y-1.5 md:col-span-4">
               <Label htmlFor="search" className="text-xs">
                 Search
@@ -555,58 +554,60 @@ export default function Products() {
               </div>
             </div>
 
-            <div className="space-y-1.5 md:col-span-3">
-              <Label htmlFor="category" className="text-xs">
-                Category
-              </Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.name}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="space-y-1.5 ">
+                <Label htmlFor="category" className="text-xs">
+                  Category
+                </Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-1.5 md:col-span-3">
-              <Label htmlFor="brand" className="text-xs">
-                Brand
-              </Label>
-              <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue placeholder="All Brands" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Brands</SelectItem>
-                  {brands.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.name}>
-                      {brand.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-1.5 hidden md:block ">
+                <Label htmlFor="brand" className="text-xs">
+                  Brand
+                </Label>
+                <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="All Brands" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Brands</SelectItem>
+                    {brands.map((brand) => (
+                      <SelectItem key={brand.id} value={brand.name}>
+                        {brand.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-1.5 md:col-span-2">
-              <Label htmlFor="status" className="text-xs">
-                Status
-              </Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Products</SelectItem>
-                  <SelectItem value="active">Active Only</SelectItem>
-                  <SelectItem value="inactive">Inactive Only</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-1.5 md:col-span-2">
+                <Label htmlFor="status" className="text-xs">
+                  Status
+                </Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Products</SelectItem>
+                    <SelectItem value="active">Active Only</SelectItem>
+                    <SelectItem value="inactive">Inactive Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <div className="mt-1.5 text-[11px] sm:text-xs text-muted-foreground">
@@ -616,7 +617,7 @@ export default function Products() {
       </Card>
 
       {/* Products Table */}
-      <Card className="shadow-md border-2 hover:shadow-lg transition-shadow duration-200">
+      <Card className="shadow-md border-2 hover:shadow-lg transition-shadow duration-200 p-0">
         <CardHeader className="bg-gradient-to-r from-muted/30 to-muted/10 border-b-2">
           <CardTitle className="text-lg font-bold">Product Catalog</CardTitle>
         </CardHeader>
@@ -674,13 +675,12 @@ export default function Products() {
                         {paginatedProducts.map((product) => (
                           <TableRow
                             key={product.id}
-                            className={`hover:bg-primary/5 transition-all duration-200 ${
-                              !product.is_active ? "opacity-60" : ""
-                            }`}
+                            className={`hover:bg-primary/5 transition-all duration-200 ${!product.is_active ? "opacity-60" : ""
+                              }`}
                           >
                             <TableCell className="px-4 py-3">
                               <div>
-                                <div className="font-semibold text-sm truncate max-w-[220px] md:max-w-[320px]" title={product.name}>
+                                <div className="font-semibold text-sm truncate max-w-[140px] md:max-w-[320px]" title={product.name}>
                                   {product.name}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
