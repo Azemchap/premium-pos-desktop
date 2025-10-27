@@ -92,7 +92,7 @@ pub async fn upload_store_logo(
         .unwrap_or_else(|| "png".to_string());
     let timestamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
+        .map_err(|e| format!("Failed to get timestamp: {}", e))?
         .as_secs();
     let new_file_name = format!("store_logo_{}.{}", timestamp, extension);
     let file_path = logos_dir.join(&new_file_name);

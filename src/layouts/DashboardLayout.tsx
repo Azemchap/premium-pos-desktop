@@ -16,6 +16,7 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import { useAuthStore } from "@/store/authStore";
+import { useCartStore } from "@/store/cartStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
   BarChart3,
@@ -51,7 +52,7 @@ const navigation: NavigationItem[] = [
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
   { name: "Inventory", href: "/inventory", icon: Database },
   { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Categories", href: "/master-data", icon: Tag, roles: ["Admin", "Manager"] },
+  { name: "Master Data", href: "/master-data", icon: Tag, roles: ["Admin", "Manager"] },
   { name: "Products", href: "/products", icon: Package, roles: ["Admin", "Manager"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["Admin", "Manager"] },
   { name: "Users", href: "/users", icon: Users, roles: ["Admin", "Manager"] },
@@ -61,8 +62,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const { user, logout, theme, setTheme } = useAuthStore();
+  const { getItemCount } = useCartStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const cartItemCount = getItemCount();
 
   // Haptic feedback wrapper (calls Rust command)
   const hapticFeedback = async (intensity: 'light' | 'medium' | 'heavy') => {
@@ -139,7 +142,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-60">
           <div className="space-y-6">
@@ -192,7 +195,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               <li className="mt-auto">
                 <div className="space-y-3">
-                  <div className="p-4 bg-gradient-to-br from-primary/5 to-blue-50 rounded-xl border border-primary/10">
+                  <div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/10">
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-8 h-8">
                         {user?.profile_image_url ? (
@@ -245,7 +248,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       <div className="lg:pl-64">
-        <div className="sticky top-0 z-40 flex h-16 md:h-20 shrink-0 items-center gap-x-4 sm:gap-x-6 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 md:px-8 lg:px-10 shadow-sm safe-top">
+        <div className="sticky top-0 z-40 flex h-24 md:h-20 shrink-0 items-end gap-x-4 sm:gap-x-6 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:px-6 md:px-8 lg:px-10 shadow-sm safe-top ">
           <Button
             variant="ghost"
             size="sm"
@@ -260,7 +263,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="h-6 w-px bg-border lg:hidden" />
 
-          <div className="flex justify-end flex-1 gap-x-4 self-stretch lg:gap-x-6">
+          <div className="flex justify-end flex-1 gap-x-4 lg:gap-x-6">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <Button
                 variant="ghost"
@@ -280,6 +283,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zinc-400 opacity-75 dark:bg-zinc-600"></span>
                     <Badge className="relative inline-flex bg-zinc-500 hover:bg-zinc-600 text-white px-1 md:px-1.5 min-w-[16px] md:min-w-[20px] h-4 md:h-5 text-[10px] md:text-xs font-bold shadow-lg border-2 border-background">
                       {notificationCount > 99 ? '99+' : notificationCount}
+                    </Badge>
+                  </span>
+                )}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  await hapticFeedback('light');
+                  navigate("/cart");
+                }}
+                className="relative hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors touch-target"
+              >
+                <ShoppingCart className={`w-4 h-4 md:w-5 md:h-5 ${cartItemCount > 0
+                    ? 'text-primary animate-pulse'
+                    : 'text-gray-600 dark:text-gray-400'
+                  }`} />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-6 w-6 md:h-5 md:w-5 items-center justify-center">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/50 opacity-75"></span>
+                    <Badge className="relative inline-flex bg-primary hover:bg-primary/90 text-white px-1 md:px-1.5 min-w-[16px] md:min-w-[20px] h-4 md:h-5 text-[10px] md:text-xs font-bold shadow-lg border-2 border-background">
+                      {cartItemCount > 99 ? '99+' : cartItemCount}
                     </Badge>
                   </span>
                 )}
@@ -326,7 +352,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        <main className="py-6 md:py-10 safe-bottom">
+        <main className="py-4 md:py-6 md:pb-10 safe-bottom">
           <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 md:px-8 lg:px-10">
             {children}
           </div>

@@ -1,11 +1,11 @@
 import react from "@vitejs/plugin-react";
-import path from "path";
-import { defineConfig } from "vite";
-import tailwindcss from "tailwindcss";
 import autoprefixer from "autoprefixer";
+import path from "path";
+import tailwindcss from "tailwindcss";
+import { defineConfig } from "vite";
 
 // For Android emulator, use 10.0.2.2 to access host machine
-const host = process.env.TAURI_DEV_HOST || '0.0.0.0';
+const host = process.env.TAURI_DEV_HOST || "0.0.0.0";
 
 export default defineConfig(async () => ({
     plugins: [react()],
@@ -18,7 +18,7 @@ export default defineConfig(async () => ({
         hmr: process.env.TAURI_DEV_HOST
             ? {
                 protocol: "ws",
-                host: process.env.TAURI_DEV_HOST,
+                host: host,
                 port: 1421,
             }
             : undefined,
@@ -27,6 +27,7 @@ export default defineConfig(async () => ({
         },
         cors: true,
     },
+    
 
     resolve: {
         alias: {

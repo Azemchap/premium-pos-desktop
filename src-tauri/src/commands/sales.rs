@@ -53,9 +53,10 @@ pub async fn create_sale(
     let pool_ref = pool.inner();
 
     // Generate unique sale number
+    let uuid_str = Uuid::new_v4().to_string();
     let sale_number = format!(
         "SALE-{}",
-        Uuid::new_v4().to_string().split('-').next().unwrap()
+        uuid_str.split('-').next().unwrap_or(&uuid_str[..8])
     );
 
     // Start transaction
