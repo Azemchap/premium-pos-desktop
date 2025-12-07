@@ -1,33 +1,26 @@
-// src/pages/Dashboard.tsx - Enhanced with Store Config & Settings
+// src/pages/Dashboard.tsx - Stripe-inspired professional design
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import PageHeader from "@/components/PageHeader";
+import { StatsCard } from "@/components/StatsCard";
+import { StatsGrid } from "@/components/StatsGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import {
     AlertCircle,
-    ArrowRight,
     BarChart3,
-    Calendar,
     Clock,
     DollarSign,
-    Eye,
     Package,
-    Plus,
     RefreshCw,
     ShoppingCart,
-    Sparkles,
     Store,
-    TrendingDown,
     TrendingUp,
-    Users,
-    Zap
+    Users
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -92,14 +85,11 @@ export default function Dashboard() {
     const loadDashboardData = async () => {
         try {
             setLoading(true);
-
-            // Load all data in parallel for optimal performance
             const [statsData, activityData, configData] = await Promise.all([
                 invoke<DashboardStats>("get_stats"),
                 invoke<RecentActivity>("get_recent_activity", { limit: 5 }),
                 invoke<StoreConfig>("get_store_config")
             ]);
-
             setStats(statsData);
             setRecentActivity(activityData);
             setStoreConfig(configData);
@@ -115,15 +105,9 @@ export default function Dashboard() {
         try {
             setRefreshing(true);
             await loadDashboardData();
-            if (preferences.soundEffects) {
-                // Play success sound (simple beep)
-                const beep = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZTR4NVK3n77BdGAg+ltryxnMpBSh+zPLaizsIGGS57OihUBELTKXh8bllHAU2jdXvzn4uBiZzwvDemUccD1qy6O6qWhYJPJPY8sFuJAUneMrx25BGCRditOvssVwXCT6X2/LGciQFKH3N8tmJNwoYY7nr5J9PEBBNJ+Xx7m0gBTKJ0/LSg");
-                beep.volume = 0.2;
-                beep.play().catch(() => {});
-            }
-            toast.success("✨ Dashboard refreshed");
+            toast.success("Dashboard refreshed");
         } catch (error) {
-            toast.error("❌ Failed to refresh dashboard");
+            toast.error("Failed to refresh dashboard");
         } finally {
             setRefreshing(false);
         }
@@ -131,13 +115,10 @@ export default function Dashboard() {
 
     useEffect(() => {
         loadDashboardData();
-        
-        // Auto-refresh every 5 minutes if enabled
         if (preferences.autoSave) {
             const interval = setInterval(() => {
                 loadDashboardData();
             }, 5 * 60 * 1000);
-            
             return () => clearInterval(interval);
         }
     }, [preferences.autoSave]);
@@ -148,8 +129,6 @@ export default function Dashboard() {
         if (hour < 18) return "Good afternoon";
         return "Good evening";
     };
-
-    
 
     const getSalesGrowth = () => {
         if (!stats || stats.week_sales === 0) return 0;
@@ -172,70 +151,34 @@ export default function Dashboard() {
         });
     };
 
-    const getStockStatus = (current: number, minimum: number) => {
-        if (current === 0) return { status: 'Out of Stock', color: 'destructive' as const };
-        if (current <= minimum) return { status: 'Low Stock', color: 'destructive' as const };
-        if (current <= minimum * 1.5) return { status: 'Warning', color: 'secondary' as const };
-        return { status: 'In Stock', color: 'default' as const };
-    };
-
     if (loading) {
         return (
-            <div className="space-y-6 md:space-y-8">
-                <div className="flex items-center justify-between">
-                    <Skeleton className="h-8 w-32" />
-                    <Skeleton className="h-10 w-32" />
+            <div className="space-y-6">
+                <div className="flex items-center justify-between pb-4 border-b">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-10 w-24" />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <StatsGrid columns={4}>
                     {Array.from({ length: 4 }).map((_, i) => (
                         <Card key={i}>
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-4 w-24" />
-                                        <Skeleton className="h-8 w-20" />
-                                        <Skeleton className="h-3 w-16" />
-                                    </div>
-                                    <Skeleton className="h-12 w-12 rounded-lg" />
-                                </div>
+                            <CardContent className="p-4 md:p-6">
+                                <Skeleton className="h-4 w-24 mb-3" />
+                                <Skeleton className="h-8 w-32 mb-1" />
+                                <Skeleton className="h-3 w-20" />
                             </CardContent>
                         </Card>
                     ))}
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                    {Array.from({ length: 2 }).map((_, i) => (
-                        <Card key={i}>
-                            <CardHeader>
-                                <Skeleton className="h-6 w-32" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-2 md:space-y-4">
-                                    {Array.from({ length: 4 }).map((_, j) => (
-                                        <div key={j} className="flex items-center justify-between py-2">
-                                            <div className="space-y-2">
-                                                <Skeleton className="h-4 w-24" />
-                                                <Skeleton className="h-3 w-20" />
-                                            </div>
-                                            <Skeleton className="h-4 w-16" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                </StatsGrid>
             </div>
         );
     }
 
     return (
-        <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-6">
             <PageHeader
                 icon={Store}
                 title="Dashboard"
-                subtitle={`${getGreeting()}, ${user?.first_name || ''}! • ${storeConfig?.name || 'Loading...'}${storeConfig?.address ? ' • ' + storeConfig.address : ''}`}
+                subtitle={`${getGreeting()}, ${user?.first_name || ''}`}
                 actions={
                     <Button
                         variant="outline"
@@ -249,349 +192,181 @@ export default function Dashboard() {
                 }
             />
 
-            {/* Enhanced Stats Grid with Growth Indicators */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                <Card className="hover:shadow-md transition-all duration-200 border-l-4 border-l-green-500 dark:border-l-green-600">
-                    <CardContent className="p-3 md:p-4">
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 shadow-md">
-                                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                            </div>
-                            {getSalesGrowth() !== 0 && (
-                                <Badge 
-                                    variant={getSalesGrowth() > 0 ? "default" : "destructive"}
-                                    className="flex items-center gap-1"
-                                >
-                                    {getSalesGrowth() > 0 ? (
-                                        <TrendingUp className="w-3 h-3" />
-                                    ) : (
-                                        <TrendingDown className="w-3 h-3" />
-                                    )}
-                                    {Math.abs(getSalesGrowth()).toFixed(1)}%
-                                </Badge>
-                            )}
-                        </div>
-                        <div>
-                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                                Today's Sales
-                            </p>
-                            <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-400">
-                                {formatCurrency(stats?.today_sales || 0)}
-                            </p>
-                            <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2 flex items-center gap-1">
-                                <ShoppingCart className="w-3 h-3" />
-                                {stats?.today_transactions || 0} transactions
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
+            {/* Stats Overview - Clean, professional design */}
+            <StatsGrid columns={4} gap="md">
+                <StatsCard
+                    title="Today's Sales"
+                    value={formatCurrency(stats?.today_sales || 0)}
+                    icon={DollarSign}
+                    trend={getSalesGrowth() !== 0 ? {
+                        value: getSalesGrowth(),
+                        isPositive: getSalesGrowth() > 0,
+                        label: "vs daily avg"
+                    } : undefined}
+                    description={`${stats?.today_transactions || 0} transactions`}
+                    onClick={() => navigate('/sales-records')}
+                />
 
-                <Card className="hover:shadow-md transition-all duration-200 border-l-4 border-l-primary dark:border-l-primary">
-                    <CardContent className="p-3 md:p-4">
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-primary to-blue-600 dark:from-primary dark:to-blue-600 shadow-md">
-                                <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                            </div>
-                            <Badge variant="outline" className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                7 days
-                            </Badge>
-                        </div>
-                        <div>
-                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                                Week Sales
-                            </p>
-                            <p className="text-lg md:text-2xl font-bold text-primary">
-                                {formatCurrency(stats?.week_sales || 0)}
-                            </p>
-                            <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2">
-                                Avg: {formatCurrency((stats?.week_sales || 0) / 7)}/day
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
+                <StatsCard
+                    title="Week Sales"
+                    value={formatCurrency(stats?.week_sales || 0)}
+                    icon={TrendingUp}
+                    description={`${formatCurrency((stats?.week_sales || 0) / 7)}/day average`}
+                />
 
-                <Card className="hover:shadow-md transition-all duration-200 border-l-4 border-l-purple-500 dark:border-l-purple-600">
-                    <CardContent className="p-3 md:p-4">
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                            <div className="p-2 md:p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 shadow-md">
-                                <Package className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                            </div>
-                            <Button 
-                                variant="ghost" 
-                                aria-label="View products"
-                                className="h-9 min-w-[36px]"
-                                onClick={() => navigate('/products')}
-                            >
-                                <Eye className="w-4 h-4" />
-                            </Button>
-                        </div>
-                        <div>
-                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                                Products
-                            </p>
-                            <p className="text-lg md:text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                {stats?.total_products || 0}
-                            </p>
-                            <div className="mt-2 md:mt-3">
-                                <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                                    <span>Stock Health</span>
-                                    <span>{getStockHealth().toFixed(0)}%</span>
-                                </div>
-                                <Progress value={getStockHealth()} className="h-1" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <StatsCard
+                    title="Total Products"
+                    value={stats?.total_products || 0}
+                    icon={Package}
+                    description={`${getStockHealth().toFixed(0)}% stock health`}
+                    onClick={() => navigate('/products')}
+                />
 
-                <Card className={`hover:shadow-md transition-all duration-200 border-l-4 ${
-                    (stats?.low_stock_items || 0) > 0 ? 'border-l-orange-500 dark:border-l-orange-600' : 'border-l-green-500 dark:border-l-green-600'
-                }`}>
-                    <CardContent className="p-3 md:p-4">
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                            <div className={`p-2 md:p-3 rounded-xl shadow-md ${
-                                (stats?.low_stock_items || 0) > 0 
-                                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700' 
-                                    : 'bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700'
-                            }`}>
-                                {(stats?.low_stock_items || 0) > 0 ? (
-                                    <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                                ) : (
-                                    <Zap className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                                )}
-                            </div>
-                            {(stats?.low_stock_items || 0) > 0 && (
-                                <Button 
-                                    variant="ghost" 
-                                    aria-label="View low stock inventory"
-                                    className="h-9 min-w-[36px] text-orange-600 dark:text-orange-400"
-                                    onClick={() => navigate('/inventory')}
-                                >
-                                    <ArrowRight className="w-4 h-4" />
-                                </Button>
-                            )}
-                        </div>
-                        <div>
-                            <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-                                Low Stock Alerts
-                            </p>
-                            <p className={`text-lg md:text-2xl font-bold ${
-                                (stats?.low_stock_items || 0) > 0 
-                                    ? 'text-orange-600 dark:text-orange-400' 
-                                    : 'text-green-600 dark:text-green-400'
-                            }`}>
-                                {stats?.low_stock_items || 0}
-                            </p>
-                            <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2">
-                                {(stats?.low_stock_items || 0) > 0 
-                                    ? 'Need attention' 
-                                    : 'All products healthy'}
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+                <StatsCard
+                    title="Low Stock Alerts"
+                    value={stats?.low_stock_items || 0}
+                    icon={AlertCircle}
+                    description={(stats?.low_stock_items || 0) > 0 ? 'Need attention' : 'All healthy'}
+                    onClick={() => navigate('/inventory')}
+                />
+            </StatsGrid>
 
             {/* Quick Actions */}
-            <Card className="border-2 border-dashed hover:border-primary transition-colors shadow-sm">
+            <Card>
                 <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 md:gap-3 text-base md:text-lg">
-                        <Zap className="w-5 h-5 text-yellow-500" />
-                        Quick Actions
-                    </CardTitle>
+                    <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <Button
                             variant="outline"
-                            className="h-20 md:h-24 flex flex-col items-center justify-center gap-2 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-none transition-all hover:shadow-sm"
-                            onClick={() => navigate('/sales ')}
+                            className="h-20 flex flex-col gap-2 hover:border-border"
+                            onClick={() => navigate('/sales')}
                         >
-                            <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/30">
-                                <ShoppingCart className="w-6 h-6 text-green-700 dark:text-green-400" />
-                            </div>
-                            <span className="text-sm font-medium">New Sale</span>
+                            <ShoppingCart className="w-5 h-5" />
+                            <span className="text-sm">New Sale</span>
                         </Button>
-                        
                         <Button
                             variant="outline"
-                            className="h-20 md:h-24 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-blue-50 dark:hover:bg-blue-50/5 transition-all hover:shadow-sm"
+                            className="h-20 flex flex-col gap-2 hover:border-border"
                             onClick={() => navigate('/products')}
                         >
-                            <div className="p-2 rounded-lg bg-blue-100">
-                                <Plus className="w-6 h-6 text-primary" />
-                            </div>
-                            <span className="text-sm font-medium">Add Product</span>
+                            <Package className="w-5 h-5" />
+                            <span className="text-sm">Products</span>
                         </Button>
-                        
                         <Button
                             variant="outline"
-                            className="h-20 md:h-24 flex flex-col items-center justify-center gap-2 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-50/5 transition-all hover:shadow-sm"
+                            className="h-20 flex flex-col gap-2 hover:border-border"
                             onClick={() => navigate('/inventory')}
                         >
-                            <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                                <Package className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <span className="text-sm font-medium">Manage Stock</span>
+                            <BarChart3 className="w-5 h-5" />
+                            <span className="text-sm">Inventory</span>
                         </Button>
-                        
                         <Button
                             variant="outline"
-                            className="h-20 md:h-24 flex flex-col items-center justify-center gap-2 hover:border-orange-500 hover:bg-orange-50  dark:hover:bg-orange-50/5 transition-all hover:shadow-sm"
+                            className="h-20 flex flex-col gap-2 hover:border-border"
                             onClick={() => navigate('/reports')}
                         >
-                            <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                                <BarChart3 className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                            </div>
-                            <span className="text-sm font-medium">View Reports</span>
+                            <TrendingUp className="w-5 h-5" />
+                            <span className="text-sm">Reports</span>
                         </Button>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Additional Stats - Enhanced */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                <Card className="md:col-span-2">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="flex items-center gap-1.5 text-sm sm:text-base">
-                            <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
-                            Sales Performance
-                        </CardTitle>
-                        <Badge variant="outline" className="text-[11px]">This Month</Badge>
+            {/* Performance Summary */}
+            <StatsGrid columns={2}>
+                <Card>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold">Sales Performance</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2 md:space-y-3">
-                        <div className="grid grid-cols-2 gap-3 md:gap-4">
-                            <div className="space-y-2">
-                                <p className="text-xs sm:text-sm text-muted-foreground">Month Sales</p>
-                                <p className="text-lg  md:text-xl font-bold">
-                                    {formatCurrency(stats?.month_sales || 0)}
-                                </p>
-                                <Progress value={((stats?.month_sales || 0) / 100000) * 100} className="h-1.5" />
-                            </div>
-                            <div className="space-y-2">
-                                <p className="text-xs sm:text-sm text-muted-foreground">Avg Transaction</p>
-                                <p className="text-lg  md:text-xl font-bold">
-                                    {formatCurrency(stats?.average_transaction_value || 0)}
-                                </p>
-                                <p className="text-[11px] sm:text-xs text-muted-foreground">
-                                    {stats?.today_transactions || 0} transactions today
-                                </p>
+                    <CardContent className="space-y-4">
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm text-muted-foreground">Month Sales</span>
+                                <span className="font-semibold">{formatCurrency(stats?.month_sales || 0)}</span>
                             </div>
                         </div>
-                        
-                        <div className="pt-3 border-t">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs sm:text-sm font-medium">Daily Average</span>
-                                <span className="font-semibold text-primary">
-                                    {formatCurrency((stats?.month_sales || 0) / 30)}
-                                </span>
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm text-muted-foreground">Avg Transaction</span>
+                                <span className="font-semibold">{formatCurrency(stats?.average_transaction_value || 0)}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm text-muted-foreground">Daily Average</span>
+                                <span className="font-semibold">{formatCurrency((stats?.month_sales || 0) / 30)}</span>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="flex items-center gap-1.5 text-sm sm:text-base">
-                            <Package className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                            Inventory
-                        </CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold">Inventory Summary</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2 md:space-y-3">
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs sm:text-sm text-muted-foreground">Total Products</span>
-                                <span className="font-semibold">{stats?.total_products || 0}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs sm:text-sm text-muted-foreground">Low Stock</span>
-                                <Badge variant={
-                                    (stats?.low_stock_items || 0) > 0 ? "destructive" : "default"
-                                } className="text-[11px]">
-                                    {stats?.low_stock_items || 0}
-                                </Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs sm:text-sm text-muted-foreground">Health Score</span>
-                                <div className="flex items-center gap-1.5">
-                                    <span className="font-semibold text-green-600 dark:text-green-400">
-                                        {getStockHealth().toFixed(0)}%
-                                    </span>
-                                    {getStockHealth() >= 90 ? (
-                                        <Sparkles className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                    ) : getStockHealth() >= 70 ? (
-                                        <TrendingUp className="w-4 h-4 text-yellow-600" />
-                                    ) : (
-                                        <AlertCircle className="w-4 h-4 text-red-600" />
-                                    )}
-                                </div>
-                            </div>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Total Products</span>
+                            <span className="font-semibold">{stats?.total_products || 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Low Stock</span>
+                            <Badge variant={(stats?.low_stock_items || 0) > 0 ? "destructive" : "outline"}>
+                                {stats?.low_stock_items || 0}
+                            </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Health Score</span>
+                            <span className="font-semibold">{getStockHealth().toFixed(0)}%</span>
                         </div>
                     </CardContent>
                 </Card>
-            </div>
+            </StatsGrid>
 
-            {/* Recent Activity - Enhanced */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+            {/* Recent Activity */}
+            <StatsGrid columns={2}>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="flex items-center gap-1.5 text-sm sm:text-base">
-                            <ShoppingCart className="w-4 h-4 text-green-600 dark:text-green-400" />
-                            Recent Sales
-                        </CardTitle>
-                        <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => navigate('/sales-records')}
-                        >
-                            <Eye className="w-4 h-4 mr-1" />
-                            View All
-                        </Button>
+                    <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-base font-semibold">Recent Sales</CardTitle>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate('/sales-records')}
+                            >
+                                View All
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-2.5">
+                        <div className="space-y-3">
                             {recentActivity?.sales && recentActivity.sales.length > 0 ? (
                                 recentActivity.sales.map((sale) => (
-                                    <div 
-                                        key={sale.id} 
-                                        className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 dark:hover:bg-muted transition-colors border border-border"
+                                    <div
+                                        key={sale.id}
+                                        className="flex items-center justify-between py-2 border-b last:border-0"
                                     >
-                                        <div className="flex items-center gap-3 md:gap-4">
-                                            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-                                                <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-sm">{sale.sale_number}</p>
-                                                <p className="text-[11px] sm:text-xs text-muted-foreground flex items-center gap-1">
-                                                    <Users className="w-3 h-3" />
-                                                    {sale.customer_name || 'Walk-in'}
-                                                    <span>•</span>
-                                                    <Clock className="w-3 h-3" />
-                                                    {formatDate(sale.created_at)}
-                                                </p>
-                                            </div>
+                                        <div>
+                                            <p className="font-medium text-sm">{sale.sale_number}</p>
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                <Users className="w-3 h-3" />
+                                                {sale.customer_name || 'Walk-in'}
+                                                <span>•</span>
+                                                <Clock className="w-3 h-3" />
+                                                {formatDate(sale.created_at)}
+                                            </p>
                                         </div>
-                                        <p className="font-semibold text-green-600 dark:text-green-400 text-sm">
+                                        <p className="font-semibold text-sm">
                                             {formatCurrency(sale.total_amount)}
                                         </p>
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center py-6 md:py-12 text-muted-foreground">
-                                    <div className="w-16 h-16 mx-auto mb-2 md:mb-4 rounded-full bg-muted flex items-center justify-center">
-                                        <ShoppingCart className="w-8 h-8 opacity-50" />
-                                    </div>
-                                    <p className="font-medium text-sm">No recent sales</p>
-                                    <p className="text-xs sm:text-sm">Start selling to see transactions here</p>
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        onClick={() => navigate('/sales')}
-                                        className="mt-4"
-                                    >
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        New Sale
-                                    </Button>
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <ShoppingCart className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">No recent sales</p>
                                 </div>
                             )}
                         </div>
@@ -599,106 +374,59 @@ export default function Dashboard() {
                 </Card>
 
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="flex items-center gap-1.5 text-sm sm:text-base">
-                            <AlertCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                            Low Stock Alerts
-                        </CardTitle>
-                        <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => navigate('/inventory')}
-                        >
-                            <Eye className="w-4 h-4 mr-1" />
-                            View All
-                        </Button>
+                    <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-base font-semibold">Low Stock Items</CardTitle>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate('/inventory')}
+                            >
+                                View All
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-2.5">
+                        <div className="space-y-3">
                             {recentActivity?.low_stock_items && recentActivity.low_stock_items.length > 0 ? (
-                                recentActivity.low_stock_items.map((item) => {
-                                    const stockStatus = getStockStatus(item.current_stock, item.minimum_stock);
-                                    return (
-                                        <div 
-                                            key={item.id} 
-                                            className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/50 dark:hover:bg-muted transition-colors border border-border"
-                                        >
-                                            <div className="flex items-center gap-3 md:gap-4">
-                                                <div className={`p-2 rounded-lg ${
-                                                    stockStatus.color === 'destructive' 
-                                                        ? 'bg-red-100 dark:bg-red-900/30' 
-                                                        : 'bg-yellow-100 dark:bg-yellow-900/30'
-                                                }`}>
-                                                    <Package className={`w-4 h-4 ${
-                                                        stockStatus.color === 'destructive' 
-                                                            ? 'text-red-600 dark:text-red-400' 
-                                                            : 'text-yellow-600 dark:text-yellow-400'
-                                                    }`} />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-medium text-sm truncate">
-                                                        {item.product?.name || 'Unknown Product'}
-                                                    </p>
-                                                    <p className="text-[11px] sm:text-xs text-muted-foreground">
-                                                        SKU: {item.product?.sku} • 
-                                                        Stock: {item.current_stock}/{item.minimum_stock}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <Badge variant={stockStatus.color} className="shrink-0 text-[11px]">
-                                                {stockStatus.status}
-                                            </Badge>
+                                recentActivity.low_stock_items.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="flex items-center justify-between py-2 border-b last:border-0"
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-sm truncate">
+                                                {item.product?.name || 'Unknown Product'}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                SKU: {item.product?.sku} • Stock: {item.current_stock}/{item.minimum_stock}
+                                            </p>
                                         </div>
-                                    );
-                                })
-                            ) : (
-                                <div className="text-center py-6 md:py-12 text-muted-foreground">
-                                    <div className="w-16 h-16 mx-auto mb-2 md:mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                                        <Zap className="w-8 h-8 text-green-600 dark:text-green-400" />
+                                        <Badge variant={item.current_stock === 0 ? "destructive" : "secondary"} className="ml-2">
+                                            {item.current_stock === 0 ? 'Out' : 'Low'}
+                                        </Badge>
                                     </div>
-                                    <p className="font-medium text-green-600 dark:text-green-400">All Products Healthy!</p>
-                                    <p className="text-xs sm:text-sm">Your inventory is well-stocked</p>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">All products healthy</p>
                                 </div>
                             )}
                         </div>
                     </CardContent>
                 </Card>
-            </div>
+            </StatsGrid>
 
-            {/* Footer Info */}
-            <Card className="bg-gradient-to-r from-primary/10 to-blue-600/10 border-dashed border-2 shadow-md">
-                <CardContent className="p-6 md:p-8">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
-                        <div className="flex items-center gap-4 md:gap-6">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
-                                {storeConfig?.logo_url ? (
-                                    <img 
-                                        src={convertFileSrc(storeConfig.logo_url)} 
-                                        alt={storeConfig?.name || 'Store logo'} 
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            console.error("Logo failed to load in footer");
-                                            e.currentTarget.style.display = 'none';
-                                            if (e.currentTarget.parentElement) {
-                                                e.currentTarget.parentElement.innerHTML = '<svg class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
-                                            }
-                                        }}
-                                    />
-                                ) : (
-                                    <Store className="w-6 h-6 text-white" />
-                                )}
-                            </div>
-                            <div>
-                                <p className="font-semibold text-lg">{storeConfig?.name || 'ZTAD POS'}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    {storeConfig?.email} • Tax Rate: {((storeConfig?.tax_rate || 0) * 100).toFixed(1)}%
-                                </p>
-                            </div>
+            {/* Store Info Footer */}
+            <Card>
+                <CardContent className="p-4">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <Store className="w-4 h-4" />
+                            <span>{storeConfig?.name || 'Business Suite'}</span>
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-                            <span>Point of Sale System</span>
-                            <Badge variant="outline">v1.0</Badge>
-                        </div>
+                        <span>Tax Rate: {((storeConfig?.tax_rate || 0) * 100).toFixed(1)}%</span>
                     </div>
                 </CardContent>
             </Card>

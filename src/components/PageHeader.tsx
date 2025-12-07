@@ -1,8 +1,17 @@
 import { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
+/**
+ * Consistent PageHeader component - Stripe-inspired minimal design
+ * Features:
+ * - Clean, professional typography
+ * - Minimal color usage
+ * - Consistent spacing
+ * - Max font size: 2xl desktop, xl mobile
+ */
 interface PageHeaderProps {
-  icon: LucideIcon;
+  icon?: LucideIcon;
   title: string;
   subtitle?: string;
   badge?: {
@@ -10,47 +19,54 @@ interface PageHeaderProps {
     variant?: "default" | "secondary" | "outline" | "destructive";
   };
   actions?: React.ReactNode;
+  className?: string;
 }
 
-export default function PageHeader({ icon: Icon, title, subtitle, badge, actions }: PageHeaderProps) {
+export default function PageHeader({
+  icon: Icon,
+  title,
+  subtitle,
+  badge,
+  actions,
+  className
+}: PageHeaderProps) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 p-3 mb-6 shadow-md">
-      {/* Animated background blur orbs */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-2xl animate-pulse delay-75" />
+    <div className={cn(
+      "flex items-start justify-between gap-4 pb-4 mb-4 md:mb-6 border-b border-border/40",
+      className
+    )}>
+      <div className="flex items-start gap-3 min-w-0 flex-1">
+        {Icon && (
+          <div className="flex-shrink-0 mt-0.5">
+            <Icon className="h-5 w-5 md:h-6 md:w-6 text-foreground" />
+          </div>
+        )}
 
-      <div className="relative z-10 flex items-start justify-between gap-4">
-
-        <div className="flex flex-col items-start gap-2">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md border-2 border-primary/20">
-                <Icon className="w-4 h-4 md:w-7 md:h-7 text-white" />
-              </div>
-            </div>
-            <h3 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent line-clamp-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl md:text-2xl font-semibold text-foreground tracking-tight">
               {title}
-            </h3>
+            </h1>
             {badge && (
-              <Badge variant={badge.variant || "default"} className="text-xs line-clamp-2">
+              <Badge variant={badge.variant || "outline"} className="text-xs font-normal">
                 {badge.text}
               </Badge>
             )}
           </div>
 
           {subtitle && (
-            <p className="text-sm md:text-base text-muted-foreground line-clamp-2">
+            <p className="text-sm md:text-base text-muted-foreground">
               {subtitle}
             </p>
           )}
         </div>
-
-        {actions && (
-          <div className="flex items-center gap-2 flex-wrap">
-            {actions}
-          </div>
-        )}
       </div>
+
+      {actions && (
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
