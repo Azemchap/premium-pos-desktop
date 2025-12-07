@@ -1,4 +1,4 @@
-// src/pages/Sales.tsx - Enhanced with List/Grid Toggle, Validation, Toasts, and Completion Modal
+// src/pages/Sales.tsx - Enhanced with Validation, Toasts, and Mobile Responsiveness
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageHeader from "@/components/PageHeader";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +23,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import {
   Select,
   SelectContent,
@@ -31,28 +39,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
 import { printReceipt } from "@/lib/receipt-printer";
 import { useAuthStore } from "@/store/authStore";
+import { useCartStore } from "@/store/cartStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   Check,
   CheckCircle2,
-  DollarSign,
-  GridIcon,
-  List,
   Minus,
   Package,
   Plus,
@@ -61,7 +56,7 @@ import {
   Search,
   ShoppingCart,
   Trash2,
-  User
+  User,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -97,14 +92,6 @@ interface Product {
   unit_of_measure: string;
 }
 
-interface CartItem {
-  product: Product;
-  quantity: number;
-  price: number;
-  tax_amount: number;
-  total: number;
-}
-
 interface CustomerInfo {
   name: string;
   phone: string;
@@ -135,19 +122,29 @@ interface CreateSaleRequest {
   notes?: string;
 }
 
-type ViewMode = "grid" | "list";
-type SortColumn = 'name' | 'sku' | 'category' | 'selling_price' | 'available_stock';
-type SortDirection = 'asc' | 'desc';
+type SortColumn = "name" | "sku" | "category" | "selling_price" | "available_stock";
+type SortDirection = "asc" | "desc";
 
 export default function Sales() {
   const { user } = useAuthStore();
   const { format } = useCurrency();
+  const {
+    items: cart,
+    addItem,
+    removeItem,
+    updateQuantity: updateCartQuantity,
+    updatePrice,
+    clearCart,
+    getSubtotal,
+    getTaxAmount,
+    getTotal,
+  } = useCartStore();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
@@ -162,36 +159,26 @@ export default function Sales() {
     amountReceived: 0,
   });
   const [notes, setNotes] = useState("");
+  const [barcodeEntry, setBarcodeEntry] = useState("");
+  const [animatedItemId, setAnimatedItemId] = useState<number | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [completedSaleNumber, setCompletedSaleNumber] = useState("");
   const [completedSaleData, setCompletedSaleData] = useState<any>(null);
-
-  // View mode with localStorage persistence
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    const saved = localStorage.getItem("salesViewMode");
-    return (saved as ViewMode) || "grid";
-  });
+  const [activeCartProductId, setActiveCartProductId] = useState<number | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 20;
 
   // Sorting
-  const [sortColumn, setSortColumn] = useState<SortColumn>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-
-  const toggleViewMode = () => {
-    const newMode = viewMode === "grid" ? "list" : "grid";
-    setViewMode(newMode);
-    localStorage.setItem("salesViewMode", newMode);
-    toast.success(`Switched to ${newMode} view`);
-  };
+  const [sortColumn] = useState<SortColumn>("name");
+  const [sortDirection] = useState<SortDirection>("asc");
 
   const loadProducts = async () => {
     try {
       setLoading(true);
       const result = await invoke<Product[]>("get_products_with_stock");
-      setProducts(result.filter(p => p.is_active && p.available_stock > 0));
+      setProducts(result.filter((p) => p.is_active && p.available_stock > 0));
       toast.success(`✅ Loaded ${result.length} products`);
     } catch (error) {
       console.error("Failed to load products:", error);
@@ -202,84 +189,45 @@ export default function Sales() {
   };
 
   const addToCart = (product: Product) => {
-    // CRITICAL: Check available_stock from inventory (not current_stock)
-    if (product.available_stock <= 0) {
-      toast.error(`❌ ${product.name} is out of stock!`);
-      return;
-    }
-
-    const existingItem = cart.find((item) => item.product.id === product.id);
-    const currentCartQuantity = existingItem ? existingItem.quantity : 0;
-    const newTotalQuantity = currentCartQuantity + 1;
-
-    // Validate against available_stock (accounting for what's already in cart)
-    if (newTotalQuantity > product.available_stock) {
-      toast.error(`❌ Cannot add more - only ${product.available_stock} available (${currentCartQuantity} already in cart)`);
-      return;
-    }
-
-    if (existingItem) {
-      updateCartItemQuantity(product.id, existingItem.quantity + 1);
-    } else {
-      const taxAmount = product.is_taxable ? product.selling_price * (product.tax_rate / 100) : 0;
-      const total = product.selling_price + taxAmount;
-
-      setCart([
-        ...cart,
-        {
-          product,
-          quantity: 1,
-          price: product.selling_price,
-          tax_amount: taxAmount,
-          total,
-        },
-      ]);
+    if (addItem(product)) {
       toast.success(`✅ Added ${product.name} to cart`);
+    } else {
+      const existingItem = cart.find((item) => item.product.id === product.id);
+      const currentCartQuantity = existingItem ? existingItem.quantity : 0;
+      if (product.available_stock <= 0) {
+        toast.error(`❌ ${product.name} is out of stock!`);
+      } else {
+        toast.error(
+          `❌ Cannot add more - only ${product.available_stock} available (${currentCartQuantity} already in cart)`
+        );
+      }
     }
   };
 
   const updateCartItemQuantity = (productId: number, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-
     const item = cart.find((item) => item.product.id === productId);
     if (!item) return;
 
-    // CRITICAL: Validate against available_stock from inventory
-    if (newQuantity > item.product.available_stock) {
-      toast.error(`❌ Only ${item.product.available_stock} available in stock`);
-      return;
+    if (!updateCartQuantity(productId, newQuantity)) {
+      if (newQuantity > item.product.available_stock) {
+        toast.error(`❌ Only ${item.product.available_stock} available in stock`);
+      }
+    } else {
+      setAnimatedItemId(productId);
+      setTimeout(() => setAnimatedItemId(null), 180);
     }
-
-    setCart(
-      cart.map((item) =>
-        item.product.id === productId
-          ? {
-            ...item,
-            quantity: newQuantity,
-            total: item.price * newQuantity + item.tax_amount * newQuantity,
-          }
-          : item
-      )
-    );
   };
 
   const removeFromCart = (productId: number) => {
     const item = cart.find((item) => item.product.id === productId);
-    setCart(cart.filter((item) => item.product.id !== productId));
+    removeItem(productId);
     toast.success(`🗑️ Removed ${item?.product.name} from cart`);
   };
 
-  const clearCart = () => {
-    setCart([]);
-    setCustomerInfo({ name: "", phone: "", email: "" });
-    setPaymentInfo({ method: "cash", amountReceived: 0 });
-    setNotes("");
-    setValidationErrors({});
+  const clearCartHandler = () => {
+    clearCart();
     setIsClearCartDialogOpen(false);
-    toast.success("🧹 Cart cleared");
+    toast.success("🗑️ Cart cleared");
   };
 
   const validateCustomerInfo = (): boolean => {
@@ -305,7 +253,7 @@ export default function Sales() {
   const validatePayment = (): boolean => {
     try {
       paymentSchema.parse(paymentInfo);
-      if (paymentInfo.amountReceived < cartTotal) {
+      if (paymentInfo.amountReceived < getSubtotal() + getTaxAmount()) {
         toast.error("❌ Payment amount is less than total");
         return false;
       }
@@ -332,7 +280,7 @@ export default function Sales() {
       return;
     }
     setIsPaymentDialogOpen(true);
-    setPaymentInfo({ ...paymentInfo, amountReceived: cartTotal });
+    setPaymentInfo({ ...paymentInfo, amountReceived: getSubtotal() + getTaxAmount() });
   };
 
   const completeSale = async () => {
@@ -349,10 +297,10 @@ export default function Sales() {
           discount_amount: 0,
           line_total: item.price * item.quantity,
         })),
-        subtotal: cartSubtotal,
-        tax_amount: cartTax,
+        subtotal: getSubtotal(),
+        tax_amount: getTaxAmount(),
         discount_amount: 0,
-        total_amount: cartTotal,
+        total_amount: getTotal(),
         payment_method: paymentInfo.method,
         customer_name: customerInfo.name || undefined,
         customer_phone: customerInfo.phone || undefined,
@@ -366,12 +314,10 @@ export default function Sales() {
         shiftId: null,
       });
 
-      // Extract sale data from result
       const saleData = result as any;
       const saleNumber = saleData.sale_number || "SALE-000";
       setCompletedSaleNumber(saleNumber);
 
-      // Store complete sale data for receipt
       const receiptData = {
         ...saleData,
         items: cart.map((item) => ({
@@ -385,11 +331,10 @@ export default function Sales() {
         customer_phone: customerInfo.phone,
         cashier_name: `${user?.first_name} ${user?.last_name}`,
         amount_received: paymentInfo.amountReceived,
-        change: change,
+        change: paymentInfo.amountReceived - getTotal(),
       };
 
       setCompletedSaleData(receiptData);
-
       setIsPaymentDialogOpen(false);
       setIsCompletionDialogOpen(true);
 
@@ -397,7 +342,6 @@ export default function Sales() {
         duration: 3000,
       });
 
-      // Auto-print receipt immediately with the data
       setTimeout(() => {
         printReceiptWithData(receiptData);
       }, 800);
@@ -410,6 +354,9 @@ export default function Sales() {
   const startNewSale = () => {
     setIsCompletionDialogOpen(false);
     clearCart();
+    setCustomerInfo({ name: "", phone: "", email: "" });
+    setNotes("");
+    setPaymentInfo({ method: "cash", amountReceived: 0 });
     loadProducts();
     toast.success("✨ Ready for new sale");
   };
@@ -417,6 +364,9 @@ export default function Sales() {
   const handleCloseCompletion = () => {
     setIsCompletionDialogOpen(false);
     clearCart();
+    setCustomerInfo({ name: "", phone: "", email: "" });
+    setNotes("");
+    setPaymentInfo({ method: "cash", amountReceived: 0 });
     loadProducts();
   };
 
@@ -426,7 +376,6 @@ export default function Sales() {
       return;
     }
 
-    // Use centralized receipt printer
     await printReceipt(saleData);
   };
 
@@ -466,23 +415,23 @@ export default function Sales() {
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
       switch (sortColumn) {
-        case 'name':
+        case "name":
           aValue = a.name.toLowerCase();
           bValue = b.name.toLowerCase();
           break;
-        case 'sku':
+        case "sku":
           aValue = a.sku.toLowerCase();
           bValue = b.sku.toLowerCase();
           break;
-        case 'category':
-          aValue = (a.category || '').toLowerCase();
-          bValue = (b.category || '').toLowerCase();
+        case "category":
+          aValue = (a.category || "").toLowerCase();
+          bValue = (b.category || "").toLowerCase();
           break;
-        case 'selling_price':
+        case "selling_price":
           aValue = a.selling_price;
           bValue = b.selling_price;
           break;
-        case 'available_stock':
+        case "available_stock":
           aValue = a.available_stock;
           bValue = b.available_stock;
           break;
@@ -490,8 +439,8 @@ export default function Sales() {
           return 0;
       }
 
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
 
@@ -510,392 +459,446 @@ export default function Sales() {
     currentPage * productsPerPage
   );
 
-  const handleSort = (column: SortColumn) => {
-    if (column === sortColumn) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('asc');
-    }
-  };
-
-  const cartSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const cartTax = cart.reduce((sum, item) => sum + item.tax_amount * item.quantity, 0);
-  const cartTotal = cartSubtotal + cartTax;
+  // Calculate cart totals
+  const cartSubtotal = getSubtotal();
+  const cartTax = getTaxAmount();
+  const cartTotal = getTotal();
   const change = paymentInfo.amountReceived - cartTotal;
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInputLike =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.getAttribute("role") === "combobox");
+      if (isInputLike) return;
+
+      if (e.key === "Escape") {
+        if (isPaymentDialogOpen) setIsPaymentDialogOpen(false);
+        else if (isCustomerDialogOpen) setIsCustomerDialogOpen(false);
+        else if (isCompletionDialogOpen) setIsCompletionDialogOpen(false);
+      }
+
+      if (e.key === "Enter") {
+        if (isPaymentDialogOpen) {
+          completeSale();
+        } else if (!isCustomerDialogOpen && !isCompletionDialogOpen) {
+          proceedToPayment();
+        }
+      }
+
+      if (e.key === "+" || e.key === "=") {
+        if (activeCartProductId != null) {
+          const item = cart.find((ci) => ci.product.id === activeCartProductId);
+          if (item) updateCartItemQuantity(item.product.id, item.quantity + 1);
+        }
+      }
+      if (e.key === "-" || e.key === "_") {
+        if (activeCartProductId != null) {
+          const item = cart.find((ci) => ci.product.id === activeCartProductId);
+          if (item) updateCartItemQuantity(item.product.id, Math.max(1, item.quantity - 1));
+        }
+      }
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (activeCartProductId != null) {
+          removeFromCart(activeCartProductId);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [cart, activeCartProductId, isPaymentDialogOpen, isCustomerDialogOpen, isCompletionDialogOpen]);
 
   useEffect(() => {
     loadProducts();
   }, []);
 
   useEffect(() => {
-    // Reset to first page when filters or sort change
     setCurrentPage(1);
   }, [debouncedSearchQuery, selectedCategory, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Point of Sale</h1>
-          <p className="text-muted-foreground mt-1">
-            Process sales and manage transactions
-          </p>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          {cart.length > 0 && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setIsClearCartDialogOpen(true)}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear Cart
-            </Button>
-          )}
-        </div>
-      </div>
+    <div className="space-y-4 sm:space-y-6 sm:pb-6 sm:p-6">
+      <PageHeader icon={ShoppingCart} title="Point of Sale" subtitle="Process sales and manage transactions" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-5  gap-1 sm:gap-4 md:gap-6">
-        {/* Products Section */}
-        <div className="lg:col-span-3 space-y-2 md:space-y-4">
-          {/* Search and Filters */}
-          <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-1 md:gap-4">
-            <div className="relative col-span-2">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
-              <Input
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+      {/* Sticky Mobile Checkout Bar */}
+      {cart.length > 0 && (
+        <div className="fixed bottom-0 inset-x-0 z-50 sm:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t px-4 py-3 shadow-lg">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col leading-tight">
+              <span className="text-xs text-muted-foreground">Total</span>
+              <span className="text-lg font-bold">{format(cartTotal)}</span>
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category || "uncategorized"} value={category || "uncategorized"}>
-                    {category || "Uncategorized"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleViewMode}
-            >
-              {viewMode === "grid" ? (
-                <>
-                  <List className="w-4 h-4 mr-2" />
-                  List View
-                </>
-              ) : (
-                <>
-                  <GridIcon className="w-4 h-4 mr-2" />
-                  Grid View
-                </>
-              )}
+            <Button onClick={proceedToPayment} className="h-10 text-sm font-semibold flex-1 max-w-[200px]" size="sm">
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Checkout ({cart.length})
             </Button>
           </div>
+        </div>
+      )}
 
-          {/* Products Grid/List */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Products Section */}
+        <div className="lg:col-span-2 space-y-3 sm:space-y-4">
+          {/* Search and Filters */}
+          <Card className="shadow-md border-2 hover:shadow-lg transition-shadow duration-200">
+            <CardContent className="p-3 sm:p-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="relative col-span-2">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-9 text-sm"
+                  />
+                </div>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category || "uncategorized"} value={category || "uncategorized"}>
+                        {category || "Uncategorized"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="">
+                  <Input
+                    placeholder="Scan barcode or enter SKU..."
+                    value={barcodeEntry}
+                    onChange={(e) => setBarcodeEntry(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && barcodeEntry.trim()) {
+                        const code = barcodeEntry.trim().toLowerCase();
+                        const found = products.find(
+                          (p) => (p.barcode && p.barcode.toLowerCase() === code) || p.sku.toLowerCase() === code
+                        );
+                        if (found) {
+                          addToCart(found);
+                          setBarcodeEntry("");
+                        } else {
+                          toast.error("❌ No product matches that barcode/SKU");
+                        }
+                      }
+                    }}
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Products Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1  gap-1 md:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-40" />
+                <Skeleton key={i} className="h-40 rounded-lg" />
               ))}
             </div>
-          ) : viewMode === "grid" ? (
+          ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1  gap-1 md:gap-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 max-h-[calc(100vh-380px)] sm:max-h-[calc(100vh-320px)] overflow-y-auto pr-1 custom-scrollbar">
                 {paginatedProducts.map((product) => (
                   <Card
                     key={product.id}
-                    className="hover:shadow-lg transition-shadow cursor-pointer"
+                    className="group relative overflow-hidden hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer"
                     onClick={() => addToCart(product)}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <h3 className="font-medium line-clamp-1">{product.name}</h3>
-                          <p className="text-sm text-muted-foreground">{product.sku}</p>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm sm:text-base line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+                            {product.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground font-mono truncate">{product.sku}</p>
                         </div>
                         {product.available_stock <= product.minimum_stock && (
-                          <Badge variant="destructive" className="text-xs">
-                            Low Stock
+                          <Badge variant="destructive" className="text-xs ml-2 px-2 py-0.5 flex-shrink-0">
+                            Low
                           </Badge>
                         )}
                       </div>
                       <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-lg sm:text-xl md:text-2xl font-bold text-primary">
-                            {format(product.selling_price)}
-                          </span>
-                          <Badge variant="outline">{product.available_stock} in stock</Badge>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-xl font-bold text-primary truncate">{format(product.selling_price)}</span>
+                          <Badge variant="outline" className="text-xs font-semibold px-2 py-0.5 flex-shrink-0">
+                            {product.available_stock} left
+                          </Badge>
                         </div>
                         {product.category && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">
                             {product.category}
                           </Badge>
                         )}
+                        {/* <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button size="sm" className="w-full h-8 text-xs" variant="secondary">
+                            <Plus className="w-3 h-3 mr-1.5" />
+                            Add to Cart
+                          </Button>
+                        </div> */}
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
+
               {totalPages > 1 && (
-                <Pagination className="mt-4">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage > 1) setCurrentPage(currentPage - 1);
-                        }}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink
+                <div className="flex justify-center mt-4">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
                           href="#"
-                          isActive={currentPage === page}
                           onClick={(e) => {
                             e.preventDefault();
-                            setCurrentPage(page);
+                            if (currentPage > 1) setCurrentPage(currentPage - 1);
                           }}
-                        >
-                          {page}
-                        </PaginationLink>
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                        />
                       </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                        }}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              )}
-            </>
-          ) : (
-            <>
-              <Card className="max-h-[calc(100vh-300px)] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                        Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('category')}>
-                        Category {sortColumn === 'category' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('available_stock')}>
-                        Stock {sortColumn === 'available_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                      </TableHead>
-                      <TableHead className="cursor-pointer text-right" onClick={() => handleSort('selling_price')}>
-                        Price {sortColumn === 'selling_price' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                      </TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedProducts.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{product.name}</div>
-                            <div className="text-sm text-muted-foreground">{product.sku}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {product.category && (
-                            <Badge variant="secondary">{product.category}</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={product.available_stock <= product.minimum_stock ? "destructive" : "outline"}>
-                            {product.available_stock}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-bold">
-                          {format(product.selling_price)}
-                        </TableCell>
-                        <TableCell>
-                          <Button size="sm" onClick={() => addToCart(product)}>
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
-              {totalPages > 1 && (
-                <Pagination className="mt-4">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage > 1) setCurrentPage(currentPage - 1);
-                        }}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === pageNum}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(pageNum);
+                              }}
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+                      <PaginationItem>
+                        <PaginationNext
                           href="#"
-                          isActive={currentPage === page}
                           onClick={(e) => {
                             e.preventDefault();
-                            setCurrentPage(page);
+                            if (currentPage < totalPages) setCurrentPage(currentPage + 1);
                           }}
-                        >
-                          {page}
-                        </PaginationLink>
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                        />
                       </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                        }}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
               )}
             </>
           )}
 
           {!loading && filteredAndSortedProducts.length === 0 && (
             <Card>
-              <CardContent className="text-center py-6 md:py-12">
-                <Package className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
+              <CardContent className="text-center py-8 sm:py-12">
+                <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                 <h3 className="text-lg font-medium mb-2">No products found</h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search criteria
-                </p>
+                <p className="text-muted-foreground text-sm">Try adjusting your search criteria</p>
               </CardContent>
             </Card>
           )}
         </div>
 
-        {/* Cart Section */}
-        <div className="space-y-2 md:space-y-4 lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  Cart
+        {/* Cart Sidebar */}
+        <div className="lg:col-span-1 space-y-3 sm:space-y-4">
+          <Card className="sticky top-6 shadow-lg border-2">
+            <CardHeader className="border-b-2 p-3 sm:p-4 bg-gradient-to-r from-muted/30 to-muted/10">
+              <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+                <span className="flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5 text-primary" />
+                  <span>Cart</span>
                 </span>
-                <Badge>{cart.length} items</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="px-2.5 py-1 text-sm font-bold">
+                    {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                  </Badge>
+                  {cart.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setIsClearCartDialogOpen(true)}
+                      aria-label="Clear cart"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 md:space-y-4">
+            <CardContent className="space-y-3 p-3 sm:p-4">
               {/* Cart Items */}
-              <div className="space-y-3 max-h-60 overflow-y-auto">
+              <div className="space-y-2 max-h-[300px] sm:max-h-96 overflow-y-auto custom-scrollbar pr-1">
                 {cart.length === 0 ? (
-                  <div className="text-center py-4 md:py-8 text-muted-foreground">
-                    <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Cart is empty</p>
+                  <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
+                      <ShoppingCart className="w-8 h-8 sm:w-10 sm:h-10 opacity-30" />
+                    </div>
+                    <p className="font-medium text-sm sm:text-base">Your cart is empty</p>
+                    <p className="text-xs sm:text-sm mt-1">Start adding products</p>
                   </div>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.product.id} className="flex gap-1 flex-col  p-3 bg-muted rounded-lg">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{item.product.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(item.price)} each
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateCartItemQuantity(item.product.id, item.quantity - 1)}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateCartItemQuantity(item.product.id, item.quantity + 1)}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFromCart(item.product.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
+                    <div
+                      key={item.product.id}
+                      onClick={() => setActiveCartProductId(item.product.id)}
+                      className={`group p-3 bg-muted/30 hover:bg-muted/50 border rounded-lg transition-all cursor-pointer ${activeCartProductId === item.product.id
+                          ? "border-primary/50 ring-2 ring-primary/20"
+                          : "border-transparent hover:border-primary/30"
+                        }`}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm line-clamp-1" title={item.product.name}>
+                              {item.product.name}
+                            </h4>
+                            <p className="text-xs text-muted-foreground font-mono">{item.product.sku}</p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFromCart(item.product.id);
+                            }}
+                            aria-label="Remove from cart"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                        <div className="flex flex-col items-start gap-2">
+                          <div
+                            className={`flex  items-center gap-1 bg-background rounded-md p-1 transition-transform duration-150 ${animatedItemId === item.product.id ? "scale-105" : ""
+                              }`}
+                          >
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 hover:bg-primary/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateCartItemQuantity(item.product.id, item.quantity - 1);
+                              }}
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </Button>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={item.product.available_stock}
+                              value={item.quantity}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                updateCartItemQuantity(item.product.id, Math.max(1, parseInt(e.target.value) || 1));
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-14 h-7 text-center text-sm"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 hover:bg-primary/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateCartItemQuantity(item.product.id, item.quantity + 1);
+                              }}
+                              aria-label="Increase quantity"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2 flex-1">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min={0}
+                              value={item.price}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                updatePrice(item.product.id, Math.max(0, parseFloat(e.target.value) || 0));
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-20 h-7 text-sm"
+                            />
+                            <span className="text-sm font-bold text-primary whitespace-nowrap">
+                              {format(item.total)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))
                 )}
               </div>
 
-              {/* Cart Totals */}
+              {/* Cart Totals & Actions */}
               {cart.length > 0 && (
                 <>
-                  <div className="border-t pt-4 space-y-2">
-                    <div className="flex justify-between text-xs sm:text-sm">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium">{format(cartSubtotal)}</span>
+                  <div className="border-t-2 pt-3 space-y-2">
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="font-semibold">{format(cartSubtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Tax</span>
+                        <span className="font-semibold">{format(cartTax)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-xs sm:text-sm">
-                      <span className="text-muted-foreground">Tax</span>
-                      <span className="font-medium">{format(cartTax)}</span>
-                    </div>
-                    <div className="flex justify-between text-base sm:text-lg font-bold border-t pt-2">
-                      <span>Total</span>
-                      <span className="text-primary">{format(cartTotal)}</span>
+                    <div className="flex justify-between items-baseline p-3 bg-primary/5 rounded-lg border-2 border-primary/20">
+                      <span className="text-base font-bold">Total</span>
+                      <span className="text-xl font-bold text-primary">{format(cartTotal)}</span>
                     </div>
                   </div>
 
                   {/* Customer Info Button */}
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full h-10 text-sm hover:border-primary/50 hover:bg-primary/5"
                     onClick={() => setIsCustomerDialogOpen(true)}
                   >
                     <User className="w-4 h-4 mr-2" />
-                    {customerInfo.name ? customerInfo.name : "Add Customer (Optional)"}
+                    {customerInfo.name || "Add Customer (Optional)"}
                   </Button>
 
                   {/* Notes */}
                   <Textarea
-                    placeholder="Notes (optional)"
+                    placeholder="Add notes..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={2}
+                    className="text-sm resize-none"
                   />
 
-                  {/* Checkout Button */}
-                  <Button className="w-full" size="lg" onClick={proceedToPayment}>
-                    <DollarSign className="w-5 h-5 mr-2" />
-                    Proceed to Payment
+                  {/* Checkout Button - Hidden on Mobile (sticky bar shown instead) */}
+                  <Button
+                    className="w-full h-12 text-base font-bold hidden sm:flex"
+                    size="lg"
+                    onClick={proceedToPayment}
+                  >
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    Checkout
                   </Button>
                 </>
               )}
@@ -904,59 +907,62 @@ export default function Sales() {
         </div>
       </div>
 
-      {/* Customer Info Dialog */}
+      {/* Customer Info Dialog - Mobile Responsive */}
       <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Customer Information</DialogTitle>
-            <DialogDescription>
-              Add customer details (optional)
-            </DialogDescription>
+            <DialogTitle className="text-base sm:text-lg">Customer Information</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">Add customer details (optional)</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="customerName">Name</Label>
+          <div className="space-y-3 mt-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="customerName" className="text-xs sm:text-sm font-medium">
+                Name
+              </Label>
               <Input
                 id="customerName"
                 value={customerInfo.name}
                 onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
                 placeholder="Customer name"
-                className={validationErrors.name ? "border-red-500" : ""}
+                className={`h-9 text-sm ${validationErrors.name ? "border-red-500" : ""}`}
               />
-              {validationErrors.name && (
-                <p className="text-xs text-red-500">{validationErrors.name}</p>
-              )}
+              {validationErrors.name && <p className="text-xs text-red-500">{validationErrors.name}</p>}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="customerPhone">Phone</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="customerPhone" className="text-xs sm:text-sm font-medium">
+                Phone
+              </Label>
               <Input
                 id="customerPhone"
                 value={customerInfo.phone}
                 onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
                 placeholder="Phone number"
-                className={validationErrors.phone ? "border-red-500" : ""}
+                className={`h-9 text-sm ${validationErrors.phone ? "border-red-500" : ""}`}
               />
-              {validationErrors.phone && (
-                <p className="text-xs text-red-500">{validationErrors.phone}</p>
-              )}
+              {validationErrors.phone && <p className="text-xs text-red-500">{validationErrors.phone}</p>}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="customerEmail">Email</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="customerEmail" className="text-xs sm:text-sm font-medium">
+                Email
+              </Label>
               <Input
                 id="customerEmail"
                 type="email"
                 value={customerInfo.email}
                 onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
                 placeholder="Email address"
-                className={validationErrors.email ? "border-red-500" : ""}
+                className={`h-9 text-sm ${validationErrors.email ? "border-red-500" : ""}`}
               />
-              {validationErrors.email && (
-                <p className="text-xs text-red-500">{validationErrors.email}</p>
-              )}
+              {validationErrors.email && <p className="text-xs text-red-500">{validationErrors.email}</p>}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCustomerDialogOpen(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setIsCustomerDialogOpen(false)}
+              size="sm"
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
             <Button
@@ -966,6 +972,8 @@ export default function Sales() {
                   toast.success("✅ Customer info saved");
                 }
               }}
+              size="sm"
+              className="w-full sm:w-auto"
             >
               Save
             </Button>
@@ -973,20 +981,25 @@ export default function Sales() {
         </DialogContent>
       </Dialog>
 
-      {/* Payment Dialog */}
+      {/* Payment Dialog - Mobile Responsive */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Complete Payment</DialogTitle>
-            <DialogDescription>
-              Total: {format(cartTotal)}
+            <DialogTitle className="text-base sm:text-lg">Complete Payment</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
+              Total: <span className="font-bold text-base">{format(cartTotal)}</span>
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="paymentMethod">Payment Method</Label>
-              <Select value={paymentInfo.method} onValueChange={(value) => setPaymentInfo({ ...paymentInfo, method: value })}>
-                <SelectTrigger className={validationErrors.method ? "border-red-500" : ""}>
+          <div className="space-y-3 mt-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="paymentMethod" className="text-xs sm:text-sm font-medium">
+                Payment Method *
+              </Label>
+              <Select
+                value={paymentInfo.method}
+                onValueChange={(value) => setPaymentInfo({ ...paymentInfo, method: value })}
+              >
+                <SelectTrigger className={`h-9 text-sm ${validationErrors.method ? "border-red-500" : ""}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -996,12 +1009,12 @@ export default function Sales() {
                   <SelectItem value="check">Check</SelectItem>
                 </SelectContent>
               </Select>
-              {validationErrors.method && (
-                <p className="text-xs text-red-500">{validationErrors.method}</p>
-              )}
+              {validationErrors.method && <p className="text-xs text-red-500">{validationErrors.method}</p>}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="amountReceived">Amount Received</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="amountReceived" className="text-xs sm:text-sm font-medium">
+                Amount Received *
+              </Label>
               <Input
                 id="amountReceived"
                 type="number"
@@ -1010,7 +1023,7 @@ export default function Sales() {
                 value={paymentInfo.amountReceived}
                 onChange={(e) => setPaymentInfo({ ...paymentInfo, amountReceived: parseFloat(e.target.value) || 0 })}
                 placeholder="0.00"
-                className={validationErrors.amountReceived ? "border-red-500" : ""}
+                className={`h-9 text-sm ${validationErrors.amountReceived ? "border-red-500" : ""}`}
               />
               {validationErrors.amountReceived && (
                 <p className="text-xs text-red-500">{validationErrors.amountReceived}</p>
@@ -1018,21 +1031,24 @@ export default function Sales() {
             </div>
 
             {change > 0 && paymentInfo.amountReceived > 0 && (
-              <div className="bg-green-50 p-4 rounded-lg">
+              <div className="bg-green-50 dark:bg-green-950 p-3 sm:p-4 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-green-800">Change</span>
-                  <span className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">
-                    {format(change)}
-                  </span>
+                  <span className="text-sm text-green-800 dark:text-green-200 font-medium">Change</span>
+                  <span className="text-xl font-bold text-green-600 dark:text-green-400">{format(change)}</span>
                 </div>
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setIsPaymentDialogOpen(false)}
+              size="sm"
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button onClick={completeSale}>
+            <Button onClick={completeSale} size="sm" className="w-full sm:w-auto">
               <Check className="w-4 h-4 mr-2" />
               Complete Sale
             </Button>
@@ -1040,40 +1056,40 @@ export default function Sales() {
         </DialogContent>
       </Dialog>
 
-      {/* Sale Completion Dialog */}
+      {/* Sale Completion Dialog - Mobile Responsive */}
       <Dialog open={isCompletionDialogOpen} onOpenChange={handleCloseCompletion}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center text-green-600">
-              <CheckCircle2 className="w-6 h-6 mr-2" />
+            <DialogTitle className="flex items-center text-green-600 dark:text-green-400 text-base sm:text-lg">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
               Sale Completed!
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Sale Number: <span className="font-mono font-bold">{completedSaleNumber}</span>
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4 py-4">
-            <div className="bg-green-50 p-3 md:p-6 rounded-lg text-center">
-              <p className="text-sm text-green-800 mb-2">Total Amount</p>
-              <p className="text-4xl font-bold text-green-600">{format(cartTotal)}</p>
+          <div className="space-y-3 py-4">
+            <div className="bg-green-50 dark:bg-green-950 p-4 sm:p-5 rounded-lg border-2 border-green-200 dark:border-green-800 text-center">
+              <p className="text-xs sm:text-sm text-green-800 dark:text-green-200 mb-2 font-medium">Total Amount</p>
+              <p className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">{format(cartTotal)}</p>
             </div>
-            <div className="grid grid-cols-2 gap-1 md:gap-4">
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1">Payment Method</p>
-                <p className="font-medium capitalize">{paymentInfo.method}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1 font-medium">Payment Method</p>
+                <p className="text-sm font-medium capitalize">{paymentInfo.method}</p>
               </div>
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1">Items</p>
-                <p className="font-medium">{cart.length}</p>
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1 font-medium">Items</p>
+                <p className="text-sm font-medium">{cart.length}</p>
               </div>
             </div>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-1 sm:gap-2">
-            <Button variant="outline" onClick={handlePrintReceipt} className="w-full">
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={handlePrintReceipt} size="sm" className="w-full sm:flex-1">
               <Printer className="w-4 h-4 mr-2" />
               Print Receipt
             </Button>
-            <Button onClick={startNewSale} className="w-full">
+            <Button onClick={startNewSale} size="sm" className="w-full sm:flex-1">
               <ReceiptIcon className="w-4 h-4 mr-2" />
               New Sale
             </Button>
@@ -1081,18 +1097,20 @@ export default function Sales() {
         </DialogContent>
       </Dialog>
 
-      {/* Clear Cart Confirmation Dialog */}
+      {/* Clear Cart Confirmation Dialog - Mobile Responsive */}
       <AlertDialog open={isClearCartDialogOpen} onOpenChange={setIsClearCartDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[95vw] sm:max-w-md p-4 sm:p-6">
           <AlertDialogHeader>
-            <AlertDialogTitle>Clear Cart?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-base sm:text-lg">Clear Cart?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm">
               This will remove all items from your cart. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={clearCart}>Clear Cart</AlertDialogAction>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto h-9 text-sm">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={clearCartHandler} className="w-full sm:w-auto h-9 text-sm">
+              Clear Cart
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

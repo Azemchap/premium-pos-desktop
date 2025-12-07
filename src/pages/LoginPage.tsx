@@ -1,12 +1,13 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import StoreLogo from "@/components/StoreLogo";
 import { useAuthStore } from "@/store/authStore";
 import type { User } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
-import { Eye, EyeOff, Lock, Store, User as UserIcon } from "lucide-react";
+import { Eye, EyeOff, Lock, User as UserIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -74,18 +75,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-3 sm:p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2 sm:space-y-3 md:space-y-4 p-4 sm:p-6">
-          <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <Store className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+        <CardHeader className="text-center space-y-4 sm:space-y-6 p-4 sm:p-6">
+          <div className="flex justify-center">
+            <StoreLogo variant="desktop" showSubtitle={false} />
           </div>
-          <div>
-            <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Premium POS
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
-              Sign in to your account to continue
-            </CardDescription>
-          </div>
+          <CardDescription className="text-xs sm:text-sm text-muted-foreground">
+            Sign in to your account to continue
+          </CardDescription>
         </CardHeader>
 
         <CardContent className="p-4 sm:p-6">

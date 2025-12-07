@@ -128,7 +128,7 @@ function generateReceiptHTML(saleData: SaleData, storeConfig: StoreConfig | null
       </head>
       <body>
         <div class="header">
-          <h1>${storeConfig?.name || 'Premium POS'}</h1>
+          <h1>${storeConfig?.name || 'ZTAD POS'}</h1>
           ${storeConfig ? `
             ${storeConfig.address ? `<p>${storeConfig.address}</p>` : ''}
             ${storeConfig.city && storeConfig.state && storeConfig.zip_code ? 
@@ -193,7 +193,7 @@ function generateReceiptHTML(saleData: SaleData, storeConfig: StoreConfig | null
         <div class="footer">
           <p><strong>Thank you for your purchase!</strong></p>
           <p>Please keep this receipt for your records</p>
-          <p style="font-size: 9px;">Powered by Premium POS System</p>
+          <p style="font-size: 9px;">Powered by ZTAD POS System</p>
         </div>
       </body>
     </html>

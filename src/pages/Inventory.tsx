@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageHeader from "@/components/PageHeader";
 import {
   Dialog,
   DialogContent,
@@ -146,6 +147,9 @@ export default function Inventory() {
   const [receiveSupplier, setReceiveSupplier] = useState("");
   const [receiveReference, setReceiveReference] = useState("");
   const [receiveNotes, setReceiveNotes] = useState("");
+  const [receiveBatchNumber, setReceiveBatchNumber] = useState("");
+  const [receiveExpiryDate, setReceiveExpiryDate] = useState("");
+  const [receiveLocation, setReceiveLocation] = useState("main");
   const [adjustType, setAdjustType] = useState<"add" | "subtract">("add");
   const [adjustQuantity, setAdjustQuantity] = useState(0);
   const [adjustReason, setAdjustReason] = useState("");
@@ -218,6 +222,9 @@ export default function Inventory() {
           cost_price: receiveCostPrice,
           supplier: receiveSupplier || null,
           reference_number: receiveReference || null,
+          batch_number: receiveBatchNumber || null,
+          expiry_date: receiveExpiryDate || null,
+          location: receiveLocation,
           notes: receiveNotes || null,
         },
         userId: user?.id,
@@ -238,6 +245,9 @@ export default function Inventory() {
     setReceiveCostPrice(0);
     setReceiveSupplier("");
     setReceiveReference("");
+    setReceiveBatchNumber("");
+    setReceiveExpiryDate("");
+    setReceiveLocation("main");
     setReceiveNotes("");
   };
 
@@ -466,94 +476,107 @@ export default function Inventory() {
   }, [debouncedSearchQuery, filterCategory, filterStatus, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-lg  md:text-3xl font-bold">Inventory Management</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage stock levels, receive inventory, and track movements
-          </p>
-        </div>
-        <Button onClick={loadInventory} variant="outline">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Refresh
-        </Button>
+    <div className="space-y-4 sm:space-y-6">
+      <PageHeader
+        icon={Package}
+        title="Inventory"
+        subtitle="Manage stock levels, receive inventory, and track movements"
+        actions={
+          <Button onClick={loadInventory} variant="outline" size="sm" className="w-full sm:w-auto">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+        }
+      />
+
+      {/* Statistics - Compact & Responsive */}
+      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-md transition-all duration-200">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 sm:p-4">
+            <div className="flex items-start gap-1 justify-between">
+              <div className="text-white">
+                <p className="text-[10px] sm:text-xs opacity-90 font-medium">Total Items</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{totalItems}</p>
+              </div>
+              <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                <Package className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-md transition-all duration-200">
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-3 sm:p-4">
+            <div className="flex items-start gap-1 justify-between">
+              <div className="text-white">
+                <p className="text-[10px] sm:text-xs opacity-90 font-medium">In Stock</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{inStock}</p>
+              </div>
+              <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-md transition-all duration-200">
+          <div className="bg-gradient-to-br from-yellow-500 to-orange-500 p-3 sm:p-4">
+            <div className="flex items-start gap-1 justify-between">
+              <div className="text-white">
+                <p className="text-[10px] sm:text-xs opacity-90 font-medium">Low Stock</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{lowStock}</p>
+              </div>
+              <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-md transition-all duration-200">
+          <div className="bg-gradient-to-br from-red-500 to-pink-600 p-3 sm:p-4">
+            <div className="flex items-start gap-1 justify-between">
+              <div className="text-white">
+                <p className="text-[10px] sm:text-xs opacity-90 font-medium">Shortage</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{outOfStock}</p>
+              </div>
+              <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="overflow-hidden border-none shadow-md hover:shadow-md transition-all duration-200 col-span-2">
+          <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-white">
+                <p className="text-[10px] sm:text-xs opacity-90 font-medium">Total Value</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{format(totalValue)}</p>
+              </div>
+              <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                <Package className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-1 sm:gap-4 md:gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold">{totalItems}</p>
-              </div>
-              <Package className="w-8 h-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">In Stock</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{inStock}</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Low Stock</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600">{lowStock}</p>
-              </div>
-              <AlertCircle className="w-8 h-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Out of Stock</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-600">{outOfStock}</p>
-              </div>
-              <TrendingDown className="w-8 h-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold">{format(totalValue)}</p>
-              </div>
-              <Package className="w-8 h-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:h-4" />
+      {/* Filters - Compact */}
+      <Card className="shadow-md">
+        <CardContent className="p-3 sm:p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="relative group col-span-2">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <Input
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-9 sm:pl-10 h-9 text-sm"
               />
             </div>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9 text-sm">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
@@ -566,162 +589,178 @@ export default function Inventory() {
               </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9 text-sm">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="in-stock">In Stock</SelectItem>
-                <SelectItem value="low-stock">Low Stock</SelectItem>
-                <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                <SelectItem value="reserved">Has Reservations</SelectItem>
+                <SelectItem value="in-stock">✓ In Stock</SelectItem>
+                <SelectItem value="low-stock">⚠ Low Stock</SelectItem>
+                <SelectItem value="out-of-stock">✗ Out of Stock</SelectItem>
+                <SelectItem value="reserved">🔒 Has Reservations</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tabs */}
-      <Tabs defaultValue="inventory" className="space-y-2 md:space-y-4">
-        <TabsList>
-          <TabsTrigger value="inventory">
-            <Package className="w-4 h-4 mr-2" />
-            Inventory
+      {/* Tabs - Compact */}
+      <Tabs defaultValue="inventory" className="space-y-3 sm:space-y-4">
+        <TabsList className="h-auto p-1">
+          <TabsTrigger value="inventory" className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2">
+            <Package className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Inventory</span>
+            <span className="sm:hidden">Stock</span>
           </TabsTrigger>
-          <TabsTrigger value="movements">
-            <History className="w-4 h-4 mr-2" />
-            Movement History
+          <TabsTrigger value="movements" className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2">
+            <History className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Movement History</span>
+            <span className="sm:hidden">History</span>
           </TabsTrigger>
         </TabsList>
 
         {/* Inventory Tab */}
         <TabsContent value="inventory">
-          <Card>
-            <CardHeader>
-              <CardTitle>Stock Levels</CardTitle>
+          <Card className="shadow-md">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 sm:p-4">
+              <CardTitle className="flex items-center text-sm sm:text-base">
+                <Package className="w-4 h-4 mr-2 text-primary" />
+                Stock Levels
+                <Badge className="ml-2 text-xs" variant="secondary">{filteredAndSortedInventory.length}</Badge>
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 sm:p-3">
               {loading ? (
-                <div className="space-y-2 md:space-y-4">
+                <div className="space-y-2 p-3 sm:p-4">
                   {Array.from({ length: 10 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
+                    <Skeleton key={i} className="h-12 w-full" />
                   ))}
                 </div>
               ) : (
                 <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                          Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                        </TableHead>
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('sku')}>
-                          SKU {sortColumn === 'sku' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                        </TableHead>
-                        <TableHead className="text-right cursor-pointer" onClick={() => handleSort('current_stock')}>
-                          Current Stock {sortColumn === 'current_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                        </TableHead>
-                        <TableHead className="text-right">Reserved</TableHead>
-                        <TableHead className="text-right cursor-pointer" onClick={() => handleSort('available_stock')}>
-                          Available {sortColumn === 'available_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-4 h-4 md:h-4" /> : <ArrowDown className="inline w-4 h-4 md:h-4" />) : <ArrowUpDown className="inline w-4 h-4 md:h-4" />}
-                        </TableHead>
-                        <TableHead className="text-right">Min/Max</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedInventory.map((item) => {
-                        const status = getStockStatus(item);
-                        return (
-                          <TableRow key={item.id}>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">{item.product?.name}</div>
-                                {item.product?.category && (
-                                  <div className="text-sm text-muted-foreground">
-                                    {item.product.category}
-                                  </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b">
+                          <TableHead className="h-9 px-2 sm:px-4 text-xs cursor-pointer" onClick={() => handleSort('name')}>
+                            Product {sortColumn === 'name' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />) : <ArrowUpDown className="inline w-3 h-3" />}
+                          </TableHead>
+                          <TableHead className="h-9 px-2 sm:px-4 text-xs cursor-pointer hidden md:table-cell" onClick={() => handleSort('sku')}>
+                            SKU {sortColumn === 'sku' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />) : <ArrowUpDown className="inline w-3 h-3" />}
+                          </TableHead>
+                          <TableHead className="h-9 px-2 sm:px-4 text-xs text-right cursor-pointer" onClick={() => handleSort('current_stock')}>
+                            Stock {sortColumn === 'current_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />) : <ArrowUpDown className="inline w-3 h-3" />}
+                          </TableHead>
+                          <TableHead className="h-9 px-2 sm:px-4 text-xs text-right hidden lg:table-cell">Reserved</TableHead>
+                          <TableHead className="h-9 px-2 sm:px-4 text-xs text-right cursor-pointer" onClick={() => handleSort('available_stock')}>
+                            Avail {sortColumn === 'available_stock' ? (sortDirection === 'asc' ? <ArrowUp className="inline w-3 h-3" /> : <ArrowDown className="inline w-3 h-3" />) : <ArrowUpDown className="inline w-3 h-3" />}
+                          </TableHead>
+                          <TableHead className="h-9 px-2 sm:px-4 text-xs text-right hidden xl:table-cell">Min/Max</TableHead>
+                          <TableHead className="h-9 px-2 sm:px-4 text-xs hidden sm:table-cell">Status</TableHead>
+                          <TableHead className="h-9 px-2 sm:px-4 text-xs text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedInventory.map((item) => {
+                          const status = getStockStatus(item);
+                          return (
+                            <TableRow key={item.id} className="hover:bg-muted/50 transition-colors border-b h-12">
+                              <TableCell className="py-2 px-2 sm:px-4">
+                                <div>
+                                  <div className="text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-[200px]">{item.product?.name}</div>
+                                  {item.product?.category && (
+                                    <Badge variant="outline" className="text-[10px] sm:text-xs px-1 py-0 h-4 mt-0.5">
+                                      {item.product.category}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-2 px-2 sm:px-4 font-mono text-[10px] sm:text-xs hidden md:table-cell">
+                                {item.product?.sku}
+                              </TableCell>
+                              <TableCell className="py-2 px-2 sm:px-4 text-right">
+                                <span className="text-sm sm:text-base font-bold">{item.current_stock}</span>
+                              </TableCell>
+                              <TableCell className="py-2 px-2 sm:px-4 text-right hidden lg:table-cell">
+                                {item.reserved_stock > 0 ? (
+                                  <Badge variant="secondary" className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 text-[10px] sm:text-xs px-1.5 py-0 h-5">
+                                    <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5" />
+                                    {item.reserved_stock}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">—</span>
                                 )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-mono text-xs sm:text-sm">
-                              {item.product?.sku}
-                            </TableCell>
-                            <TableCell className="text-right font-bold">
-                              {item.current_stock}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {item.reserved_stock > 0 ? (
-                                <Badge variant="outline">{item.reserved_stock}</Badge>
-                              ) : (
-                                "—"
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {item.available_stock}
-                            </TableCell>
-                            <TableCell className="text-right text-xs sm:text-sm text-muted-foreground">
-                              {item.minimum_stock} / {item.maximum_stock}
-                            </TableCell>
-                            <TableCell>
+                              </TableCell>
+                              <TableCell className="py-2 px-2 sm:px-4 text-right">
+                                <span className="text-sm sm:text-base font-bold text-primary">{item.available_stock}</span>
+                              </TableCell>
+                              <TableCell className="py-2 px-2 sm:px-4 text-right text-[10px] sm:text-xs text-muted-foreground hidden xl:table-cell">
+                                {item.minimum_stock} / {item.maximum_stock}
+                              </TableCell>
+                              <TableCell className="py-2 px-2 sm:px-4 hidden sm:table-cell">
                               <div className="flex flex-col gap-1">
                                 {!item.product?.is_active && (
-                                  <Badge variant="outline" className="text-xs text-red-600 border-red-600">
-                                    <span className="w-full text-center">Inactive Product</span>
+                                  <Badge variant="outline" className="text-xs text-red-600 border-red-600 bg-red-50">
+                                    <AlertCircle className="w-3 h-3 mr-1" />
+                                    Inactive
                                   </Badge>
                                 )}
                                 {item.product?.is_active && (
                                   <Badge
-                                    variant={
+                                    className={
                                       status.color === "destructive"
-                                        ? "destructive"
+                                        ? "bg-red-100 text-red-700 border-red-200"
                                         : status.color === "warning"
-                                          ? "secondary"
-                                          : "default"
+                                          ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                                          : "bg-green-100 text-green-700 border-green-200"
                                     }
+                                    variant="outline"
                                   >
-                                    <span className="w-full text-center">{status.label}</span>
+                                    {status.color === "destructive" ? <TrendingDown className="w-3 h-3 mr-1" /> : 
+                                     status.color === "warning" ? <AlertCircle className="w-3 h-3 mr-1" /> : 
+                                     <TrendingUp className="w-3 h-3 mr-1" />}
+                                    {status.label}
                                   </Badge>
                                 )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <MoreHorizontal className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => openReceiveDialog(item)}>
-                                    <PackagePlus className="w-4 h-4 mr-2" />
-                                    Receive Stock
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openAdjustDialog(item)}>
-                                    <RefreshCw className="w-4 h-4 mr-2" />
-                                    Adjust Stock
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openStockTakeDialog(item)}>
-                                    <ClipboardCheck className="w-4 h-4 mr-2" />
-                                    Stock Take
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openReserveDialog(item)}>
-                                    <Lock className="w-4 h-4 mr-2" />
-                                    Reserve Stock
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openMovementDialog(item)}>
-                                    <History className="w-4 h-4 mr-2" />
-                                    View History
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-2 px-2 sm:px-4 text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                      <MoreHorizontal className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-48">
+                                    <DropdownMenuItem onClick={() => openReceiveDialog(item)} className="text-xs">
+                                      <PackagePlus className="w-3.5 h-3.5 mr-2" />
+                                      Receive Stock
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openAdjustDialog(item)} className="text-xs">
+                                      <RefreshCw className="w-3.5 h-3.5 mr-2" />
+                                      Adjust Stock
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openStockTakeDialog(item)} className="text-xs">
+                                      <ClipboardCheck className="w-3.5 h-3.5 mr-2" />
+                                      Stock Take
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openReserveDialog(item)} className="text-xs">
+                                      <Lock className="w-3.5 h-3.5 mr-2" />
+                                      Reserve Stock
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openMovementDialog(item)} className="text-xs">
+                                      <History className="w-3.5 h-3.5 mr-2" />
+                                      View History
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                   {totalPages > 1 && (
                     <Pagination className="mt-4">
                       <PaginationContent>
@@ -779,68 +818,74 @@ export default function Inventory() {
           </Card>
         </TabsContent>
 
-        {/* Movement History Tab */}
+        {/* Movement History Tab - Compact & Responsive */}
         <TabsContent value="movements">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Stock Movements</CardTitle>
+          <Card className="shadow-md">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 sm:p-4">
+              <CardTitle className="flex items-center text-sm sm:text-base">
+                <History className="w-4 h-4 mr-2 text-primary" />
+                Recent Stock Movements
+                <Badge className="ml-2 text-xs" variant="secondary">{movements.length}</Badge>
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Change</TableHead>
-                    <TableHead className="text-right">Previous</TableHead>
-                    <TableHead className="text-right">New</TableHead>
-                    <TableHead>Notes</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {movements.map((movement) => (
-                    <TableRow key={movement.id}>
-                      <TableCell>
-                        <div className="text-sm">
-                          {formatDistance(parseUTCDate(movement.created_at), new Date(), {
-                            addSuffix: true,
-                          })}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{movement.product_name || `Product #${movement.product_id}`}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 sm:gap-2">
-                          {getMovementIcon(movement.movement_type)}
-                          <span className="capitalize">{movement.movement_type.replace("_", " ")}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span
-                          className={`font-bold ${movement.quantity_change > 0 ? "text-green-600" : "text-red-600"}`}
-                        >
-                          {movement.quantity_change > 0 ? "+" : ""}
-                          {movement.quantity_change}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">{movement.previous_stock}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {movement.new_stock}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {movement.notes || "—"}
-                      </TableCell>
+            <CardContent className="p-0 sm:p-3">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b">
+                      <TableHead className="h-9 px-2 sm:px-4 text-xs">Date</TableHead>
+                      <TableHead className="h-9 px-2 sm:px-4 text-xs">Product</TableHead>
+                      <TableHead className="h-9 px-2 sm:px-4 text-xs">Type</TableHead>
+                      <TableHead className="h-9 px-2 sm:px-4 text-xs text-right">Change</TableHead>
+                      <TableHead className="h-9 px-2 sm:px-4 text-xs text-right hidden md:table-cell">Previous</TableHead>
+                      <TableHead className="h-9 px-2 sm:px-4 text-xs text-right">New</TableHead>
+                      <TableHead className="h-9 px-2 sm:px-4 text-xs hidden lg:table-cell">Notes</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {movements.map((movement) => (
+                      <TableRow key={movement.id} className="hover:bg-muted/50 transition-colors border-b h-12">
+                        <TableCell className="py-2 px-2 sm:px-4">
+                          <div className="text-[10px] sm:text-xs">
+                            {formatDistance(parseUTCDate(movement.created_at), new Date(), {
+                              addSuffix: true,
+                            })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 px-2 sm:px-4">
+                          <div className="text-xs sm:text-sm font-medium truncate max-w-[100px] sm:max-w-[150px]">{movement.product_name || `Product #${movement.product_id}`}</div>
+                        </TableCell>
+                        <TableCell className="py-2 px-2 sm:px-4">
+                          <div className="flex items-center gap-1">
+                            {getMovementIcon(movement.movement_type)}
+                            <span className="text-[10px] sm:text-xs capitalize hidden sm:inline">{movement.movement_type.replace("_", " ")}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 px-2 sm:px-4 text-right">
+                          <span
+                            className={`text-xs sm:text-sm font-bold ${movement.quantity_change > 0 ? "text-green-600" : "text-red-600"}`}
+                          >
+                            {movement.quantity_change > 0 ? "+" : ""}
+                            {movement.quantity_change}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-2 px-2 sm:px-4 text-right text-xs hidden md:table-cell">{movement.previous_stock}</TableCell>
+                        <TableCell className="py-2 px-2 sm:px-4 text-right text-xs sm:text-sm font-medium">
+                          {movement.new_stock}
+                        </TableCell>
+                        <TableCell className="py-2 px-2 sm:px-4 text-[10px] sm:text-xs text-muted-foreground truncate max-w-[120px] hidden lg:table-cell">
+                          {movement.notes || "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
               {movements.length === 0 && (
                 <div className="text-center py-6 md:py-12">
-                  <History className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No movements yet</h3>
-                  <p className="text-muted-foreground">
+                  <History className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <h3 className="text-sm sm:text-lg font-medium mb-1 sm:mb-2">No movements yet</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Stock movements will appear here as you manage inventory
                   </p>
                 </div>
@@ -851,111 +896,166 @@ export default function Inventory() {
       </Tabs>
 
       {/* Dialogs */}
+      {/* Receive Stock Dialog - Enhanced & Responsive */}
       <Dialog open={isReceiveDialogOpen} onOpenChange={setIsReceiveDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Receive Stock</DialogTitle>
-            <DialogDescription>Add new stock for {selectedItem?.product?.name}</DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Receive Stock</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
+              Add new stock for {selectedItem?.product?.name}
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="receive-quantity">Quantity *</Label>
-              <Input
-                id="receive-quantity"
-                type="number"
-                value={receiveQuantity}
-                onChange={(e) => setReceiveQuantity(parseInt(e.target.value) || 0)}
-                min="1"
-              />
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="receive-quantity" className="text-xs sm:text-sm">Quantity *</Label>
+                <Input
+                  id="receive-quantity"
+                  type="number"
+                  value={receiveQuantity}
+                  onChange={(e) => setReceiveQuantity(parseInt(e.target.value) || 0)}
+                  min="1"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="receive-cost-price" className="text-xs sm:text-sm">Cost Price (per unit)</Label>
+                <Input
+                  id="receive-cost-price"
+                  type="number"
+                  step="0.01"
+                  value={receiveCostPrice}
+                  onChange={(e) => setReceiveCostPrice(parseFloat(e.target.value) || 0)}
+                  className="h-9 text-sm"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="receive-cost-price">Cost Price (per unit)</Label>
-              <Input
-                id="receive-cost-price"
-                type="number"
-                step="0.01"
-                value={receiveCostPrice}
-                onChange={(e) => setReceiveCostPrice(parseFloat(e.target.value) || 0)}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="receive-supplier" className="text-xs sm:text-sm">Supplier</Label>
+                <Input
+                  id="receive-supplier"
+                  value={receiveSupplier}
+                  onChange={(e) => setReceiveSupplier(e.target.value)}
+                  placeholder="e.g. ABC Wholesale"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="receive-reference" className="text-xs sm:text-sm">Reference Number</Label>
+                <Input
+                  id="receive-reference"
+                  value={receiveReference}
+                  onChange={(e) => setReceiveReference(e.target.value)}
+                  placeholder="e.g. PO-12345"
+                  className="h-9 text-sm"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="receive-supplier">Supplier</Label>
-              <Input
-                id="receive-supplier"
-                value={receiveSupplier}
-                onChange={(e) => setReceiveSupplier(e.target.value)}
-                placeholder="e.g. ABC Wholesale"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="receive-batch" className="text-xs sm:text-sm">Batch Number</Label>
+                <Input
+                  id="receive-batch"
+                  value={receiveBatchNumber}
+                  onChange={(e) => setReceiveBatchNumber(e.target.value)}
+                  placeholder="e.g. BATCH-2024-001"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="receive-expiry" className="text-xs sm:text-sm">Expiry Date</Label>
+                <Input
+                  id="receive-expiry"
+                  type="date"
+                  value={receiveExpiryDate}
+                  onChange={(e) => setReceiveExpiryDate(e.target.value)}
+                  className="h-9 text-sm"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="receive-reference">Reference Number</Label>
-              <Input
-                id="receive-reference"
-                value={receiveReference}
-                onChange={(e) => setReceiveReference(e.target.value)}
-                placeholder="e.g. PO-12345"
-              />
+            <div className="space-y-1.5">
+              <Label htmlFor="receive-location" className="text-xs sm:text-sm">Storage Location</Label>
+              <Select value={receiveLocation} onValueChange={setReceiveLocation}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="main">Main Warehouse</SelectItem>
+                  <SelectItem value="back">Back Storage</SelectItem>
+                  <SelectItem value="front">Front Store</SelectItem>
+                  <SelectItem value="cold">Cold Storage</SelectItem>
+                  <SelectItem value="display">Display Area</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="receive-notes">Notes</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="receive-notes" className="text-xs sm:text-sm">Notes</Label>
               <Textarea
                 id="receive-notes"
                 value={receiveNotes}
                 onChange={(e) => setReceiveNotes(e.target.value)}
                 rows={2}
+                className="text-sm resize-none"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReceiveDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleReceiveStock}>Receive Stock</Button>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsReceiveDialogOpen(false)} size="sm" className="flex-1 sm:flex-none">
+              Cancel
+            </Button>
+            <Button onClick={handleReceiveStock} size="sm" className="flex-1 sm:flex-none">
+              Receive Stock
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Adjust Stock Dialog - Responsive */}
       <Dialog open={isAdjustDialogOpen} onOpenChange={setIsAdjustDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Adjust Stock</DialogTitle>
-            <DialogDescription>Manually adjust stock for {selectedItem?.product?.name}</DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Adjust Stock</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">Manually adjust stock for {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="space-y-2">
-              <Label>Adjustment Type *</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs sm:text-sm">Adjustment Type *</Label>
               <Select value={adjustType} onValueChange={(v: any) => setAdjustType(v)}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="add">
                     <div className="flex items-center">
-                      <Plus className="w-4 h-4 mr-2 text-green-600" />
+                      <Plus className="w-3.5 h-3.5 mr-2 text-green-600" />
                       Add Stock
                     </div>
                   </SelectItem>
                   <SelectItem value="subtract">
                     <div className="flex items-center">
-                      <Minus className="w-4 h-4 mr-2 text-red-600" />
+                      <Minus className="w-3.5 h-3.5 mr-2 text-red-600" />
                       Remove Stock
                     </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="adjust-quantity">Quantity *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="adjust-quantity" className="text-xs sm:text-sm">Quantity *</Label>
               <Input
                 id="adjust-quantity"
                 type="number"
                 value={adjustQuantity}
                 onChange={(e) => setAdjustQuantity(parseInt(e.target.value) || 0)}
                 min="1"
+                className="h-9 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="adjust-reason">Reason *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="adjust-reason" className="text-xs sm:text-sm">Reason *</Label>
               <Select value={adjustReason} onValueChange={setAdjustReason}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 text-sm">
                   <SelectValue placeholder="Select reason" />
                 </SelectTrigger>
                 <SelectContent>
@@ -968,40 +1068,42 @@ export default function Inventory() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="adjust-notes">Additional Notes</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="adjust-notes" className="text-xs sm:text-sm">Additional Notes</Label>
               <Textarea
                 id="adjust-notes"
                 value={adjustNotes}
                 onChange={(e) => setAdjustNotes(e.target.value)}
                 rows={2}
+                className="text-sm resize-none"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAdjustDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAdjustStock}>Adjust Stock</Button>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsAdjustDialogOpen(false)} size="sm" className="flex-1 sm:flex-none">Cancel</Button>
+            <Button onClick={handleAdjustStock} size="sm" className="flex-1 sm:flex-none">Adjust Stock</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Stock Take Dialog - Responsive */}
       <Dialog open={isStockTakeDialogOpen} onOpenChange={setIsStockTakeDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Stock Take / Physical Count</DialogTitle>
-            <DialogDescription>Enter the actual physical count for {selectedItem?.product?.name}</DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Stock Take / Physical Count</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">Enter the actual physical count for {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="p-4 bg-muted rounded-lg">
-              <div className="grid grid-cols-2 gap-1 md:gap-4 text-xs sm:text-sm">
+          <div className="space-y-3">
+            <div className="p-3 sm:p-4 bg-muted rounded-lg">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div>
-                  <p className="text-muted-foreground">System Count</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{selectedItem?.current_stock}</p>
+                  <p className="text-muted-foreground mb-1">System Count</p>
+                  <p className="text-xl sm:text-2xl font-bold">{selectedItem?.current_stock}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Difference</p>
+                  <p className="text-muted-foreground mb-1">Difference</p>
                   <p
-                    className={`text-2xl font-bold ${stockTakeCount - (selectedItem?.current_stock || 0) > 0
+                    className={`text-xl sm:text-2xl font-bold ${stockTakeCount - (selectedItem?.current_stock || 0) > 0
                       ? "text-green-600"
                       : stockTakeCount - (selectedItem?.current_stock || 0) < 0
                         ? "text-red-600"
@@ -1014,55 +1116,58 @@ export default function Inventory() {
                 </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="stock-take-count">Actual Count *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="stock-take-count" className="text-xs sm:text-sm">Actual Count *</Label>
               <Input
                 id="stock-take-count"
                 type="number"
                 value={stockTakeCount}
                 onChange={(e) => setStockTakeCount(parseInt(e.target.value) || 0)}
                 min="0"
+                className="h-9 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="stock-take-notes">Notes</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="stock-take-notes" className="text-xs sm:text-sm">Notes</Label>
               <Textarea
                 id="stock-take-notes"
                 value={stockTakeNotes}
                 onChange={(e) => setStockTakeNotes(e.target.value)}
                 rows={2}
                 placeholder="Explain any discrepancies..."
+                className="text-sm resize-none"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsStockTakeDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleStockTake}>Complete Stock Take</Button>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsStockTakeDialogOpen(false)} size="sm" className="flex-1 sm:flex-none">Cancel</Button>
+            <Button onClick={handleStockTake} size="sm" className="flex-1 sm:flex-none">Complete Stock Take</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Reserve Stock Dialog - Responsive */}
       <Dialog open={isReserveDialogOpen} onOpenChange={setIsReserveDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Reserve Stock</DialogTitle>
-            <DialogDescription>Reserve stock for orders or quotes - {selectedItem?.product?.name}</DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Reserve Stock</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">Reserve stock for orders or quotes - {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 md:space-y-4">
-            <div className="p-4 bg-muted rounded-lg">
-              <div className="grid grid-cols-2 gap-1 md:gap-4 text-xs sm:text-sm">
+          <div className="space-y-3">
+            <div className="p-3 sm:p-4 bg-muted rounded-lg">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div>
-                  <p className="text-muted-foreground">Available</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{selectedItem?.available_stock}</p>
+                  <p className="text-muted-foreground mb-1">Available</p>
+                  <p className="text-xl sm:text-2xl font-bold">{selectedItem?.available_stock}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Already Reserved</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold">{selectedItem?.reserved_stock}</p>
+                  <p className="text-muted-foreground mb-1">Already Reserved</p>
+                  <p className="text-xl sm:text-2xl font-bold">{selectedItem?.reserved_stock}</p>
                 </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="reserve-quantity">Quantity to Reserve *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="reserve-quantity" className="text-xs sm:text-sm">Quantity to Reserve *</Label>
               <Input
                 id="reserve-quantity"
                 type="number"
@@ -1070,68 +1175,71 @@ export default function Inventory() {
                 onChange={(e) => setReserveQuantity(parseInt(e.target.value) || 0)}
                 min="1"
                 max={selectedItem?.available_stock || 0}
+                className="h-9 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="reserve-notes">Notes (Order ID, Customer name, etc.)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="reserve-notes" className="text-xs sm:text-sm">Notes (Order ID, Customer name, etc.)</Label>
               <Textarea
                 id="reserve-notes"
                 value={reserveNotes}
                 onChange={(e) => setReserveNotes(e.target.value)}
                 rows={2}
+                className="text-sm resize-none"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReserveDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleReserveStock}>Reserve Stock</Button>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsReserveDialogOpen(false)} size="sm" className="flex-1 sm:flex-none">Cancel</Button>
+            <Button onClick={handleReserveStock} size="sm" className="flex-1 sm:flex-none">Reserve Stock</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Movement History Dialog - Responsive & Compact */}
       <Dialog open={isMovementDialogOpen} onOpenChange={setIsMovementDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Movement History - {selectedItem?.product?.name}</DialogTitle>
-            <DialogDescription>All stock movements for this product</DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Movement History - {selectedItem?.product?.name}</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">All stock movements for this product</DialogDescription>
           </DialogHeader>
-          <div className="max-h-[500px] overflow-y-auto">
+          <div className="max-h-[400px] sm:max-h-[500px] overflow-y-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Change</TableHead>
-                  <TableHead className="text-right">New Stock</TableHead>
-                  <TableHead>Notes</TableHead>
+                <TableRow className="border-b">
+                  <TableHead className="h-9 px-2 sm:px-4 text-xs">Date</TableHead>
+                  <TableHead className="h-9 px-2 sm:px-4 text-xs">Type</TableHead>
+                  <TableHead className="h-9 px-2 sm:px-4 text-xs text-right">Change</TableHead>
+                  <TableHead className="h-9 px-2 sm:px-4 text-xs text-right">New Stock</TableHead>
+                  <TableHead className="h-9 px-2 sm:px-4 text-xs hidden md:table-cell">Notes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {productMovements.map((movement) => (
-                  <TableRow key={movement.id}>
-                    <TableCell className="text-sm">
+                  <TableRow key={movement.id} className="hover:bg-muted/50 transition-colors border-b h-12">
+                    <TableCell className="py-2 px-2 sm:px-4 text-[10px] sm:text-xs">
                       {formatDistance(parseUTCDate(movement.created_at), new Date(), {
                         addSuffix: true,
                       })}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 sm:gap-2">
+                    <TableCell className="py-2 px-2 sm:px-4">
+                      <div className="flex items-center gap-1">
                         {getMovementIcon(movement.movement_type)}
-                        <span className="capitalize">{movement.movement_type.replace("_", " ")}</span>
+                        <span className="text-[10px] sm:text-xs capitalize">{movement.movement_type.replace("_", " ")}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="py-2 px-2 sm:px-4 text-right">
                       <span
-                        className={`font-bold ${movement.quantity_change > 0 ? "text-green-600" : "text-red-600"}`}
+                        className={`text-xs sm:text-sm font-bold ${movement.quantity_change > 0 ? "text-green-600" : "text-red-600"}`}
                       >
                         {movement.quantity_change > 0 ? "+" : ""}
                         {movement.quantity_change}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right font-medium">
+                    <TableCell className="py-2 px-2 sm:px-4 text-right text-xs sm:text-sm font-medium">
                       {movement.new_stock}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="py-2 px-2 sm:px-4 text-[10px] sm:text-xs text-muted-foreground hidden md:table-cell">
                       {movement.notes || "—"}
                     </TableCell>
                   </TableRow>
@@ -1140,13 +1248,13 @@ export default function Inventory() {
             </Table>
             {productMovements.length === 0 && (
               <div className="text-center py-6 md:py-12">
-                <History className="w-12 h-12 mx-auto mb-2 md:mb-4 text-muted-foreground opacity-50" />
-                <p className="text-muted-foreground">No movements for this product yet</p>
+                <History className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 text-muted-foreground opacity-50" />
+                <p className="text-xs sm:text-sm text-muted-foreground">No movements for this product yet</p>
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button onClick={() => setIsMovementDialogOpen(false)}>Close</Button>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button onClick={() => setIsMovementDialogOpen(false)} size="sm" className="flex-1 sm:flex-none">Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -108,7 +108,7 @@ async fn seed_store_config(pool: &SqlitePool) -> Result<(), String> {
 
     sqlx::query(
         "INSERT OR IGNORE INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency)
-         VALUES (1, 'BuildCo Wholesale Materials', '4567 Industrial Parkway', 'Denver', 'CO', '80202', '+1-303-555-0199', 'sales@buildco.com', 6.5, 'USD')"
+         VALUES (1, 'BuildCo Wholesale Materials', '4567 Industrial Parkway', 'Denver', 'CO', '80202', '+1-303-555-0199', 'sales@buildco.com', 0.065, 'USD')"
     )
     .execute(pool)
     .await
@@ -1134,9 +1134,10 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
 
     // Create 15 sample sales for building materials
     for i in 0i32..15i32 {
+        let uuid_str = Uuid::new_v4().to_string();
         let sale_number = format!(
             "SALE-{}",
-            Uuid::new_v4().to_string().split('-').next().unwrap()
+            uuid_str.split('-').next().unwrap_or(&uuid_str[..8])
         );
 
         let payment_methods = vec!["cash", "card", "check", "bank_transfer"];

@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 node_modules
 src-tauri/target/
+# src-tauri/gen
 .env
 .env.local
 .env.signing

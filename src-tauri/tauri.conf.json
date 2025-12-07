@@ -1,8 +1,8 @@
 {
     "$schema": "../node_modules/@tauri-apps/cli/schema.json",
-    "productName": "Premium POS",
+    "productName": "ZTAD POS",
     "version": "0.1.0",
-    "identifier": "com.premiumpos.app",
+    "identifier": "com.ztadpos.app",
     "build": {
         "beforeBuildCommand": "pnpm build",
         "beforeDevCommand": "pnpm dev",
@@ -14,7 +14,7 @@
             {
                 "fullscreen": false,
                 "resizable": true,
-                "title": "Premium POS",
+                "title": "ZTAD POS",
                 "width": 1400,
                 "height": 900,
                 "minWidth": 1200,
@@ -28,15 +28,22 @@
             }
         ],
         "security": {
-            "csp": null
+            "csp": null,
+            "assetProtocol": {
+                "enable": true,
+                "scope": [
+                    "$APPDATA/**",
+                    "$APPDATA/logos/**"
+                ]
+            }
         }
     },
     "bundle": {
         "active": true,
         "category": "Business",
-        "copyright": "© 2024 Premium POS",
-        "shortDescription": "Premium POS System",
-        "longDescription": "Premium Point of Sale and Inventory Management System for retail locations",
+        "copyright": " 2024 ZTAD POS",
+        "shortDescription": "ZTAD POS System",
+        "longDescription": "ZTAD Point of Sale and Inventory Management System for retail locations",
         "targets": "all",
         "externalBin": [],
         "resources": [],

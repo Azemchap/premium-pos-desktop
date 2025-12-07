@@ -1,4 +1,4 @@
-package com.premiumpos.app
+package com.ztadpos.app
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge

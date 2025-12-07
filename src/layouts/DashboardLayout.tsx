@@ -1,4 +1,5 @@
 import MobileBottomNav from "@/components/MobileBottomNav";
+import StoreLogo from "@/components/StoreLogo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import { useAuthStore } from "@/store/authStore";
+import { useCartStore } from "@/store/cartStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
   BarChart3,
@@ -29,7 +31,6 @@ import {
   Receipt,
   Settings,
   ShoppingCart,
-  Store as StoreIcon,
   Sun,
   Tag,
   User,
@@ -51,7 +52,7 @@ const navigation: NavigationItem[] = [
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
   { name: "Inventory", href: "/inventory", icon: Database },
   { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Categories", href: "/master-data", icon: Tag, roles: ["Admin", "Manager"] },
+  { name: "Master Data", href: "/master-data", icon: Tag, roles: ["Admin", "Manager"] },
   { name: "Products", href: "/products", icon: Package, roles: ["Admin", "Manager"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["Admin", "Manager"] },
   { name: "Users", href: "/users", icon: Users, roles: ["Admin", "Manager"] },
@@ -60,10 +61,11 @@ const navigation: NavigationItem[] = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
-  const [storeName, setStoreName] = useState<string>("");
   const { user, logout, theme, setTheme } = useAuthStore();
+  const { getItemCount } = useCartStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const cartItemCount = getItemCount();
 
   // Haptic feedback wrapper (calls Rust command)
   const hapticFeedback = async (intensity: 'light' | 'medium' | 'heavy') => {
@@ -74,24 +76,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  // Load store config and notification count
+  // Load notification count
   useEffect(() => {
-    const loadDashboardData = async () => {
+    const loadNotifications = async () => {
       try {
-        const config = await invoke<any>("get_store_config");
-        setStoreName(config.name || "Premium POS");
-
         const notifications = await invoke<any[]>("get_notifications", {
           isRead: false,
           limit: 100
         });
         setNotificationCount(notifications.length);
       } catch (error) {
-        console.error("Failed to load dashboard data:", error);
+        console.error("Failed to load notifications:", error);
       }
     };
 
-    loadDashboardData();
+    loadNotifications();
 
     const interval = setInterval(async () => {
       try {
@@ -143,19 +142,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-60">
           <div className="space-y-6">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                <StoreIcon className="text-primary-foreground w-4 h-4" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-sm leading-none">{storeName}</span>
-                <span className="text-xs text-muted-foreground">POS System</span>
-              </div>
-            </div>
+            <StoreLogo variant="mobile" />
 
             <nav className="space-y-2">
               {filteredNavigation.map((item) => (
@@ -177,21 +168,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </SheetContent>
       </Sheet>
 
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-60 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-border bg-card px-6 pb-4">
-          <div className="flex h-16 shrink-0 items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm px-1">POS</span>
-              </div>
-              <span className="font-bold text-xl">Premium POS</span>
-            </div>
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
+        <div className="flex grow flex-col gap-y-8 overflow-y-auto border-r border-border bg-card px-6 pb-6 shadow-sm">
+          <div className="flex h-20 shrink-0 items-center">
+            <StoreLogo variant="desktop" />
           </div>
 
           <nav className="flex flex-1 flex-col">
-            <ul role="list" className="flex flex-1 flex-col gap-y-7">
+            <ul role="list" className="flex flex-1 flex-col gap-y-10">
               <li>
-                <ul role="list" className="-mx-2 space-y-1">
+                <ul role="list" className="-mx-2 space-y-2">
                   {filteredNavigation.map((item) => (
                     <li key={item.name}>
                       <Button
@@ -208,8 +194,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </li>
 
               <li className="mt-auto">
-                <div className="space-y-2">
-                  <div className="p-3 bg-muted rounded-lg">
+                <div className="space-y-3">
+                  <div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/10">
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-8 h-8">
                         {user?.profile_image_url ? (
@@ -230,26 +216,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-3">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={toggleTheme}
-                      className="flex-1"
+                      className="flex-1 hover:bg-primary/10 hover:text-primary hover:border-primary"
                     >
                       {theme === 'light' ? (
-                        <Moon className="w-4 h-4" />
+                        <Moon className="w-4 h-4 mr-2" />
                       ) : (
-                        <Sun className="w-4 h-4" />
+                        <Sun className="w-4 h-4 mr-2" />
                       )}
+                      <span className="text-xs">Theme</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleLogout}
-                      className="flex-1"
+                      className="flex-1 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-4 h-4 mr-2" />
+                      <span className="text-xs">Logout</span>
                     </Button>
                   </div>
                 </div>
@@ -259,8 +247,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
 
-      <div className="lg:pl-60">
-        <div className="sticky top-0 z-40 flex h-14 md:h-16 shrink-0 items-center gap-x-2 sm:gap-x-4 border-b border-border bg-background px-3 sm:px-4 md:px-6 lg:px-8 shadow-sm safe-top">
+      <div className="lg:pl-64">
+        <div className="sticky top-0 z-40 flex h-24 md:h-20 shrink-0 items-end gap-x-4 sm:gap-x-6 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:px-6 md:px-8 lg:px-10 shadow-sm safe-top ">
           <Button
             variant="ghost"
             size="sm"
@@ -275,7 +263,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="h-6 w-px bg-border lg:hidden" />
 
-          <div className="flex justify-end flex-1 gap-x-4 self-stretch lg:gap-x-6">
+          <div className="flex justify-end flex-1 gap-x-4 lg:gap-x-6">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <Button
                 variant="ghost"
@@ -295,6 +283,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zinc-400 opacity-75 dark:bg-zinc-600"></span>
                     <Badge className="relative inline-flex bg-zinc-500 hover:bg-zinc-600 text-white px-1 md:px-1.5 min-w-[16px] md:min-w-[20px] h-4 md:h-5 text-[10px] md:text-xs font-bold shadow-lg border-2 border-background">
                       {notificationCount > 99 ? '99+' : notificationCount}
+                    </Badge>
+                  </span>
+                )}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  await hapticFeedback('light');
+                  navigate("/cart");
+                }}
+                className="relative hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors touch-target"
+              >
+                <ShoppingCart className={`w-4 h-4 md:w-5 md:h-5 ${cartItemCount > 0
+                    ? 'text-primary animate-pulse'
+                    : 'text-gray-600 dark:text-gray-400'
+                  }`} />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-6 w-6 md:h-5 md:w-5 items-center justify-center">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/50 opacity-75"></span>
+                    <Badge className="relative inline-flex bg-primary hover:bg-primary/90 text-white px-1 md:px-1.5 min-w-[16px] md:min-w-[20px] h-4 md:h-5 text-[10px] md:text-xs font-bold shadow-lg border-2 border-background">
+                      {cartItemCount > 99 ? '99+' : cartItemCount}
                     </Badge>
                   </span>
                 )}
@@ -341,8 +352,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        <main className="py-4 md:py-8 safe-bottom">
-          <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 md:px-6 lg:px-8">
+        <main className="py-4 md:py-6 md:pb-10 safe-bottom">
+          <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 md:px-8 lg:px-10">
             {children}
           </div>
         </main>

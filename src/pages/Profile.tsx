@@ -10,10 +10,11 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { formatLocalDate } from "@/lib/date-utils";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
-import { Camera, Info, Key, User } from "lucide-react";
+import { Camera, Info, Key, User, Upload, X, Save, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -50,81 +51,144 @@ export default function Profile() {
     newPassword: "",
     confirmPassword: "",
   });
-  const [avatar, setAvatar] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [avatarChanged, setAvatarChanged] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
-    // Load avatar from user's profile_image_url or localStorage
+    // Load avatar from user's profile_image_url
     if (user?.profile_image_url) {
-      setAvatar(user.profile_image_url);
-    } else {
-      const savedAvatar = localStorage.getItem(`user_avatar_${user?.id}`);
-      if (savedAvatar) {
-        setAvatar(savedAvatar);
-      }
+      setAvatarPreview(user.profile_image_url);
+      setAvatarChanged(false);
     }
   }, [user?.id, user?.profile_image_url]);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Sync form with user data when user changes
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        username: user.username,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+      });
+    }
+  }, [user]);
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Resize if too large (max 800x800)
+          const maxSize = 800;
+          if (width > height && width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          } else if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Convert to base64 with compression (quality: 0.8)
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(compressedBase64);
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      toast.error("❌ Please select an image file");
+      toast.error("❌ Please select an image file (PNG, JPG, etc.)");
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("❌ Image must be less than 2MB");
+    // Validate file size (max 5MB before compression)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("❌ Image must be less than 5MB");
       return;
     }
 
-    // Read and convert to base64
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setAvatar(base64String);
-      toast.success("✅ Profile picture updated! Click 'Save Changes' to keep it.");
-    };
-    reader.onerror = () => {
-      toast.error("❌ Failed to read image");
-    };
-    reader.readAsDataURL(file);
+    try {
+      setUploadingAvatar(true);
+      const compressedImage = await compressImage(file);
+      setAvatarPreview(compressedImage);
+      setAvatarChanged(true);
+      toast.success("✅ Image selected! Click 'Save Changes' to update.", {
+        description: "Your profile picture will be saved when you update your profile."
+      });
+    } catch (error) {
+      console.error("Failed to process image:", error);
+      toast.error("❌ Failed to process image");
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const handleRemoveAvatar = () => {
-    setAvatar("");
-    toast.success("🗑️ Profile picture removed! Click 'Save Changes' to confirm.");
+    setAvatarPreview("");
+    setAvatarChanged(true);
+    toast.success("🗑️ Profile picture will be removed when you save changes.");
   };
 
   const handleUpdateProfile = async () => {
     try {
+      // Validate form
       profileSchema.parse(profileForm);
       setValidationErrors({});
-      setLoading(true);
+      setSavingProfile(true);
 
-      // Update profile in backend (including avatar)
+      // Prepare update data
+      const updateData: any = {
+        username: profileForm.username,
+        first_name: profileForm.first_name,
+        last_name: profileForm.last_name,
+        email: profileForm.email,
+      };
+
+      // Include avatar if changed
+      if (avatarChanged) {
+        updateData.profile_image_url = avatarPreview || null;
+      }
+
+      // Update profile in backend
       const updatedUser: any = await invoke("update_user_profile", {
         userId: user?.id,
-        request: {
-          username: profileForm.username,
-          first_name: profileForm.first_name,
-          last_name: profileForm.last_name,
-          email: profileForm.email,
-          profile_image_url: avatar || null
-        }
+        request: updateData
       });
-
-      // Remove localStorage avatar since it's now in database
-      localStorage.removeItem(`user_avatar_${user?.id}`);
 
       // Update user in auth store
       updateUser(updatedUser);
 
-      toast.success("✅ Profile updated successfully!");
+      // Reset avatar changed flag
+      setAvatarChanged(false);
+
+      toast.success("✅ Profile updated successfully!", {
+        description: "Your changes have been saved to the database."
+      });
 
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -133,20 +197,22 @@ export default function Profile() {
           if (err.path[0]) errors[err.path[0].toString()] = err.message;
         });
         setValidationErrors(errors);
-        toast.error("❌ Please fix the errors");
+        toast.error("❌ Please fix the validation errors");
       } else {
+        console.error("Profile update error:", error);
         toast.error(`❌ Failed to update profile: ${error}`);
       }
     } finally {
-      setLoading(false);
+      setSavingProfile(false);
     }
   };
 
   const handleChangePassword = async () => {
     try {
+      // Validate password form
       passwordSchema.parse(passwordForm);
       setValidationErrors({});
-      setLoading(true);
+      setChangingPassword(true);
 
       // Change password in backend
       await invoke("change_user_password", {
@@ -157,8 +223,12 @@ export default function Profile() {
         }
       });
 
-      toast.success("✅ Password changed successfully! Please log in with your new password.");
+      toast.success("✅ Password changed successfully!", {
+        description: "You will be logged out in 2 seconds. Please log in with your new password.",
+        duration: 5000,
+      });
 
+      // Clear password form
       setPasswordForm({
         currentPassword: "",
         newPassword: "",
@@ -178,12 +248,13 @@ export default function Profile() {
           if (err.path[0]) errors[err.path[0].toString()] = err.message;
         });
         setValidationErrors(errors);
-        toast.error("❌ Please fix the errors");
+        toast.error("❌ Please fix the validation errors");
       } else {
+        console.error("Password change error:", error);
         toast.error(`❌ Failed to change password: ${error}`);
       }
     } finally {
-      setLoading(false);
+      setChangingPassword(false);
     }
   };
 
@@ -193,87 +264,131 @@ export default function Profile() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-3 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-xl sm:text-lg md:text-3xl font-bold">Profile</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Profile</h1>
         <p className="text-muted-foreground mt-1">
           Manage your account settings and preferences
         </p>
       </div>
 
       {/* Profile Header Card */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-1 sm:gap-4 md:gap-6">
-            <div className="relative">
-              <Avatar className="w-24 h-24">
-                {avatar ? (
-                  <AvatarImage src={avatar} alt={`${user?.first_name} ${user?.last_name}`} />
+      <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardContent className="p-4 sm:p-6 bg-gradient-to-r from-primary/5 to-primary/10">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-6">
+            <div className="relative flex-shrink-0">
+              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 ring-4 ring-white dark:ring-gray-800 shadow-lg">
+                {uploadingAvatar ? (
+                  <AvatarFallback className="bg-primary/10">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </AvatarFallback>
+                ) : avatarPreview ? (
+                  <AvatarImage src={avatarPreview} alt={`${user?.first_name} ${user?.last_name}`} className="object-cover" />
                 ) : (
-                  <AvatarFallback className="text-lg sm:text-xl md:text-2xl bg-primary text-primary-foreground">
+                  <AvatarFallback className="text-xl sm:text-2xl md:text-3xl bg-primary text-primary-foreground">
                     {getInitials()}
                   </AvatarFallback>
                 )}
               </Avatar>
               <label
                 htmlFor="avatar-upload"
-                className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors"
+                className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-all shadow-lg hover:scale-110"
+                title="Change profile picture"
               >
-                <Camera className="w-4 h-4" />
+                {uploadingAvatar ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
                 <input
                   id="avatar-upload"
                   type="file"
                   accept="image/*"
                   className="hidden"
                   onChange={handleAvatarChange}
+                  disabled={uploadingAvatar}
                 />
               </label>
+              {avatarChanged && (
+                <div className="absolute -top-2 -right-2">
+                  <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white shadow-md">
+                    Unsaved
+                  </Badge>
+                </div>
+              )}
             </div>
-            <div className="flex-1">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
+            <div className="flex-1 text-center sm:text-left w-full">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">
                 {user?.first_name} {user?.last_name}
               </h2>
-              <p className="text-muted-foreground">{user?.email}</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Role: <span className="font-medium">{user?.role}</span>
-              </p>
-              {avatar && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRemoveAvatar}
-                  className="mt-2"
-                >
-                  Remove Picture
-                </Button>
-              )}
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">{user?.email}</p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
+                <Badge variant="outline" className="text-xs sm:text-sm">
+                  <User className="w-3 h-3 mr-1" />
+                  {user?.role}
+                </Badge>
+                {user?.is_active && (
+                  <Badge className="bg-green-100 text-green-700 border-green-200">
+                    Active
+                  </Badge>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2 mt-3 justify-center sm:justify-start">
+                {avatarPreview && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemoveAvatar}
+                    disabled={uploadingAvatar}
+                    className="text-xs sm:text-sm"
+                  >
+                    <X className="w-3 h-3 mr-1" />
+                    Remove Picture
+                  </Button>
+                )}
+                <label htmlFor="avatar-upload" className="cursor-pointer">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    disabled={uploadingAvatar}
+                    className="text-xs sm:text-sm"
+                  >
+                    <Upload className="w-3 h-3 mr-1" />
+                    {uploadingAvatar ? "Processing..." : "Change Picture"}
+                  </Button>
+                </label>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Tabs for different sections */}
-      <Card>
-        <CardContent className="p-6">
-          <Tabs defaultValue="profile" className="space-y-3 sm:space-y-3 md:space-y-6">
-            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
-              <TabsTrigger value="profile">
-                <User className="w-4 h-4 mr-2" />
-                Profile
+      <Card className="shadow-md">
+        <CardContent className="p-4 sm:p-6">
+          <Tabs defaultValue="profile" className="space-y-6 md:space-y-6">
+            <TabsList className="grid w-full grid-cols-3 h-full">
+              <TabsTrigger value="profile" className="text-xs sm:text-sm">
+                <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Profile</span>
+                <span className="sm:hidden">Info</span>
               </TabsTrigger>
-              <TabsTrigger value="security">
-                <Key className="w-4 h-4 mr-2" />
-                Security
+              <TabsTrigger value="security" className="text-xs sm:text-sm">
+                <Key className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Security</span>
+                <span className="sm:hidden">Pass</span>
               </TabsTrigger>
-              <TabsTrigger value="account">
-                <Info className="w-4 h-4 mr-2" />
-                Account
+              <TabsTrigger value="account" className="text-xs sm:text-sm">
+                <Info className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Account</span>
+                <span className="sm:hidden">Info</span>
               </TabsTrigger>
             </TabsList>
 
             {/* Profile Tab */}
             <TabsContent value="profile" className="space-y-2 md:space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="username">Username *</Label>
                   <Input
@@ -336,9 +451,29 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <Button onClick={handleUpdateProfile} disabled={loading}>
-                  {loading ? "Saving..." : "Save Changes"}
+              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 pt-4 border-t">
+                {avatarChanged && (
+                  <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-500 flex items-center">
+                    <Info className="w-4 h-4 mr-1" />
+                    You have unsaved image changes
+                  </p>
+                )}
+                <Button 
+                  onClick={handleUpdateProfile} 
+                  disabled={savingProfile}
+                  className="w-full sm:w-auto"
+                >
+                  {savingProfile ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
                 </Button>
               </div>
             </TabsContent>
@@ -402,19 +537,33 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <Button onClick={handleChangePassword} disabled={loading}>
-                  {loading ? "Changing..." : "Change Password"}
+              <div className="flex justify-end pt-4 border-t">
+                <Button 
+                  onClick={handleChangePassword} 
+                  disabled={changingPassword}
+                  className="w-full sm:w-auto"
+                >
+                  {changingPassword ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Changing...
+                    </>
+                  ) : (
+                    <>
+                      <Key className="w-4 h-4 mr-2" />
+                      Change Password
+                    </>
+                  )}
                 </Button>
               </div>
             </TabsContent>
 
             {/* Account Tab */}
             <TabsContent value="account" className="space-y-2 md:space-y-4">
-              <div className="space-y-2 md:space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
-                  <h3 className="font-medium mb-2">Account Information</h3>
-                  <div className="grid grid-cols-2 gap-1 md:gap-4 text-xs sm:text-sm">
+                  <h3 className="font-semibold mb-3 text-sm sm:text-base">Account Information</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 text-xs sm:text-sm">
                     <div>
                       <p className="text-muted-foreground">Username</p>
                       <p className="font-medium">{user?.username}</p>
