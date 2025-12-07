@@ -36,13 +36,11 @@ import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
-  ArrowLeft,
   Check,
   CheckCircle2,
   CreditCard,
   DollarSign,
   Minus,
-  Package,
   Plus,
   Printer,
   ReceiptIcon,
