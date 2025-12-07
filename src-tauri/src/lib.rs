@@ -3,8 +3,12 @@
 pub mod app;
 pub mod commands;
 pub mod database;
+pub mod db_utils;
+pub mod error;
 pub mod models;
 pub mod seeder_building_materials;
+pub mod session;
+pub mod validation;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
