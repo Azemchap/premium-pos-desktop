@@ -43,6 +43,8 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::auth::login_user,
             commands::auth::register_user,
             commands::auth::verify_session,
+            commands::auth::logout_user,
+            commands::auth::get_session_user,
             commands::users::get_users,
             commands::users::create_user,
             commands::users::update_user,

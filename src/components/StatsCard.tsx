@@ -3,12 +3,12 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card } from "./ui/card";
 
 /**
- * Reusable StatsCard component - Stripe-inspired professional design
+ * Reusable StatsCard component - Financial software grade
  * Features:
- * - Minimal color usage
- * - Consistent typography (max 2xl desktop, xl mobile)
- * - Reduced spacing for professional look
- * - Flexible grid layout support
+ * - Subtle background colors
+ * - Max font size: lg (16px)
+ * - Compact spacing
+ * - Professional typography
  */
 interface StatsCardProps {
     title: string;
@@ -38,34 +38,26 @@ export function StatsCard({
     return (
         <Card
             className={cn(
-                "transition-all duration-150 hover:shadow-md border border-border/40 bg-card",
-                onClick && "cursor-pointer hover:border-border",
-                isCompact ? "p-3 md:p-4" : "p-4 md:p-6"
+                "transition-all duration-150 hover:shadow-sm border border-border/50 bg-muted/20",
+                onClick && "cursor-pointer hover:bg-muted/30 hover:border-border",
+                isCompact ? "p-3" : "p-4"
             )}
             onClick={onClick}
         >
             {/* Header: Title and Icon */}
-            <div className="flex items-start justify-between mb-2 md:mb-3">
-                <h3 className={cn(
-                    "font-medium text-muted-foreground",
-                    isCompact ? "text-xs md:text-sm" : "text-sm md:text-base"
-                )}>
+            <div className="flex items-start justify-between mb-2">
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     {title}
                 </h3>
                 {Icon && (
-                    <Icon className={cn(
-                        "text-muted-foreground/60",
-                        isCompact ? "h-4 w-4" : "h-4 w-4 md:h-5 md:w-5"
-                    )} />
+                    <Icon className="h-4 w-4 text-muted-foreground/50" />
                 )}
             </div>
 
-            {/* Value */}
+            {/* Value - MAX lg */}
             <div className={cn(
-                "font-semibold text-foreground mb-1",
-                isCompact
-                    ? "text-lg md:text-xl"
-                    : "text-xl md:text-2xl"
+                "font-semibold text-foreground mb-1 text-financial",
+                isCompact ? "text-base" : "text-lg"
             )}>
                 {value}
             </div>
