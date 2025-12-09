@@ -331,23 +331,63 @@ export interface UpdateCustomerRequest {
   tags?: string;
 }
 
-// ==================== SUPPLIER TYPES (For Future) ====================
+// ==================== SUPPLIER TYPES ====================
 
 export interface Supplier {
   id: number;
-  name: string;
-  contact_person?: string;
+  supplier_number: string;
+  company_name: string;
+  contact_name?: string;
   email?: string;
   phone?: string;
+  website?: string;
   address?: string;
   city?: string;
   state?: string;
   zip_code?: string;
-  tax_id?: string;
+  country?: string;
   payment_terms?: string;
+  tax_id?: string;
+  notes?: string;
+  rating?: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateSupplierRequest {
+  company_name: string;
+  contact_name?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  payment_terms?: string;
+  tax_id?: string;
+  notes?: string;
+  rating?: number;
+}
+
+export interface UpdateSupplierRequest {
+  company_name?: string;
+  contact_name?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  payment_terms?: string;
+  tax_id?: string;
+  notes?: string;
+  rating?: number;
+  is_active?: boolean;
 }
 
 // ==================== PURCHASE ORDER TYPES (For Future) ====================

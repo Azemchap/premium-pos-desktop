@@ -120,6 +120,67 @@ pub struct UpdateCustomerRequest {
     pub tags: Option<String>,
 }
 
+// Supplier models
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Supplier {
+    pub id: i64,
+    pub supplier_number: String,
+    pub company_name: String,
+    pub contact_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub website: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub payment_terms: Option<String>,
+    pub tax_id: Option<String>,
+    pub notes: Option<String>,
+    pub rating: Option<i32>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateSupplierRequest {
+    pub company_name: String,
+    pub contact_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub website: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub payment_terms: Option<String>,
+    pub tax_id: Option<String>,
+    pub notes: Option<String>,
+    pub rating: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateSupplierRequest {
+    pub company_name: Option<String>,
+    pub contact_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub website: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub payment_terms: Option<String>,
+    pub tax_id: Option<String>,
+    pub notes: Option<String>,
+    pub rating: Option<i32>,
+    pub is_active: Option<bool>,
+}
+
 // Product models
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Product {
