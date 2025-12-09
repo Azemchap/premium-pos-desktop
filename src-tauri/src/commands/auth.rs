@@ -1,16 +1,23 @@
-use tauri::{command, State};
-use bcrypt::{hash, verify, DEFAULT_COST};
-use uuid::Uuid;
-use crate::models::{LoginRequest, LoginResponse, User, CreateUserRequest};
+use crate::models::{CreateUserRequest, LoginRequest, LoginResponse, User};
 use crate::session::SESSION_MANAGER;
 use crate::validation;
-use crate::error::{AppError, AppResult};
-use sqlx::{SqlitePool, Row};
+use bcrypt::{hash, verify, DEFAULT_COST};
+use sqlx::{Row, SqlitePool};
+use tauri::{command, State};
 
 #[command]
-pub async fn login_user(pool: State<'_, SqlitePool>, request: LoginRequest) -> Result<LoginResponse, String> {
-    println!("DEBUG(auth): login_user called username='{}'", request.username);
-    println!("DEBUG(auth): received password length = {}", request.password.len());
+pub async fn login_user(
+    pool: State<'_, SqlitePool>,
+    request: LoginRequest,
+) -> Result<LoginResponse, String> {
+    println!(
+        "DEBUG(auth): login_user called username='{}'",
+        request.username
+    );
+    println!(
+        "DEBUG(auth): received password length = {}",
+        request.password.len()
+    );
 
     // Validate input
     if let Err(e) = validation::validate_required(&request.username, "username") {
@@ -24,7 +31,10 @@ pub async fn login_user(pool: State<'_, SqlitePool>, request: LoginRequest) -> R
 
     // Check if user is rate-limited
     if SESSION_MANAGER.is_locked(&request.username) {
-        println!("DEBUG(auth): user locked due to failed attempts: {}", request.username);
+        println!(
+            "DEBUG(auth): user locked due to failed attempts: {}",
+            request.username
+        );
         return Err("Account temporarily locked due to multiple failed login attempts. Please try again later.".to_string());
     }
 
@@ -104,14 +114,26 @@ pub async fn login_user(pool: State<'_, SqlitePool>, request: LoginRequest) -> R
 
     // Create session with proper management
     let session_token = SESSION_MANAGER.create_session(id, username, role);
-    println!("DEBUG(auth): login successful id={}, token created", user.id);
+    println!(
+        "DEBUG(auth): login successful id={}, token created",
+        user.id
+    );
 
-    Ok(LoginResponse { user, session_token })
+    Ok(LoginResponse {
+        user,
+        session_token,
+    })
 }
 
 #[command]
-pub async fn register_user(pool: State<'_, SqlitePool>, request: CreateUserRequest) -> Result<User, String> {
-    println!("DEBUG(auth): register_user username='{}' email='{}'", request.username, request.email);
+pub async fn register_user(
+    pool: State<'_, SqlitePool>,
+    request: CreateUserRequest,
+) -> Result<User, String> {
+    println!(
+        "DEBUG(auth): register_user username='{}' email='{}'",
+        request.username, request.email
+    );
 
     // Validate inputs
     if let Err(e) = validation::validate_username(&request.username) {
@@ -210,13 +232,16 @@ pub async fn register_user(pool: State<'_, SqlitePool>, request: CreateUserReque
 
 #[command]
 pub async fn verify_session(session_token: String) -> Result<bool, String> {
-    println!("DEBUG(auth): verify_session token_len={}", session_token.len());
+    println!(
+        "DEBUG(auth): verify_session token_len={}",
+        session_token.len()
+    );
 
     if session_token.is_empty() {
         return Ok(false);
     }
 
-    Ok(SESSION_MANAGER.validate_session(&session_token))
+    Ok(SESSION_MANAGER.validate_session(&session_token).is_ok())
 }
 
 #[command]
@@ -231,8 +256,13 @@ pub async fn logout_user(session_token: String) -> Result<(), String> {
 }
 
 #[command]
-pub async fn get_session_user(session_token: String) -> Result<Option<(i64, String, String)>, String> {
-    println!("DEBUG(auth): get_session_user token_len={}", session_token.len());
+pub async fn get_session_user(
+    session_token: String,
+) -> Result<Option<(i64, String, String)>, String> {
+    println!(
+        "DEBUG(auth): get_session_user token_len={}",
+        session_token.len()
+    );
 
     if session_token.is_empty() {
         return Ok(None);

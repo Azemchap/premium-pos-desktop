@@ -1,6 +1,36 @@
 use crate::error::{AppError, AppResult};
 use regex::Regex;
 
+/// Validate that a required field is not empty
+pub fn validate_required(value: &str, field: &str) -> AppResult<()> {
+    if value.trim().is_empty() {
+        Err(AppError::validation_error(&format!(
+            "{} is required",
+            field
+        )))
+    } else {
+        Ok(())
+    }
+}
+
+/// Validate username format (alphanumeric, underscores, 3-30 chars)
+pub fn validate_username(username: &str) -> AppResult<()> {
+    if username.len() < 3 || username.len() > 30 {
+        return Err(AppError::validation_error(
+            "Username must be between 3 and 30 characters",
+        ));
+    }
+
+    let username_regex = Regex::new(r"^[a-zA-Z0-9_]+$").unwrap();
+    if username_regex.is_match(username) {
+        Ok(())
+    } else {
+        Err(AppError::validation_error(
+            "Username can only contain letters, numbers, and underscores",
+        ))
+    }
+}
+
 /// Validate email format
 pub fn validate_email(email: &str) -> AppResult<()> {
     let email_regex = Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap();

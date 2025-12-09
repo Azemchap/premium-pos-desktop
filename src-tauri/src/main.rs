@@ -5,8 +5,12 @@
 mod app;
 mod commands;
 mod database;
+mod db_utils;
+mod error;
 mod models;
 mod seeder_building_materials;
+mod session;
+mod validation;
 
 fn main() {
     // Call the same app run function synchronously

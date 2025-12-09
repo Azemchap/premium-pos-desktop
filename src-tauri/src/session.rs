@@ -11,6 +11,7 @@ pub struct Session {
     pub token: String,
     pub user_id: i64,
     pub username: String,
+    pub role: String,
     pub created_at: u64,
     pub expires_at: u64,
     pub last_activity: u64,
@@ -37,7 +38,7 @@ impl SessionManager {
     }
 
     /// Create a new session
-    pub fn create_session(&self, user_id: i64, username: String) -> AppResult<String> {
+    pub fn create_session(&self, user_id: i64, username: String, role: String) -> String {
         let token = Uuid::new_v4().to_string();
         let now = current_timestamp();
 
@@ -45,6 +46,7 @@ impl SessionManager {
             token: token.clone(),
             user_id,
             username,
+            role,
             created_at: now,
             expires_at: now + self.session_timeout.as_secs(),
             last_activity: now,
@@ -53,7 +55,36 @@ impl SessionManager {
         let mut sessions = self.sessions.lock().unwrap();
         sessions.insert(token.clone(), session);
 
-        Ok(token)
+        token
+    }
+
+    /// Check if a user is locked out due to failed attempts
+    pub fn is_locked(&self, username: &str) -> bool {
+        self.check_rate_limit(username).is_err()
+    }
+
+    /// Remove a session (alias for invalidate_session for compatibility)
+    pub fn remove_session(&self, token: &str) {
+        let mut sessions = self.sessions.lock().unwrap();
+        sessions.remove(token);
+    }
+
+    /// Get session data by token, returns Option<(user_id, username, role)>
+    pub fn get_session(&self, token: &str) -> Option<(i64, String, String)> {
+        let sessions = self.sessions.lock().unwrap();
+        let now = current_timestamp();
+
+        sessions.get(token).and_then(|session| {
+            if now <= session.expires_at {
+                Some((
+                    session.user_id,
+                    session.username.clone(),
+                    session.role.clone(),
+                ))
+            } else {
+                None
+            }
+        })
     }
 
     /// Validate session and update last activity
@@ -125,7 +156,9 @@ impl SessionManager {
         let mut failed_attempts = self.failed_attempts.lock().unwrap();
         let now = current_timestamp();
 
-        let entry = failed_attempts.entry(username.to_string()).or_insert((0, now));
+        let entry = failed_attempts
+            .entry(username.to_string())
+            .or_insert((0, now));
         entry.0 += 1;
         entry.1 = now;
     }
@@ -180,7 +213,7 @@ mod tests {
     #[test]
     fn test_create_and_validate_session() {
         let manager = SessionManager::new();
-        let token = manager.create_session(1, "testuser".to_string()).unwrap();
+        let token = manager.create_session(1, "testuser".to_string(), "cashier".to_string());
         assert!(manager.validate_session(&token).is_ok());
     }
 
