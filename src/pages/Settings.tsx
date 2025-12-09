@@ -136,8 +136,23 @@ export default function Settings() {
       setSaving(false);
     }
   };
-  
-  const saveAllSettings = () => {
+
+  const saveAllSettings = async () => {
+    // Save store config if we have any changes
+    if (storeForm.name.trim()) {
+      try {
+        setSaving(true);
+        await invoke("update_store_config", { request: storeForm });
+        await loadStoreConfig();
+      } catch (error) {
+        console.error("Failed to save store config:", error);
+        toast.error("❌ Failed to save store configuration");
+        playSound('error', preferences);
+        return;
+      } finally {
+        setSaving(false);
+      }
+    }
     toast.success("✅ All settings saved successfully");
     playSound('success', preferences);
   };
@@ -178,7 +193,7 @@ export default function Settings() {
 
     try {
       setUploadingLogo(true);
-      
+
       // Read file as array buffer
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
@@ -193,7 +208,7 @@ export default function Settings() {
       setStoreForm({ ...storeForm, logo_url: logoUrl });
       toast.success("✅ Logo uploaded successfully");
       playSound('success', preferences);
-      
+
       // Reload config to get updated data
       loadStoreConfig();
     } catch (error) {
@@ -240,8 +255,8 @@ export default function Settings() {
           </p>
         </div>
         <div className="flex gap-2 sm:gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             className="flex-1 sm:flex-none text-xs sm:text-sm"
             onClick={() => {
@@ -254,14 +269,25 @@ export default function Settings() {
             <span className="hidden sm:inline">Reset All</span>
             <span className="sm:hidden">Reset</span>
           </Button>
-          <Button 
+          <Button
             size="sm"
             className="flex-1 sm:flex-none text-xs sm:text-sm"
             onClick={saveAllSettings}
+            disabled={saving || loading}
           >
-            <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Save Settings</span>
-            <span className="sm:hidden">Save</span>
+            {saving ? (
+              <>
+                <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2 animate-spin" />
+                <span className="hidden sm:inline">Saving...</span>
+                <span className="sm:hidden">...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Save Settings</span>
+                <span className="sm:hidden">Save</span>
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -330,9 +356,9 @@ export default function Settings() {
                         <div className="flex-shrink-0">
                           <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden border-2 border-border">
                             {storeForm.logo_url ? (
-                              <img 
+                              <img
                                 src={convertFileSrc(storeForm.logo_url)}
-                                alt="Store logo" 
+                                alt="Store logo"
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   console.error("Logo failed to load:", storeForm.logo_url);
@@ -527,37 +553,6 @@ export default function Settings() {
                 )}
               </CardContent>
             </Card>
-
-            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="w-full sm:w-auto text-xs sm:text-sm"
-                onClick={resetStoreConfig} 
-                disabled={loading}
-              >
-                <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                Reset
-              </Button>
-              <Button 
-                size="sm"
-                className="w-full sm:w-auto text-xs sm:text-sm"
-                onClick={saveStoreConfig} 
-                disabled={saving || loading}
-              >
-                {saving ? (
-                  <>
-                    <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                    Save Changes
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
         </TabsContent>
 
@@ -857,16 +852,16 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Print Copies</Label>
-                <Input 
-                  type="number" 
-                  min="1" 
-                  max="5" 
-                  value={preferences.printCopies} 
-                  onChange={(e) => { 
-                    const value = parseInt(e.target.value) || 1; 
-                    updatePreference('printCopies', value); 
-                    toast.success(`📄 Print copies set to ${value}`); 
-                  }} 
+                <Input
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={preferences.printCopies}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1;
+                    updatePreference('printCopies', value);
+                    toast.success(`📄 Print copies set to ${value}`);
+                  }}
                 />
               </div>
 
