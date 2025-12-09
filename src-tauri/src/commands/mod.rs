@@ -8,6 +8,7 @@ pub mod shifts;
 pub mod cash_drawer;
 pub mod customers;
 pub mod suppliers;
+pub mod purchase_orders;
 pub mod expenses;
 pub mod receipts;
 pub mod dashboard;

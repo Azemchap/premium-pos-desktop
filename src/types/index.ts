@@ -390,22 +390,70 @@ export interface UpdateSupplierRequest {
   is_active?: boolean;
 }
 
-// ==================== PURCHASE ORDER TYPES (For Future) ====================
+// ==================== PURCHASE ORDER TYPES ====================
+
+export type PurchaseOrderStatus = 'Draft' | 'Sent' | 'Confirmed' | 'Partial' | 'Received' | 'Cancelled';
+export type PaymentStatus = 'Unpaid' | 'Partial' | 'Paid';
 
 export interface PurchaseOrder {
   id: number;
   po_number: string;
   supplier_id: number;
   order_date: string;
-  expected_delivery?: string;
-  status: 'pending' | 'approved' | 'ordered' | 'received' | 'cancelled';
+  expected_delivery_date?: string;
+  actual_delivery_date?: string;
   subtotal: number;
-  tax_amount: number;
+  tax: number;
+  shipping_cost: number;
   total_amount: number;
+  status: PurchaseOrderStatus;
+  payment_status: PaymentStatus;
+  payment_method?: string;
   notes?: string;
-  created_by: number;
+  created_by?: number;
   created_at: string;
   updated_at: string;
+  supplier?: Supplier; // For joined queries
+}
+
+export interface PurchaseOrderItem {
+  id: number;
+  purchase_order_id: number;
+  product_id: number;
+  quantity: number;
+  received_quantity: number;
+  unit_cost: number;
+  total_cost: number;
+  notes?: string;
+  product?: Product; // For joined queries
+}
+
+export interface CreatePurchaseOrderRequest {
+  supplier_id: number;
+  order_date: string;
+  expected_delivery_date?: string;
+  items: Array<{
+    product_id: number;
+    quantity: number;
+    unit_cost: number;
+  }>;
+  tax?: number;
+  shipping_cost?: number;
+  payment_method?: string;
+  notes?: string;
+}
+
+export interface UpdatePurchaseOrderRequest {
+  supplier_id?: number;
+  order_date?: string;
+  expected_delivery_date?: string;
+  actual_delivery_date?: string;
+  status?: PurchaseOrderStatus;
+  payment_status?: PaymentStatus;
+  payment_method?: string;
+  tax?: number;
+  shipping_cost?: number;
+  notes?: string;
 }
 
 // ==================== EXPENSE TYPES ====================

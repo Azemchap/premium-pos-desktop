@@ -237,6 +237,73 @@ pub struct UpdateExpenseRequest {
     pub status: Option<String>,
 }
 
+// Purchase Order models
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PurchaseOrder {
+    pub id: i64,
+    pub po_number: String,
+    pub supplier_id: i64,
+    pub order_date: String,
+    pub expected_delivery_date: Option<String>,
+    pub actual_delivery_date: Option<String>,
+    pub subtotal: f64,
+    pub tax: f64,
+    pub shipping_cost: f64,
+    pub total_amount: f64,
+    pub status: String,
+    pub payment_status: String,
+    pub payment_method: Option<String>,
+    pub notes: Option<String>,
+    pub created_by: Option<i64>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PurchaseOrderItem {
+    pub id: i64,
+    pub purchase_order_id: i64,
+    pub product_id: i64,
+    pub quantity: i32,
+    pub received_quantity: i32,
+    pub unit_cost: f64,
+    pub total_cost: f64,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PurchaseOrderItemInput {
+    pub product_id: i64,
+    pub quantity: i32,
+    pub unit_cost: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreatePurchaseOrderRequest {
+    pub supplier_id: i64,
+    pub order_date: String,
+    pub expected_delivery_date: Option<String>,
+    pub items: Vec<PurchaseOrderItemInput>,
+    pub tax: Option<f64>,
+    pub shipping_cost: Option<f64>,
+    pub payment_method: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdatePurchaseOrderRequest {
+    pub supplier_id: Option<i64>,
+    pub order_date: Option<String>,
+    pub expected_delivery_date: Option<String>,
+    pub actual_delivery_date: Option<String>,
+    pub status: Option<String>,
+    pub payment_status: Option<String>,
+    pub payment_method: Option<String>,
+    pub tax: Option<f64>,
+    pub shipping_cost: Option<f64>,
+    pub notes: Option<String>,
+}
+
 // Product models
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Product {

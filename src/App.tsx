@@ -9,6 +9,7 @@ import MasterData from "@/pages/MasterData";
 import Notifications from "@/pages/Notifications";
 import Products from "@/pages/Products";
 import Profile from "@/pages/Profile";
+import PurchaseOrders from "@/pages/PurchaseOrders";
 import Reports from "@/pages/Reports";
 import Sales from "@/pages/Sales";
 import SalesRecords from "@/pages/SalesRecords";
@@ -159,6 +160,14 @@ useEffect(() => {
             }
           />
           <Route path="/inventory" element={<Inventory />} />
+          <Route
+            path="/purchase-orders"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+                <PurchaseOrders />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/reports" element={<Reports />} />
           <Route
