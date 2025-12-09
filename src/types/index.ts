@@ -408,6 +408,60 @@ export interface PurchaseOrder {
   updated_at: string;
 }
 
+// ==================== EXPENSE TYPES ====================
+
+export interface Expense {
+  id: number;
+  expense_number: string;
+  category_id?: number;
+  vendor?: string;
+  description: string;
+  amount: number;
+  expense_date: string;
+  payment_method: 'Cash' | 'Credit Card' | 'Debit Card' | 'Check' | 'Bank Transfer' | 'Other';
+  reference_number?: string;
+  receipt_url?: string;
+  is_recurring: boolean;
+  recurring_frequency?: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly';
+  tags?: string;
+  notes?: string;
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Paid';
+  approved_by?: number;
+  approved_at?: string;
+  created_by?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateExpenseRequest {
+  category_id?: number;
+  vendor?: string;
+  description: string;
+  amount: number;
+  expense_date: string;
+  payment_method: 'Cash' | 'Credit Card' | 'Debit Card' | 'Check' | 'Bank Transfer' | 'Other';
+  reference_number?: string;
+  is_recurring?: boolean;
+  recurring_frequency?: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly';
+  tags?: string;
+  notes?: string;
+}
+
+export interface UpdateExpenseRequest {
+  category_id?: number;
+  vendor?: string;
+  description?: string;
+  amount?: number;
+  expense_date?: string;
+  payment_method?: 'Cash' | 'Credit Card' | 'Debit Card' | 'Check' | 'Bank Transfer' | 'Other';
+  reference_number?: string;
+  is_recurring?: boolean;
+  recurring_frequency?: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly';
+  tags?: string;
+  notes?: string;
+  status?: 'Pending' | 'Approved' | 'Rejected' | 'Paid';
+}
+
 // ==================== VALIDATION HELPERS ====================
 
 export const isValidRole = (role: string): role is UserRole => {

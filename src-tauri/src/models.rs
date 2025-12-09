@@ -181,6 +181,62 @@ pub struct UpdateSupplierRequest {
     pub is_active: Option<bool>,
 }
 
+// Expense models
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Expense {
+    pub id: i64,
+    pub expense_number: String,
+    pub category_id: Option<i64>,
+    pub vendor: Option<String>,
+    pub description: String,
+    pub amount: f64,
+    pub expense_date: String,
+    pub payment_method: String,
+    pub reference_number: Option<String>,
+    pub receipt_url: Option<String>,
+    pub is_recurring: bool,
+    pub recurring_frequency: Option<String>,
+    pub tags: Option<String>,
+    pub notes: Option<String>,
+    pub status: String,
+    pub approved_by: Option<i64>,
+    pub approved_at: Option<String>,
+    pub created_by: Option<i64>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateExpenseRequest {
+    pub category_id: Option<i64>,
+    pub vendor: Option<String>,
+    pub description: String,
+    pub amount: f64,
+    pub expense_date: String,
+    pub payment_method: String,
+    pub reference_number: Option<String>,
+    pub is_recurring: Option<bool>,
+    pub recurring_frequency: Option<String>,
+    pub tags: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateExpenseRequest {
+    pub category_id: Option<i64>,
+    pub vendor: Option<String>,
+    pub description: Option<String>,
+    pub amount: Option<f64>,
+    pub expense_date: Option<String>,
+    pub payment_method: Option<String>,
+    pub reference_number: Option<String>,
+    pub is_recurring: Option<bool>,
+    pub recurring_frequency: Option<String>,
+    pub tags: Option<String>,
+    pub notes: Option<String>,
+    pub status: Option<String>,
+}
+
 // Product models
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Product {

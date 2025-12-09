@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PageHeader from "@/components/PageHeader";
-import { StatsCard } from "@/components/StatsCard";
 import { StatsGrid } from "@/components/StatsGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -192,47 +191,83 @@ export default function Dashboard() {
                 }
             />
 
-            {/* Stats Overview - Clean, professional design */}
-            <StatsGrid columns={4} gap="md">
-                <StatsCard
-                    title="Today's Sales"
-                    value={formatCurrency(stats?.today_sales || 0)}
-                    icon={DollarSign}
-                    trend={getSalesGrowth() !== 0 ? {
-                        value: getSalesGrowth(),
-                        isPositive: getSalesGrowth() > 0,
-                        label: "vs daily avg"
-                    } : undefined}
-                    description={`${stats?.today_transactions || 0} transactions`}
-                    onClick={() => navigate('/sales-records')}
-                />
+            {/* Stats Overview - Gradient cards for consistency */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
+                    <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="text-white">
+                                <p className="text-xs opacity-90 font-medium">Today's Sales</p>
+                                <p className="text-lg font-bold mt-2">{formatCurrency(stats?.today_sales || 0)}</p>
+                                <p className="text-xs opacity-75 mt-1">{stats?.today_transactions || 0} transactions</p>
+                            </div>
+                            <div className="p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <DollarSign className="w-5 h-5 text-white" />
+                            </div>
+                        </div>
+                        {getSalesGrowth() !== 0 && (
+                            <div className="mt-3 pt-3 border-t border-white/20">
+                                <div className="flex items-center gap-1">
+                                    <TrendingUp className={`w-3 h-3 ${getSalesGrowth() > 0 ? 'text-white' : 'text-white/70'}`} />
+                                    <span className="text-xs text-white/90">
+                                        {getSalesGrowth() > 0 ? '+' : ''}{getSalesGrowth().toFixed(1)}% vs daily avg
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </Card>
 
-                <StatsCard
-                    title="Week Sales"
-                    value={formatCurrency(stats?.week_sales || 0)}
-                    icon={TrendingUp}
-                    description={`${formatCurrency((stats?.week_sales || 0) / 7)}/day average`}
-                />
+                <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
+                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="text-white">
+                                <p className="text-xs opacity-90 font-medium">Week Sales</p>
+                                <p className="text-lg font-bold mt-2">{formatCurrency(stats?.week_sales || 0)}</p>
+                                <p className="text-xs opacity-75 mt-1">{formatCurrency((stats?.week_sales || 0) / 7)}/day average</p>
+                            </div>
+                            <div className="p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <TrendingUp className="w-5 h-5 text-white" />
+                            </div>
+                        </div>
+                    </div>
+                </Card>
 
-                <StatsCard
-                    title="Total Products"
-                    value={stats?.total_products || 0}
-                    icon={Package}
-                    description={`${getStockHealth().toFixed(0)}% stock health`}
-                    onClick={() => navigate('/products')}
-                />
+                <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
+                    <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="text-white">
+                                <p className="text-xs opacity-90 font-medium">Total Products</p>
+                                <p className="text-lg font-bold mt-2">{stats?.total_products || 0}</p>
+                                <p className="text-xs opacity-75 mt-1">{getStockHealth().toFixed(0)}% stock health</p>
+                            </div>
+                            <div className="p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <Package className="w-5 h-5 text-white" />
+                            </div>
+                        </div>
+                    </div>
+                </Card>
 
-                <StatsCard
-                    title="Low Stock Alerts"
-                    value={stats?.low_stock_items || 0}
-                    icon={AlertCircle}
-                    description={(stats?.low_stock_items || 0) > 0 ? 'Need attention' : 'All healthy'}
-                    onClick={() => navigate('/inventory')}
-                />
-            </StatsGrid>
+                <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
+                    <div className="bg-gradient-to-br from-orange-500 to-red-600 p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="text-white">
+                                <p className="text-xs opacity-90 font-medium">Low Stock Alerts</p>
+                                <p className="text-lg font-bold mt-2">{stats?.low_stock_items || 0}</p>
+                                <p className="text-xs opacity-75 mt-1">
+                                    {(stats?.low_stock_items || 0) > 0 ? 'Need attention' : 'All healthy'}
+                                </p>
+                            </div>
+                            <div className="p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <AlertCircle className="w-5 h-5 text-white" />
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+            </div>
 
             {/* Quick Actions */}
-            <Card>
+            <Card className="shadow-md">
                 <CardHeader className="pb-3">
                     <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
                 </CardHeader>
@@ -240,35 +275,35 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col gap-2 hover:border-border"
+                            className="h-20 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/50 transition-all duration-200"
                             onClick={() => navigate('/sales')}
                         >
                             <ShoppingCart className="w-5 h-5" />
-                            <span className="text-sm">New Sale</span>
+                            <span className="text-sm font-medium">New Sale</span>
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col gap-2 hover:border-border"
+                            className="h-20 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/50 transition-all duration-200"
                             onClick={() => navigate('/products')}
                         >
                             <Package className="w-5 h-5" />
-                            <span className="text-sm">Products</span>
+                            <span className="text-sm font-medium">Products</span>
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col gap-2 hover:border-border"
+                            className="h-20 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/50 transition-all duration-200"
                             onClick={() => navigate('/inventory')}
                         >
                             <BarChart3 className="w-5 h-5" />
-                            <span className="text-sm">Inventory</span>
+                            <span className="text-sm font-medium">Inventory</span>
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-20 flex flex-col gap-2 hover:border-border"
+                            className="h-20 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary/50 transition-all duration-200"
                             onClick={() => navigate('/reports')}
                         >
                             <TrendingUp className="w-5 h-5" />
-                            <span className="text-sm">Reports</span>
+                            <span className="text-sm font-medium">Reports</span>
                         </Button>
                     </div>
                 </CardContent>
@@ -276,7 +311,7 @@ export default function Dashboard() {
 
             {/* Performance Summary */}
             <StatsGrid columns={2}>
-                <Card>
+                <Card className="shadow-md">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-base font-semibold">Sales Performance</CardTitle>
                     </CardHeader>
@@ -302,7 +337,7 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="shadow-md">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-base font-semibold">Inventory Summary</CardTitle>
                     </CardHeader>
@@ -327,7 +362,7 @@ export default function Dashboard() {
 
             {/* Recent Activity */}
             <StatsGrid columns={2}>
-                <Card>
+                <Card className="shadow-md">
                     <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-base font-semibold">Recent Sales</CardTitle>
@@ -373,7 +408,7 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="shadow-md">
                     <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-base font-semibold">Low Stock Items</CardTitle>
@@ -419,7 +454,7 @@ export default function Dashboard() {
             </StatsGrid>
 
             {/* Store Info Footer */}
-            <Card>
+            <Card className="shadow-md">
                 <CardContent className="p-4">
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
