@@ -32,6 +32,7 @@ import {
   Menu,
   Moon,
   Package,
+  PackageX,
   Receipt,
   Settings,
   ShoppingBag,
@@ -65,6 +66,7 @@ const coreOperations: NavigationItem[] = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "New Sale", href: "/sales", icon: ShoppingCart },
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
+  { name: "Returns", href: "/returns", icon: PackageX },
   { name: "Inventory", href: "/inventory", icon: Database },
 ];
 

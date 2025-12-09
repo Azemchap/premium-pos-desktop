@@ -3,6 +3,7 @@ pub mod users;
 pub mod products;
 pub mod inventory;
 pub mod sales;
+pub mod returns;
 pub mod store;
 pub mod shifts;
 pub mod cash_drawer;
