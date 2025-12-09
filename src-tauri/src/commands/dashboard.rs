@@ -29,12 +29,10 @@ pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, St
 
     // Explicitly fetch and map types for today's sales
     let today_sales_amount: f64 = today_sales_row.try_get("total_sales").map_err(|e| {
-    eprintln!("Dashboard Stats Error: Failed to fetch 'total_sales' as f64. SQL Type might be incompatible. Error: {}", e);
     format!("Type mismatch for total_sales: {}", e)
 })?;
 
     let today_transactions: i32 = today_sales_row.try_get("transaction_count").map_err(|e| {
-        eprintln!(
             "Dashboard Stats Error: Failed to fetch 'transaction_count' as i32. Error: {}",
             e
         );
@@ -52,7 +50,6 @@ pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, St
     .map_err(|e| format!("Failed to get week sales query: {}", e))?;
 
     let week_sales_amount: f64 = week_sales_row.try_get("week_total").map_err(|e| {
-        eprintln!(
             "Dashboard Stats Error: Failed to fetch 'week_total' as f64. Error: {}",
             e
         );
@@ -70,7 +67,6 @@ pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, St
     .map_err(|e| format!("Failed to get month sales query: {}", e))?;
 
     let month_sales_amount: f64 = month_sales_row.try_get("month_total").map_err(|e| {
-        eprintln!(
             "Dashboard Stats Error: Failed to fetch 'month_total' as f64. Error: {}",
             e
         );
@@ -86,7 +82,6 @@ pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, St
     .map_err(|e| format!("Failed to get product count query: {}", e))?;
 
     let total_products_count: i32 = total_products_row.try_get("product_count").map_err(|e| {
-        eprintln!(
             "Dashboard Stats Error: Failed to fetch 'product_count' as i32. Error: {}",
             e
         );
@@ -107,7 +102,6 @@ pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, St
     let low_stock_count: i32 = low_stock_items_row
         .try_get("low_stock_count")
         .map_err(|e| {
-            eprintln!(
                 "Dashboard Stats Error: Failed to fetch 'low_stock_count' as i32. Error: {}",
                 e
             );
@@ -136,7 +130,6 @@ pub async fn get_stats(pool: State<'_, SqlitePool>) -> Result<DashboardStats, St
     };
 
     // Log the fetched stats for debugging
-    println!("Dashboard Stats Fetched: {:?}", stats);
 
     Ok(stats)
 }

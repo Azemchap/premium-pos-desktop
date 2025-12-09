@@ -17,21 +17,26 @@ pub async fn get_suppliers(
     pool: State<'_, SqlitePool>,
     is_active: Option<bool>,
 ) -> Result<Vec<Supplier>, String> {
-    println!("DEBUG(suppliers): get_suppliers called");
     let pool_ref = pool.inner();
 
-    let mut query = "SELECT * FROM suppliers WHERE 1=1".to_string();
+    let mut query = String::from("SELECT * FROM suppliers WHERE 1=1");
 
-    if let Some(active) = is_active {
-        query.push_str(&format!(" AND is_active = {}", if active { 1 } else { 0 }));
+    if is_active.is_some() {
+        query.push_str(" AND is_active = ?");
     }
 
     query.push_str(" ORDER BY company_name ASC");
 
-    let rows = sqlx::query(&query).fetch_all(pool_ref).await.map_err(|e| {
-        println!("DEBUG(suppliers): query error: {}", e);
-        format!("Database error: {}", e)
-    })?;
+    let mut sql_query = sqlx::query(&query);
+
+    if let Some(active) = is_active {
+        sql_query = sql_query.bind(if active { 1 } else { 0 });
+    }
+
+    let rows = sql_query
+        .fetch_all(pool_ref)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
     let mut suppliers = Vec::with_capacity(rows.len());
     for row in rows {
@@ -66,7 +71,6 @@ pub async fn get_suppliers(
         });
     }
 
-    println!("DEBUG(suppliers): returning {} suppliers", suppliers.len());
     Ok(suppliers)
 }
 
@@ -75,7 +79,6 @@ pub async fn get_supplier(
     pool: State<'_, SqlitePool>,
     supplier_id: i64,
 ) -> Result<Supplier, String> {
-    println!("DEBUG(suppliers): get_supplier id={}", supplier_id);
     let pool_ref = pool.inner();
 
     let row = sqlx::query("SELECT * FROM suppliers WHERE id = ?1")
@@ -83,7 +86,6 @@ pub async fn get_supplier(
         .fetch_optional(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(suppliers): query error: {}", e);
             format!("Database error: {}", e)
         })?;
 
@@ -126,10 +128,6 @@ pub async fn create_supplier(
     pool: State<'_, SqlitePool>,
     request: CreateSupplierRequest,
 ) -> Result<Supplier, String> {
-    println!(
-        "DEBUG(suppliers): create_supplier company='{}'",
-        request.company_name
-    );
     let pool_ref = pool.inner();
 
     // Generate supplier number
@@ -159,12 +157,10 @@ pub async fn create_supplier(
     .execute(pool_ref)
     .await
     .map_err(|e| {
-        println!("DEBUG(suppliers): insert error: {}", e);
         format!("Database error: {}", e)
     })?;
 
     let supplier_id = result.last_insert_rowid();
-    println!("DEBUG(suppliers): created supplier id={}", supplier_id);
 
     get_supplier(pool, supplier_id).await
 }
@@ -175,7 +171,6 @@ pub async fn update_supplier(
     supplier_id: i64,
     request: UpdateSupplierRequest,
 ) -> Result<Supplier, String> {
-    println!("DEBUG(suppliers): update_supplier id={}", supplier_id);
     let pool_ref = pool.inner();
 
     // Check if supplier exists
@@ -184,12 +179,10 @@ pub async fn update_supplier(
         .fetch_optional(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(suppliers): exists query error: {}", e);
             format!("Database error: {}", e)
         })?;
 
     if exists.is_none() {
-        println!("DEBUG(suppliers): supplier not found");
         return Err("Supplier not found".to_string());
     }
 
@@ -301,11 +294,9 @@ pub async fn update_supplier(
     q = q.bind(supplier_id);
 
     q.execute(pool_ref).await.map_err(|e| {
-        println!("DEBUG(suppliers): update error: {}", e);
         format!("Database error: {}", e)
     })?;
 
-    println!("DEBUG(suppliers): updated supplier id={}", supplier_id);
 
     get_supplier(pool, supplier_id).await
 }
@@ -315,7 +306,6 @@ pub async fn delete_supplier(
     pool: State<'_, SqlitePool>,
     supplier_id: i64,
 ) -> Result<String, String> {
-    println!("DEBUG(suppliers): delete_supplier id={}", supplier_id);
     let pool_ref = pool.inner();
 
     let result = sqlx::query("DELETE FROM suppliers WHERE id = ?1")
@@ -323,7 +313,6 @@ pub async fn delete_supplier(
         .execute(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(suppliers): delete error: {}", e);
             format!("Database error: {}", e)
         })?;
 
@@ -331,7 +320,6 @@ pub async fn delete_supplier(
         return Err("Supplier not found".to_string());
     }
 
-    println!("DEBUG(suppliers): deleted supplier id={}", supplier_id);
     Ok("Supplier deleted successfully".to_string())
 }
 
@@ -340,7 +328,6 @@ pub async fn search_suppliers(
     pool: State<'_, SqlitePool>,
     query: String,
 ) -> Result<Vec<Supplier>, String> {
-    println!("DEBUG(suppliers): search_suppliers query='{}'", query);
     let pool_ref = pool.inner();
 
     let search_pattern = format!("%{}%", query);
@@ -359,7 +346,6 @@ pub async fn search_suppliers(
     .fetch_all(pool_ref)
     .await
     .map_err(|e| {
-        println!("DEBUG(suppliers): search error: {}", e);
         format!("Database error: {}", e)
     })?;
 
@@ -396,6 +382,5 @@ pub async fn search_suppliers(
         });
     }
 
-    println!("DEBUG(suppliers): found {} suppliers", suppliers.len());
     Ok(suppliers)
 }

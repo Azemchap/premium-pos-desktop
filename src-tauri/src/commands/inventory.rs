@@ -41,10 +41,9 @@ pub async fn sync_inventory(pool: State<'_, SqlitePool>) -> Result<i32, String> 
 #[command]
 pub async fn get_inventory(pool: State<'_, SqlitePool>) -> Result<Vec<InventoryItem>, String> {
     let pool_ref = pool.inner();
-    
-    // First, sync to ensure all products have inventory records
-    let _ = sync_inventory(pool.clone()).await;
 
+    // Note: sync_inventory should be called explicitly when needed (e.g., after creating products)
+    // Calling it on every get_inventory request causes unnecessary database operations
 
     let rows = sqlx::query(
         "SELECT 
@@ -123,11 +122,17 @@ pub async fn update_stock(
 ) -> Result<bool, String> {
     let pool_ref = pool.inner();
 
+    // Start transaction to ensure atomicity
+    let mut tx = pool_ref
+        .begin()
+        .await
+        .map_err(|e| format!("Failed to start transaction: {}", e))?;
+
     // Get current stock
     let current_stock =
         sqlx::query("SELECT current_stock, reserved_stock FROM inventory WHERE product_id = ?1")
             .bind(request.product_id)
-            .fetch_one(pool_ref)
+            .fetch_one(&mut *tx)
             .await
             .map_err(|e| format!("Failed to get current stock: {}", e))?;
 
@@ -147,7 +152,7 @@ pub async fn update_stock(
 
     // Update inventory
     sqlx::query(
-        "UPDATE inventory SET 
+        "UPDATE inventory SET
             current_stock = ?1,
             available_stock = ?2,
             last_updated = CURRENT_TIMESTAMP
@@ -156,13 +161,13 @@ pub async fn update_stock(
     .bind(new_stock)
     .bind(new_available_stock)
     .bind(request.product_id)
-    .execute(pool_ref)
+    .execute(&mut *tx)
     .await
     .map_err(|e| format!("Failed to update inventory: {}", e))?;
 
     // Record movement
     sqlx::query(
-        "INSERT INTO inventory_movements (product_id, movement_type, quantity_change, previous_stock, 
+        "INSERT INTO inventory_movements (product_id, movement_type, quantity_change, previous_stock,
                                          new_stock, reference_id, reference_type, notes, user_id)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)"
     )
@@ -175,9 +180,14 @@ pub async fn update_stock(
     .bind(&request.reference_type)
     .bind(&request.notes)
     .bind(request.user_id)
-    .execute(pool_ref)
+    .execute(&mut *tx)
     .await
     .map_err(|e| format!("Failed to record inventory movement: {}", e))?;
+
+    // Commit transaction
+    tx.commit()
+        .await
+        .map_err(|e| format!("Failed to commit transaction: {}", e))?;
 
     Ok(true)
 }

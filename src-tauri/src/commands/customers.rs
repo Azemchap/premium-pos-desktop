@@ -19,32 +19,38 @@ pub async fn get_customers(
     customer_type: Option<String>,
     limit: Option<i64>,
 ) -> Result<Vec<Customer>, String> {
-    println!("DEBUG(customers): get_customers called");
     let pool_ref = pool.inner();
 
-    let mut query = "SELECT * FROM customers WHERE 1=1".to_string();
+    // Build query with parameterized conditions
+    let mut query = String::from("SELECT * FROM customers WHERE 1=1");
+    let mut conditions = Vec::new();
 
-    if let Some(s) = &status {
-        query.push_str(&format!(" AND status = '{}'", s));
+    if status.is_some() {
+        query.push_str(" AND status = ?");
+        conditions.push(status.as_ref().unwrap());
     }
 
-    if let Some(ct) = &customer_type {
-        query.push_str(&format!(" AND customer_type = '{}'", ct));
+    if customer_type.is_some() {
+        query.push_str(" AND customer_type = ?");
+        conditions.push(customer_type.as_ref().unwrap());
     }
 
     query.push_str(" ORDER BY created_at DESC");
 
     if let Some(l) = limit {
-        query.push_str(&format!(" LIMIT {}", l));
+        query.push_str(&format!(" LIMIT {}", l)); // Safe: limit is i64, not user string
     }
 
-    let rows = sqlx::query(&query)
+    // Build query with bind parameters
+    let mut sql_query = sqlx::query(&query);
+    for condition in conditions {
+        sql_query = sql_query.bind(condition);
+    }
+
+    let rows = sql_query
         .fetch_all(pool_ref)
         .await
-        .map_err(|e| {
-            println!("DEBUG(customers): query error: {}", e);
-            format!("Database error: {}", e)
-        })?;
+        .map_err(|e| format!("Database error: {}", e))?;
 
     let mut customers = Vec::with_capacity(rows.len());
     for row in rows {
@@ -77,7 +83,6 @@ pub async fn get_customers(
         });
     }
 
-    println!("DEBUG(customers): returning {} customers", customers.len());
     Ok(customers)
 }
 
@@ -86,7 +91,6 @@ pub async fn get_customer(
     pool: State<'_, SqlitePool>,
     customer_id: i64,
 ) -> Result<Customer, String> {
-    println!("DEBUG(customers): get_customer id={}", customer_id);
     let pool_ref = pool.inner();
 
     let row = sqlx::query("SELECT * FROM customers WHERE id = ?1")
@@ -94,7 +98,6 @@ pub async fn get_customer(
         .fetch_optional(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(customers): query error: {}", e);
             format!("Database error: {}", e)
         })?;
 
@@ -138,7 +141,6 @@ pub async fn create_customer(
     request: CreateCustomerRequest,
     user_id: i64,
 ) -> Result<Customer, String> {
-    println!("DEBUG(customers): create_customer name='{} {}'", request.first_name, request.last_name);
     let pool_ref = pool.inner();
 
     // Check if email already exists (if provided)
@@ -148,12 +150,10 @@ pub async fn create_customer(
             .fetch_optional(pool_ref)
             .await
             .map_err(|e| {
-                println!("DEBUG(customers): exists query error: {}", e);
                 format!("Database error: {}", e)
             })?;
 
         if exists.is_some() {
-            println!("DEBUG(customers): email exists");
             return Err("Email already exists".to_string());
         }
     }
@@ -190,12 +190,10 @@ pub async fn create_customer(
         .execute(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(customers): insert error: {}", e);
             format!("Database error: {}", e)
         })?;
 
     let customer_id = result.last_insert_rowid();
-    println!("DEBUG(customers): created customer id={}", customer_id);
 
     // Fetch and return the created customer
     get_customer(pool, customer_id).await
@@ -207,7 +205,6 @@ pub async fn update_customer(
     customer_id: i64,
     request: UpdateCustomerRequest,
 ) -> Result<Customer, String> {
-    println!("DEBUG(customers): update_customer id={}", customer_id);
     let pool_ref = pool.inner();
 
     // Check if customer exists
@@ -216,12 +213,10 @@ pub async fn update_customer(
         .fetch_optional(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(customers): exists query error: {}", e);
             format!("Database error: {}", e)
         })?;
 
     if exists.is_none() {
-        println!("DEBUG(customers): customer not found");
         return Err("Customer not found".to_string());
     }
 
@@ -324,11 +319,9 @@ pub async fn update_customer(
     q.execute(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(customers): update error: {}", e);
             format!("Database error: {}", e)
         })?;
 
-    println!("DEBUG(customers): updated customer id={}", customer_id);
 
     // Fetch and return the updated customer
     get_customer(pool, customer_id).await
@@ -339,7 +332,6 @@ pub async fn delete_customer(
     pool: State<'_, SqlitePool>,
     customer_id: i64,
 ) -> Result<String, String> {
-    println!("DEBUG(customers): delete_customer id={}", customer_id);
     let pool_ref = pool.inner();
 
     let result = sqlx::query("DELETE FROM customers WHERE id = ?1")
@@ -347,7 +339,6 @@ pub async fn delete_customer(
         .execute(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(customers): delete error: {}", e);
             format!("Database error: {}", e)
         })?;
 
@@ -355,7 +346,6 @@ pub async fn delete_customer(
         return Err("Customer not found".to_string());
     }
 
-    println!("DEBUG(customers): deleted customer id={}", customer_id);
     Ok("Customer deleted successfully".to_string())
 }
 
@@ -364,7 +354,6 @@ pub async fn search_customers(
     pool: State<'_, SqlitePool>,
     query: String,
 ) -> Result<Vec<Customer>, String> {
-    println!("DEBUG(customers): search_customers query='{}'", query);
     let pool_ref = pool.inner();
 
     let search_pattern = format!("%{}%", query);
@@ -384,7 +373,6 @@ pub async fn search_customers(
         .fetch_all(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(customers): search error: {}", e);
             format!("Database error: {}", e)
         })?;
 
@@ -419,6 +407,5 @@ pub async fn search_customers(
         });
     }
 
-    println!("DEBUG(customers): found {} customers", customers.len());
     Ok(customers)
 }

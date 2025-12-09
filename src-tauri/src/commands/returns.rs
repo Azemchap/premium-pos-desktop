@@ -223,7 +223,7 @@ pub async fn get_returns(
         .map(|s| format!("%{}%", s))
         .unwrap_or_else(|| "%".to_string());
 
-    let returns = sqlx::query_as::<_, ReturnWithDetails>(
+    let rows = sqlx::query(
         "SELECT
             r.id,
             r.return_number,
@@ -254,6 +254,27 @@ pub async fn get_returns(
     .await
     .map_err(|e| format!("Failed to fetch returns: {}", e))?;
 
+    let returns = rows
+        .iter()
+        .map(|row| ReturnWithDetails {
+            id: row.try_get("id").unwrap_or(0),
+            return_number: row.try_get("return_number").unwrap_or_default(),
+            original_sale_id: row.try_get("original_sale_id").ok(),
+            original_sale_number: row.try_get("original_sale_number").ok(),
+            subtotal: row.try_get("subtotal").unwrap_or(0.0),
+            tax_amount: row.try_get("tax_amount").unwrap_or(0.0),
+            total_amount: row.try_get("total_amount").unwrap_or(0.0),
+            refund_method: row.try_get("refund_method").unwrap_or_default(),
+            processed_by: row.try_get("processed_by").unwrap_or(0),
+            processed_by_name: row.try_get("processed_by_name").ok(),
+            reason: row.try_get("reason").ok(),
+            notes: row.try_get("notes").ok(),
+            shift_id: row.try_get("shift_id").ok(),
+            created_at: row.try_get("created_at").unwrap_or_default(),
+            items_count: row.try_get("items_count").unwrap_or(0),
+        })
+        .collect();
+
     Ok(returns)
 }
 
@@ -264,7 +285,7 @@ pub async fn get_return_by_id(
 ) -> Result<ReturnWithDetails, String> {
     let pool_ref = pool.inner();
 
-    let return_record = sqlx::query_as::<_, ReturnWithDetails>(
+    let row = sqlx::query(
         "SELECT
             r.id,
             r.return_number,
@@ -291,6 +312,24 @@ pub async fn get_return_by_id(
     .await
     .map_err(|e| format!("Failed to fetch return: {}", e))?;
 
+    let return_record = ReturnWithDetails {
+        id: row.try_get("id").unwrap_or(0),
+        return_number: row.try_get("return_number").unwrap_or_default(),
+        original_sale_id: row.try_get("original_sale_id").ok(),
+        original_sale_number: row.try_get("original_sale_number").ok(),
+        subtotal: row.try_get("subtotal").unwrap_or(0.0),
+        tax_amount: row.try_get("tax_amount").unwrap_or(0.0),
+        total_amount: row.try_get("total_amount").unwrap_or(0.0),
+        refund_method: row.try_get("refund_method").unwrap_or_default(),
+        processed_by: row.try_get("processed_by").unwrap_or(0),
+        processed_by_name: row.try_get("processed_by_name").ok(),
+        reason: row.try_get("reason").ok(),
+        notes: row.try_get("notes").ok(),
+        shift_id: row.try_get("shift_id").ok(),
+        created_at: row.try_get("created_at").unwrap_or_default(),
+        items_count: row.try_get("items_count").unwrap_or(0),
+    };
+
     Ok(return_record)
 }
 
@@ -301,7 +340,7 @@ pub async fn get_return_items(
 ) -> Result<Vec<ReturnItemDetail>, String> {
     let pool_ref = pool.inner();
 
-    let items = sqlx::query_as::<_, ReturnItemDetail>(
+    let rows = sqlx::query(
         "SELECT
             ri.id,
             ri.return_id,
@@ -321,6 +360,21 @@ pub async fn get_return_items(
     .fetch_all(pool_ref)
     .await
     .map_err(|e| format!("Failed to fetch return items: {}", e))?;
+
+    let items = rows
+        .iter()
+        .map(|row| ReturnItemDetail {
+            id: row.try_get("id").unwrap_or(0),
+            return_id: row.try_get("return_id").unwrap_or(0),
+            product_id: row.try_get("product_id").unwrap_or(0),
+            product_name: row.try_get("product_name").unwrap_or_default(),
+            product_sku: row.try_get("product_sku").unwrap_or_default(),
+            quantity: row.try_get("quantity").unwrap_or(0),
+            unit_price: row.try_get("unit_price").unwrap_or(0.0),
+            line_total: row.try_get("line_total").unwrap_or(0.0),
+            created_at: row.try_get("created_at").unwrap_or_default(),
+        })
+        .collect();
 
     Ok(items)
 }
