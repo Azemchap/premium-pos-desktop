@@ -10,13 +10,6 @@ pub async fn login_user(
     pool: State<'_, SqlitePool>,
     request: LoginRequest,
 ) -> Result<LoginResponse, String> {
-        "DEBUG(auth): login_user called username='{}'",
-        request.username
-    );
-        "DEBUG(auth): received password length = {}",
-        request.password.len()
-    );
-
     // Validate input
     if let Err(e) = validation::validate_required(&request.username, "username") {
         return Err(e.message);
@@ -29,9 +22,6 @@ pub async fn login_user(
 
     // Check if user is rate-limited
     if SESSION_MANAGER.is_locked(&request.username) {
-            "DEBUG(auth): user locked due to failed attempts: {}",
-            request.username
-        );
         return Err("Account temporarily locked due to multiple failed login attempts. Please try again later.".to_string());
     }
 
@@ -105,9 +95,6 @@ pub async fn login_user(
 
     // Create session with proper management
     let session_token = SESSION_MANAGER.create_session(id, username, role);
-        "DEBUG(auth): login successful id={}, token created",
-        user.id
-    );
 
     Ok(LoginResponse {
         user,
@@ -120,10 +107,6 @@ pub async fn register_user(
     pool: State<'_, SqlitePool>,
     request: CreateUserRequest,
 ) -> Result<User, String> {
-        "DEBUG(auth): register_user username='{}' email='{}'",
-        request.username, request.email
-    );
-
     // Validate inputs
     if let Err(e) = validation::validate_username(&request.username) {
         return Err(e.message);
