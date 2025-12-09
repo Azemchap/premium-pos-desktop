@@ -43,6 +43,7 @@ import {
   Moon,
   MoreHorizontal,
   Package,
+  PackageX,
   Receipt,
   Search,
   Settings,
@@ -102,7 +103,8 @@ const coreItems: NavigationItem[] = [
   { name: "Home", href: "/", icon: Home },
   { name: "New Sale", href: "/sales", icon: ShoppingCart },
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
-  { name: "Customers", href: "/customers", icon: Users },
+  { name: "Returns", href: "/returns", icon: PackageX },
+  { name: "Inventory", href: "/inventory", icon: Database },
 ];
 
 // Products group

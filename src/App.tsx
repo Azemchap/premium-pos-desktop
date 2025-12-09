@@ -11,6 +11,7 @@ import Products from "@/pages/Products";
 import Profile from "@/pages/Profile";
 import PurchaseOrders from "@/pages/PurchaseOrders";
 import Reports from "@/pages/Reports";
+import Returns from "@/pages/Returns";
 import Sales from "@/pages/Sales";
 import SalesRecords from "@/pages/SalesRecords";
 import Settings from "@/pages/Settings";
@@ -151,6 +152,7 @@ useEffect(() => {
           <Route path="/sales" element={<Sales />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/sales-records" element={<SalesRecords />} />
+          <Route path="/returns" element={<Returns />} />
           <Route
             path="/products"
             element={
