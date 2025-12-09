@@ -21,7 +21,7 @@ import {
 import { useCurrency } from "@/hooks/useCurrency";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuthStore } from "@/store/authStore";
-import { playSound, LANGUAGE_LABELS } from "@/store/settingsStore";
+import { playSound } from "@/store/settingsStore";
 import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import {
@@ -625,7 +625,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Backup Frequency</Label>
-                <Select value={preferences.backupFrequency} onValueChange={(value: any) => { updatePreference('backupFrequency', value); toast.success(`Backup frequency set to ${value}`); playSound('click', preferences); }}>
+                <Select value={preferences.backupFrequency} onValueChange={(value: any) => { updatePreference('backupFrequency', value); toast.success(`✅ Backup frequency set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -636,25 +636,6 @@ export default function Settings() {
                     <SelectItem value="weekly">Weekly</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Language</Label>
-                <Select value={preferences.language} onValueChange={(value: any) => { const lang = value as keyof typeof LANGUAGE_LABELS; updatePreference('language', lang); toast.success(`Language changed to ${LANGUAGE_LABELS[lang]}`); playSound('click', preferences); }}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(LANGUAGE_LABELS).map(([code, name]) => (
-                      <SelectItem key={code} value={code}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Select your preferred language
-                </p>
               </div>
             </CardContent>
           </Card>
@@ -713,7 +694,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Sidebar Position</Label>
-                <Select value={preferences.sidebarPosition} onValueChange={(value: any) => { updatePreference('sidebarPosition', value); toast.success(`Sidebar position set to ${value}`); playSound('click', preferences); }}>
+                <Select value={preferences.sidebarPosition} onValueChange={(value: any) => { updatePreference('sidebarPosition', value); toast.success(`✅ Sidebar position set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -722,16 +703,6 @@ export default function Settings() {
                     <SelectItem value="right">Right</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1 space-y-0.5">
-                  <Label className="text-sm">Enable Animations</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Smooth transitions and effects
-                  </p>
-                </div>
-                <Switch checked={preferences.animationsEnabled} onCheckedChange={(checked) => { updatePreference('animationsEnabled', checked); toast.success(checked ? 'Animations enabled' : 'Animations disabled'); playSound('click', preferences); }} className="shrink-0" />
               </div>
             </CardContent>
           </Card>

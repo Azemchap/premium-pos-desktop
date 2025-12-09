@@ -19,21 +19,29 @@ import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { invoke } from "@tauri-apps/api/core";
 import {
-  BarChart3,
   Bell,
+  Building2,
+  Calendar,
   ChevronDown,
   Database,
+  DollarSign,
+  FileText,
   Home,
   LogOut,
+  Megaphone,
   Menu,
   Moon,
   Package,
   Receipt,
   Settings,
+  ShoppingBag,
   ShoppingCart,
   Sun,
   Tag,
+  TrendingUp,
+  Truck,
   User,
+  UserCog,
   Users
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -46,16 +54,86 @@ interface NavigationItem {
   roles?: string[];
 }
 
-const navigation: NavigationItem[] = [
+interface NavigationGroup {
+  name: string;
+  items: NavigationItem[];
+  roles?: string[];
+}
+
+// Core business operations - accessible to all
+const coreOperations: NavigationItem[] = [
   { name: "Dashboard", href: "/", icon: Home },
-  { name: "New Sales", href: "/sales", icon: ShoppingCart },
+  { name: "New Sale", href: "/sales", icon: ShoppingCart },
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
   { name: "Inventory", href: "/inventory", icon: Database },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Master Data", href: "/master-data", icon: Tag, roles: ["Admin", "Manager"] },
-  { name: "Products", href: "/products", icon: Package, roles: ["Admin", "Manager"] },
-  { name: "Settings", href: "/settings", icon: Settings, roles: ["Admin", "Manager"] },
-  { name: "Users", href: "/users", icon: Users, roles: ["Admin", "Manager"] },
+];
+
+// Customer & sales management
+const salesManagement: NavigationGroup = {
+  name: "Sales & CRM",
+  items: [
+    { name: "Customers", href: "/customers", icon: Users },
+    { name: "Appointments", href: "/appointments", icon: Calendar },
+    { name: "Promotions", href: "/promotions", icon: Megaphone, roles: ["Admin", "Manager"] },
+  ],
+};
+
+// Procurement & suppliers
+const procurement: NavigationGroup = {
+  name: "Procurement",
+  roles: ["Admin", "Manager", "StockKeeper"],
+  items: [
+    { name: "Suppliers", href: "/suppliers", icon: Truck },
+    { name: "Purchase Orders", href: "/purchase-orders", icon: ShoppingBag },
+    { name: "Products", href: "/products", icon: Package },
+  ],
+};
+
+// Financial management
+const finance: NavigationGroup = {
+  name: "Finance",
+  roles: ["Admin", "Manager"],
+  items: [
+    { name: "Expenses", href: "/expenses", icon: DollarSign },
+    { name: "Reports", href: "/reports", icon: TrendingUp },
+    { name: "Financial Overview", href: "/finance", icon: FileText },
+  ],
+};
+
+// Team management
+const team: NavigationGroup = {
+  name: "Team",
+  roles: ["Admin", "Manager"],
+  items: [
+    { name: "Employees", href: "/employees", icon: UserCog },
+    { name: "Time Tracking", href: "/time-tracking", icon: Calendar },
+    { name: "Users", href: "/users", icon: Users },
+  ],
+};
+
+// System administration
+const administration: NavigationGroup = {
+  name: "Administration",
+  roles: ["Admin"],
+  items: [
+    { name: "Master Data", href: "/master-data", icon: Tag },
+    { name: "Organization", href: "/organization", icon: Building2 },
+    { name: "Settings", href: "/settings", icon: Settings },
+  ],
+};
+
+const navigationGroups: NavigationGroup[] = [
+  salesManagement,
+  procurement,
+  finance,
+  team,
+  administration,
+];
+
+// Flatten for backward compatibility
+const navigation: NavigationItem[] = [
+  ...coreOperations,
+  ...navigationGroups.flatMap(group => group.items),
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

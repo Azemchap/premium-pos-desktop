@@ -1,0 +1,384 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Professional Design System - Stripe-inspired */
+@layer base {
+    :root {
+        /* Consistent spacing scale - reduced for professional look */
+        --spacing-xs: 0.25rem;    /* 4px */
+        --spacing-sm: 0.5rem;     /* 8px */
+        --spacing-md: 0.75rem;    /* 12px */
+        --spacing-lg: 1rem;       /* 16px */
+        --spacing-xl: 1.5rem;     /* 24px */
+        --spacing-2xl: 2rem;      /* 32px */
+
+        /* Desktop font sizes (max 2xl) */
+        --font-size-xs: 0.75rem;     /* 12px */
+        --font-size-sm: 0.875rem;    /* 14px */
+        --font-size-base: 0.9375rem; /* 15px - Stripe uses 15px base */
+        --font-size-lg: 1rem;        /* 16px */
+        --font-size-xl: 1.125rem;    /* 18px */
+        --font-size-2xl: 1.5rem;     /* 24px - MAX for desktop */
+
+        /* Line heights for professional typography */
+        --line-height-tight: 1.25;
+        --line-height-normal: 1.5;
+        --line-height-relaxed: 1.625;
+    }
+
+    /* Mobile font sizes (max xl) */
+    @media (max-width: 768px) {
+        :root {
+            --font-size-xs: 0.6875rem;   /* 11px */
+            --font-size-sm: 0.8125rem;   /* 13px */
+            --font-size-base: 0.875rem;  /* 14px */
+            --font-size-lg: 0.9375rem;   /* 15px */
+            --font-size-xl: 1.125rem;    /* 18px - MAX for mobile */
+            --font-size-2xl: 1.125rem;   /* 18px - capped at xl */
+
+            --spacing-xs: 0.25rem;  /* 4px */
+            --spacing-sm: 0.375rem; /* 6px */
+            --spacing-md: 0.5rem;   /* 8px */
+            --spacing-lg: 0.75rem;  /* 12px */
+            --spacing-xl: 1rem;     /* 16px */
+            --spacing-2xl: 1.25rem; /* 20px */
+        }
+
+        /* Enforce max font sizes on mobile */
+        h1 {
+            font-size: var(--font-size-xl) !important;
+            font-weight: 600;
+            line-height: var(--line-height-tight);
+        }
+
+        h2 {
+            font-size: var(--font-size-lg) !important;
+            font-weight: 600;
+            line-height: var(--line-height-tight);
+        }
+
+        h3 {
+            font-size: var(--font-size-base) !important;
+            font-weight: 600;
+            line-height: var(--line-height-normal);
+        }
+
+        h4, h5, h6 {
+            font-size: var(--font-size-sm) !important;
+            font-weight: 600;
+            line-height: var(--line-height-normal);
+        }
+
+        body {
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-normal);
+        }
+    }
+
+    /* Desktop heading styles */
+    @media (min-width: 769px) {
+        h1 {
+            font-size: var(--font-size-2xl);
+            font-weight: 600;
+            line-height: var(--line-height-tight);
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-size: var(--font-size-xl);
+            font-weight: 600;
+            line-height: var(--line-height-tight);
+            letter-spacing: -0.01em;
+        }
+
+        h3 {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            line-height: var(--line-height-normal);
+        }
+
+        h4, h5, h6 {
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            line-height: var(--line-height-normal);
+        }
+
+        body {
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-normal);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    }
+
+    /* Safe area support for notched devices */
+    .safe-top {
+        padding-top: env(safe-area-inset-top);
+    }
+
+    .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .safe-left {
+        padding-left: env(safe-area-inset-left);
+    }
+
+    .safe-right {
+        padding-right: env(safe-area-inset-right);
+    }
+
+    /* Prevent overscroll bounce on mobile */
+    @media (max-width: 768px) {
+
+        html,
+        body {
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+
+    /* Hide scrollbar on mobile */
+    @media (max-width: 768px) {
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        * {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    }
+
+    /* Touch-optimized tap highlight */
+    @media (max-width: 768px) {
+        * {
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        }
+    }
+}
+
+/* Mobile-optimized utilities */
+@layer utilities {
+
+    /* Touch target sizes (minimum 44px for mobile) */
+    .touch-target {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .touch-target-sm {
+        min-width: 36px;
+        min-height: 36px;
+    }
+
+    .touch-target-lg {
+        min-width: 52px;
+        min-height: 52px;
+    }
+
+    /* Mobile-optimized spacing */
+    @media (max-width: 768px) {
+        .mobile-p-safe {
+            padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+        }
+
+        .mobile-px-safe {
+            padding-left: max(1rem, env(safe-area-inset-left));
+            padding-right: max(1rem, env(safe-area-inset-right));
+        }
+
+        .mobile-py-safe {
+            padding-top: max(1rem, env(safe-area-inset-top));
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+    }
+
+    /* Ripple animation for touch feedback */
+    @keyframes ripple {
+        to {
+            width: 200px;
+            height: 200px;
+            opacity: 0;
+        }
+    }
+}
+
+/* Professional component styles - reduced spacing */
+@layer components {
+    /* Stripe-inspired buttons */
+    button, .btn {
+        font-weight: 500;
+        transition: all 0.15s ease;
+    }
+
+    @media (max-width: 768px) {
+        button, .btn {
+            min-height: 44px;
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-size: var(--font-size-sm);
+        }
+
+        button[size="sm"], .btn-sm {
+            min-height: 36px;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: var(--font-size-xs);
+        }
+
+        button[size="lg"], .btn-lg {
+            min-height: 52px;
+            padding: var(--spacing-lg) var(--spacing-xl);
+            font-size: var(--font-size-base);
+        }
+    }
+
+    /* Professional inputs */
+    @media (max-width: 768px) {
+        input, textarea, select {
+            min-height: 44px;
+            font-size: 16px; /* Prevents iOS zoom */
+            padding: var(--spacing-md) var(--spacing-lg);
+        }
+
+        input[type="checkbox"], input[type="radio"] {
+            min-width: 20px;
+            min-height: 20px;
+        }
+    }
+
+    /* Clean cards with minimal spacing */
+    .card {
+        border-radius: var(--radius);
+        transition: box-shadow 0.15s ease;
+    }
+
+    @media (max-width: 768px) {
+        .card {
+            padding: var(--spacing-lg);
+            border-radius: calc(var(--radius) - 2px);
+        }
+    }
+
+    @media (min-width: 769px) {
+        .card {
+            padding: var(--spacing-xl);
+        }
+    }
+
+    /* Compact tables */
+    @media (max-width: 768px) {
+        table {
+            font-size: var(--font-size-xs);
+        }
+
+        th, td {
+            padding: var(--spacing-sm) var(--spacing-md);
+        }
+    }
+
+    @media (min-width: 769px) {
+        th, td {
+            padding: var(--spacing-md) var(--spacing-lg);
+        }
+    }
+
+    /* Streamlined modals */
+    @media (max-width: 768px) {
+        [role="dialog"] {
+            max-height: 90vh;
+            margin: var(--spacing-lg);
+        }
+    }
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
+        --primary: 217 91% 60%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 217 91% 95%;
+        --secondary-foreground: 217 91% 25%;
+        --muted: 220 14% 96%;
+        --muted-foreground: 220 9% 46%;
+        --accent: 217 91% 95%;
+        --accent-foreground: 217 91% 25%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 220 13% 91%;
+        --input: 220 13% 91%;
+        --ring: 217 91% 60%;
+        --radius: 0.75rem;
+        --chart-1: 217 91% 60%;
+        --chart-2: 142 76% 36%;
+        --chart-3: 197 37% 24%;
+        --chart-4: 43 74% 66%;
+        --chart-5: 27 87% 67%;
+        --sidebar-background: 0 0% 100%;
+        --sidebar-foreground: 222.2 47% 11%;
+        --sidebar-primary: 217 91% 60%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 217 91% 95%;
+        --sidebar-accent-foreground: 217 91% 25%;
+        --sidebar-border: 220 13% 91%;
+        --sidebar-ring: 217 91% 60%;
+    }
+
+    .dark {
+        --background: 222.2 47% 11%;
+        --foreground: 213 31% 91%;
+        --card: 217 33% 17%;
+        --card-foreground: 213 31% 91%;
+        --popover: 217 33% 17%;
+        --popover-foreground: 213 31% 91%;
+        --primary: 217 91% 60%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 217.2 32.6% 25%;
+        --secondary-foreground: 213 31% 91%;
+        --muted: 223 47% 20%;
+        --muted-foreground: 215.4 16.3% 65%;
+        --accent: 217 91% 60%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 63% 50%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 215 27% 25%;
+        --input: 215 27% 25%;
+        --ring: 217 91% 60%;
+        --chart-1: 217 91% 60%;
+        --chart-2: 142 76% 45%;
+        --chart-3: 47 96% 53%;
+        --chart-4: 280 65% 60%;
+        --chart-5: 340 75% 55%;
+        --sidebar-background: 222.2 47% 11%;
+        --sidebar-foreground: 213 31% 91%;
+        --sidebar-primary: 217 91% 60%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 223 47% 20%;
+        --sidebar-accent-foreground: 213 31% 91%;
+        --sidebar-border: 215 27% 25%;
+        --sidebar-ring: 217 91% 60%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+.safe-top {
+    padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+}

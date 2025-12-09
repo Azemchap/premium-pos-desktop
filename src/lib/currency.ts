@@ -36,7 +36,7 @@ export const CURRENCIES: Record<CurrencyCode, Currency> = {
   },
   XAF: {
     code: 'XAF',
-    symbol: 'F',
+    symbol: 'FCFA',
     name: 'Central African CFA Franc',
     rate: 605.0, // 1 USD = 605 XAF (approx)
     decimals: 0, // XAF doesn't use decimals
@@ -140,8 +140,8 @@ class CurrencyFormatter {
     let result = formatted;
     
     if (showSymbol) {
-      if (this.currentCurrency.code === 'XAF') {
-        // XAF: Amount first, then symbol (e.g., "10,000 FCFA")
+      if (this.currentCurrency.code === 'XAF' || this.currentCurrency.code === 'NGN') {
+        // XAF and NGN: Amount first, then symbol with space (e.g., "10,000 FCFA", "850 ₦")
         result = `${formatted} ${this.currentCurrency.symbol}`;
       } else {
         // Most currencies: Symbol first (e.g., "$100.00", "€92.00")
