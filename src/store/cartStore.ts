@@ -1,26 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-export interface Product {
-  id: number;
-  name: string;
-  sku: string;
-  barcode?: string;
-  category?: string;
-  brand?: string;
-  selling_price: number;
-  cost_price: number;
-  tax_rate: number;
-  is_taxable: boolean;
-  current_stock: number;
-  minimum_stock: number;
-  available_stock: number;
-  is_active: boolean;
-  unit_of_measure: string;
-}
+import { ProductWithStock } from '@/types';
 
 export interface CartItem {
-  product: Product;
+  product: ProductWithStock;
   quantity: number;
   price: number;
   tax_amount: number;
@@ -29,7 +12,7 @@ export interface CartItem {
 
 interface CartState {
   items: CartItem[];
-  addItem: (product: Product) => boolean;
+  addItem: (product: ProductWithStock) => boolean;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => boolean;
   updatePrice: (productId: number, price: number) => boolean;
@@ -45,7 +28,7 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
 
-      addItem: (product: Product) => {
+      addItem: (product: ProductWithStock) => {
         const state = get();
         const existingItem = state.items.find((item) => item.product.id === product.id);
         

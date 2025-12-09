@@ -42,7 +42,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
 import { printReceipt, SaleData } from "@/lib/receipt-printer";
-import { Sale } from "@/types";
+import { Sale, ProductWithStock } from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { invoke } from "@tauri-apps/api/core";
@@ -74,24 +74,6 @@ const paymentSchema = z.object({
   method: z.enum(["cash", "card", "mobile", "check"], { errorMap: () => ({ message: "Select a payment method" }) }),
   amountReceived: z.number().min(0, "Amount must be positive"),
 });
-
-interface Product {
-  id: number;
-  name: string;
-  sku: string;
-  barcode?: string;
-  category?: string;
-  brand?: string;
-  selling_price: number;
-  cost_price: number;
-  tax_rate: number;
-  is_taxable: boolean;
-  current_stock: number;
-  minimum_stock: number;
-  available_stock: number;
-  is_active: boolean;
-  unit_of_measure: string;
-}
 
 interface CustomerInfo {
   name: string;
@@ -189,7 +171,7 @@ export default function Sales() {
     }
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: ProductWithStock) => {
     if (addItem(product)) {
       toast.success(`✅ Added ${product.name} to cart`);
     } else {

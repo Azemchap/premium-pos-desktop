@@ -44,6 +44,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
 import { parseUTCDate } from "@/lib/date-utils";
+import { Product } from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
 import { formatDistance } from "date-fns";
@@ -67,19 +68,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-
-interface Product {
-  id: number;
-  name: string;
-  sku: string;
-  barcode?: string;
-  category?: string;
-  brand?: string;
-  unit_of_measure: string;
-  selling_price: number;
-  cost_price: number;
-  is_active: boolean;
-}
 
 interface InventoryItem {
   id: number;
