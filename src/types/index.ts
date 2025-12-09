@@ -270,21 +270,65 @@ export interface SalesReport {
 
 export interface Customer {
   id: number;
-  name: string;
+  customer_number: string;
+  first_name: string;
+  last_name: string;
   email?: string;
   phone?: string;
-  company_name?: string;
-  tax_id?: string;
+  company?: string;
   address?: string;
   city?: string;
   state?: string;
   zip_code?: string;
-  customer_type: 'retail' | 'wholesale' | 'contractor' | 'business';
-  credit_limit?: number;
-  credit_balance?: number;
-  is_active: boolean;
+  country?: string;
+  date_of_birth?: string;
+  customer_type: 'Retail' | 'Wholesale' | 'VIP' | 'Corporate';
+  status: 'Active' | 'Inactive' | 'Blocked';
+  loyalty_points: number;
+  total_spent: number;
+  total_orders: number;
+  average_order_value: number;
+  last_purchase_date?: string;
+  notes?: string;
+  tags?: string;
+  created_by?: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateCustomerRequest {
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  date_of_birth?: string;
+  customer_type?: 'Retail' | 'Wholesale' | 'VIP' | 'Corporate';
+  notes?: string;
+  tags?: string;
+}
+
+export interface UpdateCustomerRequest {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  date_of_birth?: string;
+  customer_type?: 'Retail' | 'Wholesale' | 'VIP' | 'Corporate';
+  status?: 'Active' | 'Inactive' | 'Blocked';
+  notes?: string;
+  tags?: string;
 }
 
 // ==================== SUPPLIER TYPES (For Future) ====================

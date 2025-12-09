@@ -53,6 +53,73 @@ pub struct LoginResponse {
     pub session_token: String,
 }
 
+// Customer models
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Customer {
+    pub id: i64,
+    pub customer_number: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub company: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub date_of_birth: Option<String>,
+    pub customer_type: String,
+    pub status: String,
+    pub loyalty_points: i32,
+    pub total_spent: f64,
+    pub total_orders: i32,
+    pub average_order_value: f64,
+    pub last_purchase_date: Option<String>,
+    pub notes: Option<String>,
+    pub tags: Option<String>,
+    pub created_by: Option<i64>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateCustomerRequest {
+    pub first_name: String,
+    pub last_name: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub company: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub date_of_birth: Option<String>,
+    pub customer_type: Option<String>,
+    pub notes: Option<String>,
+    pub tags: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateCustomerRequest {
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub company: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub date_of_birth: Option<String>,
+    pub customer_type: Option<String>,
+    pub status: Option<String>,
+    pub notes: Option<String>,
+    pub tags: Option<String>,
+}
+
 // Product models
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Product {
