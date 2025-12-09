@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
+import { Product } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import {
   ArrowDown,
@@ -87,30 +88,6 @@ const productSchema = z.object({
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
-
-interface Product {
-  id: number;
-  name: string;
-  sku: string;
-  barcode?: string;
-  description?: string;
-  category?: string;
-  subcategory?: string;
-  brand?: string;
-  selling_price: number;
-  wholesale_price: number;
-  cost_price: number;
-  tax_rate: number;
-  is_taxable: boolean;
-  unit_of_measure: string;
-  weight: number;
-  dimensions?: string;
-  supplier_info?: string;
-  reorder_point: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 interface MasterItem {
   id: number;

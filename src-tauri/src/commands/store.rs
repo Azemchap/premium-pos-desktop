@@ -6,14 +6,12 @@ use std::path::PathBuf;
 
 #[command]
 pub async fn get_store_config(pool: State<'_, SqlitePool>) -> Result<StoreConfig, String> {
-    println!("DEBUG(store): get_store_config called");
     let pool_ref = pool.inner();
 
     let row = sqlx::query("SELECT id, name, address, city, state, zip_code, phone, email, tax_rate, currency, logo_url, created_at, updated_at FROM locations WHERE id = 1")
         .fetch_one(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(store): fetch error: {}", e);
             format!("Database error: {}", e)
         })?;
 
@@ -33,13 +31,11 @@ pub async fn get_store_config(pool: State<'_, SqlitePool>) -> Result<StoreConfig
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
     };
 
-    println!("DEBUG(store): returning id={}", config.id);
     Ok(config)
 }
 
 #[command]
 pub async fn update_store_config(pool: State<'_, SqlitePool>, request: UpdateStoreConfigRequest) -> Result<StoreConfig, String> {
-    println!("DEBUG(store): update_store_config called name='{}'", request.name);
     let pool_ref = pool.inner();
 
     sqlx::query("UPDATE locations SET name = ?1, address = ?2, city = ?3, state = ?4, zip_code = ?5, phone = ?6, email = ?7, tax_rate = ?8, currency = ?9, logo_url = ?10, updated_at = CURRENT_TIMESTAMP WHERE id = 1")
@@ -56,11 +52,9 @@ pub async fn update_store_config(pool: State<'_, SqlitePool>, request: UpdateSto
         .execute(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(store): update failed: {}", e);
             format!("Failed to update store config: {}", e)
         })?;
 
-    println!("DEBUG(store): update done; fetching config");
     get_store_config(pool).await
 }
 
@@ -71,7 +65,6 @@ pub async fn upload_store_logo(
     file_data: Vec<u8>,
     file_name: String,
 ) -> Result<String, String> {
-    println!("DEBUG(store): upload_store_logo called, file_name={}", file_name);
     
     // Get app data directory
     let app_data_dir = app
@@ -115,13 +108,11 @@ pub async fn upload_store_logo(
         .await
         .map_err(|e| format!("Failed to update logo URL in database: {}", e))?;
     
-    println!("DEBUG(store): logo saved to {}", logo_url);
     Ok(logo_url)
 }
 
 #[command]
 pub async fn remove_store_logo(pool: State<'_, SqlitePool>) -> Result<(), String> {
-    println!("DEBUG(store): remove_store_logo called");
     let pool_ref = pool.inner();
     
     // Get current logo URL to delete the file
@@ -135,7 +126,6 @@ pub async fn remove_store_logo(pool: State<'_, SqlitePool>) -> Result<(), String
     // Delete the file if it exists
     if let Some(path) = logo_url {
         if let Err(e) = fs::remove_file(&path) {
-            println!("DEBUG(store): Failed to delete logo file: {}", e);
             // Don't fail the operation if file deletion fails
         }
     }
@@ -146,6 +136,5 @@ pub async fn remove_store_logo(pool: State<'_, SqlitePool>) -> Result<(), String
         .await
         .map_err(|e| format!("Failed to remove logo URL: {}", e))?;
     
-    println!("DEBUG(store): logo removed");
     Ok(())
 }

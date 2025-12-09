@@ -10,11 +10,9 @@ pub async fn login_user(
     pool: State<'_, SqlitePool>,
     request: LoginRequest,
 ) -> Result<LoginResponse, String> {
-    println!(
         "DEBUG(auth): login_user called username='{}'",
         request.username
     );
-    println!(
         "DEBUG(auth): received password length = {}",
         request.password.len()
     );
@@ -31,7 +29,6 @@ pub async fn login_user(
 
     // Check if user is rate-limited
     if SESSION_MANAGER.is_locked(&request.username) {
-        println!(
             "DEBUG(auth): user locked due to failed attempts: {}",
             request.username
         );
@@ -47,29 +44,24 @@ pub async fn login_user(
     .fetch_optional(pool_ref)
     .await
     .map_err(|e| {
-        println!("DEBUG(auth): query error: {}", e);
         format!("Database error: {}", e)
     })?;
 
     let row = match row {
         Some(r) => r,
         None => {
-            println!("DEBUG(auth): user not found/inactive: {}", request.username);
             SESSION_MANAGER.record_failed_attempt(&request.username);
             return Err("Invalid username or password".to_string());
         }
     };
 
     let stored_hash: String = row.try_get("password_hash").map_err(|e| {
-        println!("DEBUG(auth): try_get password_hash error: {}", e);
         e.to_string()
     })?;
 
     if !verify(&request.password, &stored_hash).map_err(|e| {
-        println!("DEBUG(auth): bcrypt verify error: {}", e);
         format!("Password verification error: {}", e)
     })? {
-        println!("DEBUG(auth): bad password for {}", request.username);
         SESSION_MANAGER.record_failed_attempt(&request.username);
         return Err("Invalid username or password".to_string());
     }
@@ -87,7 +79,6 @@ pub async fn login_user(
         .execute(pool_ref)
         .await
     {
-        println!("DEBUG(auth): failed to update last_login: {}", e);
     }
 
     let user = User {
@@ -114,7 +105,6 @@ pub async fn login_user(
 
     // Create session with proper management
     let session_token = SESSION_MANAGER.create_session(id, username, role);
-    println!(
         "DEBUG(auth): login successful id={}, token created",
         user.id
     );
@@ -130,7 +120,6 @@ pub async fn register_user(
     pool: State<'_, SqlitePool>,
     request: CreateUserRequest,
 ) -> Result<User, String> {
-    println!(
         "DEBUG(auth): register_user username='{}' email='{}'",
         request.username, request.email
     );
@@ -161,17 +150,14 @@ pub async fn register_user(
         .fetch_optional(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(auth): exists query error: {}", e);
             format!("Database error: {}", e)
         })?;
 
     if exists.is_some() {
-        println!("DEBUG(auth): user exists");
         return Err("Username or email already exists".to_string());
     }
 
     let password_hash = hash(request.password, DEFAULT_COST).map_err(|e| {
-        println!("DEBUG(auth): bcrypt hash error: {}", e);
         format!("Password hashing error: {}", e)
     })?;
 
@@ -188,7 +174,6 @@ pub async fn register_user(
     .execute(pool_ref)
     .await
     .map_err(|e| {
-        println!("DEBUG(auth): insert error: {}", e);
         format!("Failed to create user: {}", e)
     })?;
 
@@ -200,7 +185,6 @@ pub async fn register_user(
     .fetch_one(pool_ref)
     .await
     .map_err(|e| {
-        println!("DEBUG(auth): fetch created user error: {}", e);
         format!("Failed to fetch created user: {}", e)
     })?;
 
@@ -226,13 +210,11 @@ pub async fn register_user(
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
     };
 
-    println!("DEBUG(auth): register_user succeeded id={}", user.id);
     Ok(user)
 }
 
 #[command]
 pub async fn verify_session(session_token: String) -> Result<bool, String> {
-    println!(
         "DEBUG(auth): verify_session token_len={}",
         session_token.len()
     );
@@ -246,7 +228,6 @@ pub async fn verify_session(session_token: String) -> Result<bool, String> {
 
 #[command]
 pub async fn logout_user(session_token: String) -> Result<(), String> {
-    println!("DEBUG(auth): logout_user token_len={}", session_token.len());
 
     if !session_token.is_empty() {
         SESSION_MANAGER.remove_session(&session_token);
@@ -259,7 +240,6 @@ pub async fn logout_user(session_token: String) -> Result<(), String> {
 pub async fn get_session_user(
     session_token: String,
 ) -> Result<Option<(i64, String, String)>, String> {
-    println!(
         "DEBUG(auth): get_session_user token_len={}",
         session_token.len()
     );

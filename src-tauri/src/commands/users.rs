@@ -5,14 +5,12 @@ use sqlx::{SqlitePool, Row};
 
 #[command]
 pub async fn get_users(pool: State<'_, SqlitePool>) -> Result<Vec<User>, String> {
-    println!("DEBUG(users): get_users called");
     let pool_ref = pool.inner();
 
     let rows = sqlx::query("SELECT id, username, email, first_name, last_name, role, is_active, profile_image_url, last_login, created_at, updated_at FROM users ORDER BY created_at DESC")
         .fetch_all(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): query error: {}", e);
             format!("Database error: {}", e)
         })?;
 
@@ -41,13 +39,11 @@ pub async fn get_users(pool: State<'_, SqlitePool>) -> Result<Vec<User>, String>
         });
     }
 
-    println!("DEBUG(users): returning {} users", users.len());
     Ok(users)
 }
 
 #[command]
 pub async fn create_user(pool: State<'_, SqlitePool>, request: CreateUserRequest) -> Result<User, String> {
-    println!("DEBUG(users): create_user username='{}'", request.username);
     let pool_ref = pool.inner();
 
     let exists = sqlx::query("SELECT id FROM users WHERE username = ?1 OR email = ?2")
@@ -56,17 +52,14 @@ pub async fn create_user(pool: State<'_, SqlitePool>, request: CreateUserRequest
         .fetch_optional(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): exists query error: {}", e);
             format!("Database error: {}", e)
         })?;
 
     if exists.is_some() {
-        println!("DEBUG(users): user exists");
         return Err("Username or email already exists".to_string());
     }
 
     let password_hash = hash(request.password, DEFAULT_COST).map_err(|e| {
-        println!("DEBUG(users): hash error: {}", e);
         format!("Password hashing error: {}", e)
     })?;
 
@@ -80,7 +73,6 @@ pub async fn create_user(pool: State<'_, SqlitePool>, request: CreateUserRequest
         .execute(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): insert error: {}", e);
             format!("Failed to create user: {}", e)
         })?;
 
@@ -89,7 +81,6 @@ pub async fn create_user(pool: State<'_, SqlitePool>, request: CreateUserRequest
         .fetch_one(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): fetch created user error: {}", e);
             format!("Failed to fetch created user: {}", e)
         })?;
 
@@ -113,13 +104,11 @@ pub async fn create_user(pool: State<'_, SqlitePool>, request: CreateUserRequest
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
     };
 
-    println!("DEBUG(users): created user id={}", user.id);
     Ok(user)
 }
 
 #[command]
 pub async fn update_user(pool: State<'_, SqlitePool>, user_id: i64, request: CreateUserRequest) -> Result<User, String> {
-    println!("DEBUG(users): update_user id={}", user_id);
     let pool_ref = pool.inner();
 
     let exists = sqlx::query("SELECT id FROM users WHERE (username = ?1 OR email = ?2) AND id != ?3")
@@ -129,17 +118,14 @@ pub async fn update_user(pool: State<'_, SqlitePool>, user_id: i64, request: Cre
         .fetch_optional(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): exists query error: {}", e);
             format!("Database error: {}", e)
         })?;
 
     if exists.is_some() {
-        println!("DEBUG(users): username/email used by another");
         return Err("Username or email already exists".to_string());
     }
 
     let password_hash = hash(request.password, DEFAULT_COST).map_err(|e| {
-        println!("DEBUG(users): hash error: {}", e);
         format!("Password hashing error: {}", e)
     })?;
 
@@ -154,7 +140,6 @@ pub async fn update_user(pool: State<'_, SqlitePool>, user_id: i64, request: Cre
         .execute(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): update error: {}", e);
             format!("Failed to update user: {}", e)
         })?;
 
@@ -163,7 +148,6 @@ pub async fn update_user(pool: State<'_, SqlitePool>, user_id: i64, request: Cre
         .fetch_one(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): fetch updated user error: {}", e);
             format!("Failed to fetch updated user: {}", e)
         })?;
 
@@ -187,13 +171,11 @@ pub async fn update_user(pool: State<'_, SqlitePool>, user_id: i64, request: Cre
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
     };
 
-    println!("DEBUG(users): updated user id={}", user.id);
     Ok(user)
 }
 
 #[command]
 pub async fn delete_user(pool: State<'_, SqlitePool>, user_id: i64) -> Result<bool, String> {
-    println!("DEBUG(users): delete_user id={}", user_id);
     let pool_ref = pool.inner();
 
     sqlx::query("UPDATE users SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?1")
@@ -201,11 +183,9 @@ pub async fn delete_user(pool: State<'_, SqlitePool>, user_id: i64) -> Result<bo
         .execute(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): deactivate error: {}", e);
             format!("Failed to deactivate user: {}", e)
         })?;
 
-    println!("DEBUG(users): deactivated id={}", user_id);
     Ok(true)
 }
 
@@ -215,7 +195,6 @@ pub async fn update_user_profile(
     user_id: i64,
     request: UpdateProfileRequest,
 ) -> Result<User, String> {
-    println!("DEBUG(users): update_user_profile id={}", user_id);
     let pool_ref = pool.inner();
 
     // Check if username is already taken by another user
@@ -225,12 +204,10 @@ pub async fn update_user_profile(
         .fetch_optional(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): username check error: {}", e);
             format!("Database error: {}", e)
         })?;
 
     if username_exists.is_some() {
-        println!("DEBUG(users): username already in use");
         return Err("Username already in use by another account".to_string());
     }
 
@@ -241,12 +218,10 @@ pub async fn update_user_profile(
         .fetch_optional(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): email check error: {}", e);
             format!("Database error: {}", e)
         })?;
 
     if email_exists.is_some() {
-        println!("DEBUG(users): email already in use");
         return Err("Email already in use by another account".to_string());
     }
 
@@ -263,7 +238,6 @@ pub async fn update_user_profile(
     .execute(pool_ref)
     .await
     .map_err(|e| {
-        println!("DEBUG(users): update profile error: {}", e);
         format!("Failed to update profile: {}", e)
     })?;
 
@@ -275,7 +249,6 @@ pub async fn update_user_profile(
     .fetch_one(pool_ref)
     .await
     .map_err(|e| {
-        println!("DEBUG(users): fetch updated user error: {}", e);
         format!("Failed to fetch updated user: {}", e)
     })?;
 
@@ -299,7 +272,6 @@ pub async fn update_user_profile(
         updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
     };
 
-    println!("DEBUG(users): profile updated successfully");
     Ok(user)
 }
 
@@ -309,7 +281,6 @@ pub async fn change_user_password(
     user_id: i64,
     request: ChangePasswordRequest,
 ) -> Result<bool, String> {
-    println!("DEBUG(users): change_user_password id={}", user_id);
     let pool_ref = pool.inner();
 
     // Get current password hash
@@ -318,24 +289,20 @@ pub async fn change_user_password(
         .fetch_one(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): fetch password error: {}", e);
             format!("User not found: {}", e)
         })?;
 
     // Verify current password
     let is_valid = verify(&request.current_password, &current_hash).map_err(|e| {
-        println!("DEBUG(users): password verification error: {}", e);
         format!("Password verification failed: {}", e)
     })?;
 
     if !is_valid {
-        println!("DEBUG(users): current password incorrect");
         return Err("Current password is incorrect".to_string());
     }
 
     // Hash new password
     let new_hash = hash(&request.new_password, DEFAULT_COST).map_err(|e| {
-        println!("DEBUG(users): hash error: {}", e);
         format!("Password hashing error: {}", e)
     })?;
 
@@ -346,10 +313,8 @@ pub async fn change_user_password(
         .execute(pool_ref)
         .await
         .map_err(|e| {
-            println!("DEBUG(users): update password error: {}", e);
             format!("Failed to update password: {}", e)
         })?;
 
-    println!("DEBUG(users): password changed successfully");
     Ok(true)
 }

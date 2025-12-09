@@ -108,7 +108,7 @@ pub async fn get_notification_stats(
     let pool_ref = pool.inner();
     
     let mut query = String::from(
-        "SELECT 
+        "SELECT
             COUNT(*) as total,
             SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) as unread,
             SUM(CASE WHEN notification_type = 'low_stock' THEN 1 ELSE 0 END) as low_stock,
@@ -116,12 +116,18 @@ pub async fn get_notification_stats(
          FROM notifications
          WHERE 1=1"
     );
-    
-    if let Some(uid) = user_id {
-        query.push_str(&format!(" AND (user_id = {} OR user_id IS NULL)", uid));
+
+    if user_id.is_some() {
+        query.push_str(" AND (user_id = ? OR user_id IS NULL)");
     }
-    
-    let row = sqlx::query(&query)
+
+    let mut sql_query = sqlx::query(&query);
+
+    if let Some(uid) = user_id {
+        sql_query = sql_query.bind(uid);
+    }
+
+    let row = sql_query
         .fetch_one(pool_ref)
         .await
         .map_err(|e| format!("Database error: {}", e))?;
@@ -156,18 +162,24 @@ pub async fn mark_all_notifications_read(
     user_id: Option<i64>,
 ) -> Result<bool, String> {
     let pool_ref = pool.inner();
-    
+
     let mut query = String::from("UPDATE notifications SET is_read = 1 WHERE 1=1");
-    
-    if let Some(uid) = user_id {
-        query.push_str(&format!(" AND (user_id = {} OR user_id IS NULL)", uid));
+
+    if user_id.is_some() {
+        query.push_str(" AND (user_id = ? OR user_id IS NULL)");
     }
-    
-    sqlx::query(&query)
+
+    let mut sql_query = sqlx::query(&query);
+
+    if let Some(uid) = user_id {
+        sql_query = sql_query.bind(uid);
+    }
+
+    sql_query
         .execute(pool_ref)
         .await
         .map_err(|e| format!("Failed to mark notifications as read: {}", e))?;
-    
+
     Ok(true)
 }
 

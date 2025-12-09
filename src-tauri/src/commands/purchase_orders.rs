@@ -19,15 +19,21 @@ pub async fn get_purchase_orders(
     status: Option<String>,
 ) -> Result<Vec<PurchaseOrder>, String> {
     let pool_ref = pool.inner();
-    let mut query = "SELECT * FROM purchase_orders WHERE 1=1".to_string();
+    let mut query = String::from("SELECT * FROM purchase_orders WHERE 1=1");
 
-    if let Some(s) = &status {
-        query.push_str(&format!(" AND status = '{}'", s));
+    if status.is_some() {
+        query.push_str(" AND status = ?");
     }
 
     query.push_str(" ORDER BY order_date DESC, created_at DESC");
 
-    let rows = sqlx::query(&query)
+    let mut sql_query = sqlx::query(&query);
+
+    if let Some(s) = status {
+        sql_query = sql_query.bind(s);
+    }
+
+    let rows = sql_query
         .fetch_all(pool_ref)
         .await
         .map_err(|e| format!("Database error: {}", e))?;

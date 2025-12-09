@@ -17,13 +17,21 @@ pub async fn get_expenses(
     status: Option<String>,
 ) -> Result<Vec<Expense>, String> {
     let pool_ref = pool.inner();
-    let mut query = "SELECT * FROM expenses WHERE 1=1".to_string();
-    if let Some(s) = &status {
-        query.push_str(&format!(" AND status = '{}'", s));
+    let mut query = String::from("SELECT * FROM expenses WHERE 1=1");
+
+    if status.is_some() {
+        query.push_str(" AND status = ?");
     }
+
     query.push_str(" ORDER BY expense_date DESC");
 
-    let rows = sqlx::query(&query)
+    let mut sql_query = sqlx::query(&query);
+
+    if let Some(s) = status {
+        sql_query = sql_query.bind(s);
+    }
+
+    let rows = sql_query
         .fetch_all(pool_ref)
         .await
         .map_err(|e| format!("Database error: {}", e))?;
