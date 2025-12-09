@@ -397,7 +397,7 @@ export default function Inventory() {
     });
 
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: string | number, bValue: string | number;
       switch (sortColumn) {
         case 'name':
           aValue = a.product?.name.toLowerCase() || '';
@@ -1021,7 +1021,7 @@ export default function Inventory() {
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label className="text-xs sm:text-sm">Adjustment Type *</Label>
-              <Select value={adjustType} onValueChange={(v: any) => setAdjustType(v)}>
+              <Select value={adjustType} onValueChange={(v: string) => setAdjustType(v as "add" | "subtract")}>
                 <SelectTrigger className="h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>

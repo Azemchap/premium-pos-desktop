@@ -41,7 +41,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
-import { printReceipt } from "@/lib/receipt-printer";
+import { printReceipt, SaleData } from "@/lib/receipt-printer";
+import { Sale } from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { invoke } from "@tauri-apps/api/core";
@@ -163,7 +164,7 @@ export default function Sales() {
   const [animatedItemId, setAnimatedItemId] = useState<number | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [completedSaleNumber, setCompletedSaleNumber] = useState("");
-  const [completedSaleData, setCompletedSaleData] = useState<any>(null);
+  const [completedSaleData, setCompletedSaleData] = useState<SaleData | null>(null);
   const [activeCartProductId, setActiveCartProductId] = useState<number | null>(null);
 
   // Pagination
@@ -308,13 +309,13 @@ export default function Sales() {
         notes: notes || undefined,
       };
 
-      const result = await invoke("create_sale", {
+      const result = await invoke<Sale>("create_sale", {
         request: saleRequest,
         cashierId: user?.id,
         shiftId: null,
       });
 
-      const saleData = result as any;
+      const saleData = result;
       const saleNumber = saleData.sale_number || "SALE-000";
       setCompletedSaleNumber(saleNumber);
 
@@ -370,7 +371,7 @@ export default function Sales() {
     loadProducts();
   };
 
-  const printReceiptWithData = async (saleData: any) => {
+  const printReceiptWithData = async (saleData: SaleData) => {
     if (!saleData) {
       toast.error("❌ No sale data available");
       return;
@@ -413,7 +414,7 @@ export default function Sales() {
     });
 
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: string | number, bValue: string | number;
       switch (sortColumn) {
         case "name":
           aValue = a.name.toLowerCase();

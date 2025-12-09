@@ -606,7 +606,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Data Retention Period</Label>
-                <Select value={preferences.dataRetention} onValueChange={(value: any) => { updatePreference('dataRetention', value); toast.success(`✅ Data retention set to ${value}`); playSound('click', preferences); }}>
+                <Select value={preferences.dataRetention} onValueChange={(value: string) => { updatePreference('dataRetention', value as typeof preferences.dataRetention); toast.success(`✅ Data retention set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -625,7 +625,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Backup Frequency</Label>
-                <Select value={preferences.backupFrequency} onValueChange={(value: any) => { updatePreference('backupFrequency', value); toast.success(`Backup frequency set to ${value}`); playSound('click', preferences); }}>
+                <Select value={preferences.backupFrequency} onValueChange={(value: string) => { updatePreference('backupFrequency', value as typeof preferences.backupFrequency); toast.success(`Backup frequency set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -640,7 +640,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Language</Label>
-                <Select value={preferences.language} onValueChange={(value: any) => { const lang = value as keyof typeof LANGUAGE_LABELS; updatePreference('language', lang); toast.success(`Language changed to ${LANGUAGE_LABELS[lang]}`); playSound('click', preferences); }}>
+                <Select value={preferences.language} onValueChange={(value: string) => { const lang = value as keyof typeof LANGUAGE_LABELS; updatePreference('language', lang); toast.success(`Language changed to ${LANGUAGE_LABELS[lang]}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -685,7 +685,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Compact View</Label>
-                <Select value={preferences.compactView} onValueChange={(value: any) => { updatePreference('compactView', value); toast.success(`✅ View changed to ${value}`); playSound('click', preferences); }}>
+                <Select value={preferences.compactView} onValueChange={(value: string) => { updatePreference('compactView', value as typeof preferences.compactView); toast.success(`✅ View changed to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -699,7 +699,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Font Size</Label>
-                <Select value={preferences.fontSize} onValueChange={(value: any) => { updatePreference('fontSize', value); toast.success(`✅ Font size changed to ${value}`); playSound('click', preferences); }}>
+                <Select value={preferences.fontSize} onValueChange={(value: string) => { updatePreference('fontSize', value as typeof preferences.fontSize); toast.success(`✅ Font size changed to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -713,7 +713,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Sidebar Position</Label>
-                <Select value={preferences.sidebarPosition} onValueChange={(value: any) => { updatePreference('sidebarPosition', value); toast.success(`Sidebar position set to ${value}`); playSound('click', preferences); }}>
+                <Select value={preferences.sidebarPosition} onValueChange={(value: string) => { updatePreference('sidebarPosition', value as typeof preferences.sidebarPosition); toast.success(`Sidebar position set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -828,7 +828,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Default Printer</Label>
-                <Select value={preferences.receiptPrinter} onValueChange={(value: any) => { updatePreference('receiptPrinter', value); toast.success(`🖨️ Default printer set to ${value}`); playSound('click', preferences); }}>
+                <Select value={preferences.receiptPrinter} onValueChange={(value: string) => { updatePreference('receiptPrinter', value); toast.success(`🖨️ Default printer set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -844,7 +844,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <Label>Paper Size</Label>
-                <Select value={preferences.paperSize} onValueChange={(value: any) => { updatePreference('paperSize', value); toast.success(`📄 Paper size set to ${value}`); playSound('click', preferences); }}>
+                <Select value={preferences.paperSize} onValueChange={(value: string) => { updatePreference('paperSize', value as typeof preferences.paperSize); toast.success(`📄 Paper size set to ${value}`); playSound('click', preferences); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

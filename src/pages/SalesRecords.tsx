@@ -294,7 +294,7 @@ export default function SalesRecords() {
     });
 
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: string | number, bValue: string | number;
       switch (sortColumn) {
         case "created_at":
           aValue = parseUTCDate(a.created_at).getTime();

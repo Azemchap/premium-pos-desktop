@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatLocalDate } from "@/lib/date-utils";
 import { useAuthStore } from "@/store/authStore";
+import { User as UserType, UpdateProfileRequest } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import { Camera, Info, Key, User, Upload, X, Save, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -162,7 +163,7 @@ export default function Profile() {
       setSavingProfile(true);
 
       // Prepare update data
-      const updateData: any = {
+      const updateData: UpdateProfileRequest = {
         username: profileForm.username,
         first_name: profileForm.first_name,
         last_name: profileForm.last_name,
@@ -171,11 +172,11 @@ export default function Profile() {
 
       // Include avatar if changed
       if (avatarChanged) {
-        updateData.profile_image_url = avatarPreview || null;
+        updateData.profile_image_url = avatarPreview || undefined;
       }
 
       // Update profile in backend
-      const updatedUser: any = await invoke("update_user_profile", {
+      const updatedUser = await invoke<UserType>("update_user_profile", {
         userId: user?.id,
         request: updateData
       });
