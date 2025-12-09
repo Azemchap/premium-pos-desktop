@@ -358,8 +358,8 @@ export default function Notifications() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Notifications</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+          <h1 className="text-lg font-bold">Notifications</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Stay updated with alerts and system messages
           </p>
         </div>
@@ -393,8 +393,8 @@ export default function Notifications() {
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6">
               <div className="flex items-center justify-between">
                 <div className="text-white">
-                  <p className="text-xs sm:text-sm opacity-90 font-medium">Total</p>
-                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{stats.total}</p>
+                  <p className="text-xs opacity-90 font-medium">Total</p>
+                  <p className="text-lg font-bold mt-2">{stats.total}</p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                   <Bell className="w-7 h-7 text-white" />
@@ -407,8 +407,8 @@ export default function Notifications() {
             <div className="bg-gradient-to-br from-red-500 to-rose-600 p-6">
               <div className="flex items-center justify-between">
                 <div className="text-white">
-                  <p className="text-xs sm:text-sm opacity-90 font-medium">Unread</p>
-                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{stats.unread}</p>
+                  <p className="text-xs opacity-90 font-medium">Unread</p>
+                  <p className="text-lg font-bold mt-2">{stats.unread}</p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                   <BellOff className="w-7 h-7 text-white" />
@@ -421,8 +421,8 @@ export default function Notifications() {
             <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-6">
               <div className="flex items-center justify-between">
                 <div className="text-white">
-                  <p className="text-xs sm:text-sm opacity-90 font-medium">Low Stock</p>
-                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{stats.low_stock}</p>
+                  <p className="text-xs opacity-90 font-medium">Low Stock</p>
+                  <p className="text-lg font-bold mt-2">{stats.low_stock}</p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                   <Package className="w-7 h-7 text-white" />
@@ -435,8 +435,8 @@ export default function Notifications() {
             <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6">
               <div className="flex items-center justify-between">
                 <div className="text-white">
-                  <p className="text-xs sm:text-sm opacity-90 font-medium">System</p>
-                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{stats.system}</p>
+                  <p className="text-xs opacity-90 font-medium">System</p>
+                  <p className="text-lg font-bold mt-2">{stats.system}</p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                   <Info className="w-7 h-7 text-white" />

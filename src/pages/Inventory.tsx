@@ -496,7 +496,7 @@ export default function Inventory() {
             <div className="flex items-start gap-1 justify-between">
               <div className="text-white">
                 <p className="text-[10px] sm:text-xs opacity-90 font-medium">Total Items</p>
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{totalItems}</p>
+                <p className="text-lg font-bold mt-1">{totalItems}</p>
               </div>
               <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
                 <Package className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -510,7 +510,7 @@ export default function Inventory() {
             <div className="flex items-start gap-1 justify-between">
               <div className="text-white">
                 <p className="text-[10px] sm:text-xs opacity-90 font-medium">In Stock</p>
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{inStock}</p>
+                <p className="text-lg font-bold mt-1">{inStock}</p>
               </div>
               <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
                 <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -524,7 +524,7 @@ export default function Inventory() {
             <div className="flex items-start gap-1 justify-between">
               <div className="text-white">
                 <p className="text-[10px] sm:text-xs opacity-90 font-medium">Low Stock</p>
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{lowStock}</p>
+                <p className="text-lg font-bold mt-1">{lowStock}</p>
               </div>
               <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
                 <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -538,7 +538,7 @@ export default function Inventory() {
             <div className="flex items-start gap-1 justify-between">
               <div className="text-white">
                 <p className="text-[10px] sm:text-xs opacity-90 font-medium">Shortage</p>
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{outOfStock}</p>
+                <p className="text-lg font-bold mt-1">{outOfStock}</p>
               </div>
               <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
                 <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -552,7 +552,7 @@ export default function Inventory() {
             <div className="flex items-center justify-between">
               <div className="text-white">
                 <p className="text-[10px] sm:text-xs opacity-90 font-medium">Total Value</p>
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold mt-1">{format(totalValue)}</p>
+                <p className="text-lg font-bold mt-1">{format(totalValue)}</p>
               </div>
               <div className="p-2 sm:p-2.5 bg-white/20 rounded-lg backdrop-blur-sm">
                 <Package className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -900,7 +900,7 @@ export default function Inventory() {
       <Dialog open={isReceiveDialogOpen} onOpenChange={setIsReceiveDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Receive Stock</DialogTitle>
+            <DialogTitle className="text-lg">Receive Stock</DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">
               Add new stock for {selectedItem?.product?.name}
             </DialogDescription>
@@ -1015,7 +1015,7 @@ export default function Inventory() {
       <Dialog open={isAdjustDialogOpen} onOpenChange={setIsAdjustDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Adjust Stock</DialogTitle>
+            <DialogTitle className="text-lg">Adjust Stock</DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">Manually adjust stock for {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -1090,7 +1090,7 @@ export default function Inventory() {
       <Dialog open={isStockTakeDialogOpen} onOpenChange={setIsStockTakeDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Stock Take / Physical Count</DialogTitle>
+            <DialogTitle className="text-lg">Stock Take / Physical Count</DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">Enter the actual physical count for {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -1098,12 +1098,12 @@ export default function Inventory() {
               <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div>
                   <p className="text-muted-foreground mb-1">System Count</p>
-                  <p className="text-xl sm:text-2xl font-bold">{selectedItem?.current_stock}</p>
+                  <p className="text-lg font-bold">{selectedItem?.current_stock}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground mb-1">Difference</p>
                   <p
-                    className={`text-xl sm:text-2xl font-bold ${stockTakeCount - (selectedItem?.current_stock || 0) > 0
+                    className={`text-lg font-bold ${stockTakeCount - (selectedItem?.current_stock || 0) > 0
                       ? "text-green-600"
                       : stockTakeCount - (selectedItem?.current_stock || 0) < 0
                         ? "text-red-600"
@@ -1150,7 +1150,7 @@ export default function Inventory() {
       <Dialog open={isReserveDialogOpen} onOpenChange={setIsReserveDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Reserve Stock</DialogTitle>
+            <DialogTitle className="text-lg">Reserve Stock</DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">Reserve stock for orders or quotes - {selectedItem?.product?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -1158,11 +1158,11 @@ export default function Inventory() {
               <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div>
                   <p className="text-muted-foreground mb-1">Available</p>
-                  <p className="text-xl sm:text-2xl font-bold">{selectedItem?.available_stock}</p>
+                  <p className="text-lg font-bold">{selectedItem?.available_stock}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground mb-1">Already Reserved</p>
-                  <p className="text-xl sm:text-2xl font-bold">{selectedItem?.reserved_stock}</p>
+                  <p className="text-lg font-bold">{selectedItem?.reserved_stock}</p>
                 </div>
               </div>
             </div>
@@ -1200,7 +1200,7 @@ export default function Inventory() {
       <Dialog open={isMovementDialogOpen} onOpenChange={setIsMovementDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Movement History - {selectedItem?.product?.name}</DialogTitle>
+            <DialogTitle className="text-lg">Movement History - {selectedItem?.product?.name}</DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">All stock movements for this product</DialogDescription>
           </DialogHeader>
           <div className="max-h-[400px] sm:max-h-[500px] overflow-y-auto">
