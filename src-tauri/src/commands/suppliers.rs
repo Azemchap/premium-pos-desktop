@@ -1,6 +1,6 @@
+use crate::models::{CreateSupplierRequest, Supplier, UpdateSupplierRequest};
+use sqlx::{Row, SqlitePool};
 use tauri::{command, State};
-use crate::models::{Supplier, CreateSupplierRequest, UpdateSupplierRequest};
-use sqlx::{SqlitePool, Row};
 
 // Generate unique supplier number
 async fn generate_supplier_number(pool: &SqlitePool) -> Result<String, String> {
@@ -28,13 +28,10 @@ pub async fn get_suppliers(
 
     query.push_str(" ORDER BY company_name ASC");
 
-    let rows = sqlx::query(&query)
-        .fetch_all(pool_ref)
-        .await
-        .map_err(|e| {
-            println!("DEBUG(suppliers): query error: {}", e);
-            format!("Database error: {}", e)
-        })?;
+    let rows = sqlx::query(&query).fetch_all(pool_ref).await.map_err(|e| {
+        println!("DEBUG(suppliers): query error: {}", e);
+        format!("Database error: {}", e)
+    })?;
 
     let mut suppliers = Vec::with_capacity(rows.len());
     for row in rows {
@@ -91,37 +88,35 @@ pub async fn get_supplier(
         })?;
 
     match row {
-        Some(row) => {
-            Ok(Supplier {
-                id: row.try_get("id").map_err(|e| e.to_string())?,
-                supplier_number: row.try_get("supplier_number").map_err(|e| e.to_string())?,
-                company_name: row.try_get("company_name").map_err(|e| e.to_string())?,
-                contact_name: row.try_get("contact_name").ok(),
-                email: row.try_get("email").ok(),
-                phone: row.try_get("phone").ok(),
-                website: row.try_get("website").ok(),
-                address: row.try_get("address").ok(),
-                city: row.try_get("city").ok(),
-                state: row.try_get("state").ok(),
-                zip_code: row.try_get("zip_code").ok(),
-                country: row.try_get("country").ok(),
-                payment_terms: row.try_get("payment_terms").ok(),
-                tax_id: row.try_get("tax_id").ok(),
-                notes: row.try_get("notes").ok(),
-                rating: row.try_get("rating").ok(),
-                is_active: {
-                    match row.try_get::<bool, _>("is_active") {
-                        Ok(b) => b,
-                        Err(_) => {
-                            let v: i64 = row.try_get("is_active").map_err(|e| e.to_string())?;
-                            v != 0
-                        }
+        Some(row) => Ok(Supplier {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            supplier_number: row.try_get("supplier_number").map_err(|e| e.to_string())?,
+            company_name: row.try_get("company_name").map_err(|e| e.to_string())?,
+            contact_name: row.try_get("contact_name").ok(),
+            email: row.try_get("email").ok(),
+            phone: row.try_get("phone").ok(),
+            website: row.try_get("website").ok(),
+            address: row.try_get("address").ok(),
+            city: row.try_get("city").ok(),
+            state: row.try_get("state").ok(),
+            zip_code: row.try_get("zip_code").ok(),
+            country: row.try_get("country").ok(),
+            payment_terms: row.try_get("payment_terms").ok(),
+            tax_id: row.try_get("tax_id").ok(),
+            notes: row.try_get("notes").ok(),
+            rating: row.try_get("rating").ok(),
+            is_active: {
+                match row.try_get::<bool, _>("is_active") {
+                    Ok(b) => b,
+                    Err(_) => {
+                        let v: i64 = row.try_get("is_active").map_err(|e| e.to_string())?;
+                        v != 0
                     }
-                },
-                created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
-                updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
-            })
-        }
+                }
+            },
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+            updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
+        }),
         None => Err("Supplier not found".to_string()),
     }
 }
@@ -131,7 +126,10 @@ pub async fn create_supplier(
     pool: State<'_, SqlitePool>,
     request: CreateSupplierRequest,
 ) -> Result<Supplier, String> {
-    println!("DEBUG(suppliers): create_supplier company='{}'", request.company_name);
+    println!(
+        "DEBUG(suppliers): create_supplier company='{}'",
+        request.company_name
+    );
     let pool_ref = pool.inner();
 
     // Generate supplier number
@@ -141,29 +139,29 @@ pub async fn create_supplier(
         "INSERT INTO suppliers (
             supplier_number, company_name, contact_name, email, phone, website,
             address, city, state, zip_code, country, payment_terms, tax_id, notes, rating
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)"
+        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
     )
-        .bind(&supplier_number)
-        .bind(&request.company_name)
-        .bind(&request.contact_name)
-        .bind(&request.email)
-        .bind(&request.phone)
-        .bind(&request.website)
-        .bind(&request.address)
-        .bind(&request.city)
-        .bind(&request.state)
-        .bind(&request.zip_code)
-        .bind(&request.country)
-        .bind(&request.payment_terms)
-        .bind(&request.tax_id)
-        .bind(&request.notes)
-        .bind(&request.rating)
-        .execute(pool_ref)
-        .await
-        .map_err(|e| {
-            println!("DEBUG(suppliers): insert error: {}", e);
-            format!("Database error: {}", e)
-        })?;
+    .bind(&supplier_number)
+    .bind(&request.company_name)
+    .bind(&request.contact_name)
+    .bind(&request.email)
+    .bind(&request.phone)
+    .bind(&request.website)
+    .bind(&request.address)
+    .bind(&request.city)
+    .bind(&request.state)
+    .bind(&request.zip_code)
+    .bind(&request.country)
+    .bind(&request.payment_terms)
+    .bind(&request.tax_id)
+    .bind(&request.notes)
+    .bind(&request.rating)
+    .execute(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(suppliers): insert error: {}", e);
+        format!("Database error: {}", e)
+    })?;
 
     let supplier_id = result.last_insert_rowid();
     println!("DEBUG(suppliers): created supplier id={}", supplier_id);
@@ -197,7 +195,6 @@ pub async fn update_supplier(
 
     // Build dynamic update query
     let mut updates = Vec::new();
-    let mut query_builder = sqlx::query("SELECT 1"); // Dummy to start
 
     if request.company_name.is_some() {
         updates.push("company_name = ?");
@@ -251,37 +248,62 @@ pub async fn update_supplier(
 
     updates.push("updated_at = CURRENT_TIMESTAMP");
 
-    let query_str = format!(
-        "UPDATE suppliers SET {} WHERE id = ?",
-        updates.join(", ")
-    );
+    let query_str = format!("UPDATE suppliers SET {} WHERE id = ?", updates.join(", "));
 
     let mut q = sqlx::query(&query_str);
 
-    if let Some(v) = &request.company_name { q = q.bind(v); }
-    if let Some(v) = &request.contact_name { q = q.bind(v); }
-    if let Some(v) = &request.email { q = q.bind(v); }
-    if let Some(v) = &request.phone { q = q.bind(v); }
-    if let Some(v) = &request.website { q = q.bind(v); }
-    if let Some(v) = &request.address { q = q.bind(v); }
-    if let Some(v) = &request.city { q = q.bind(v); }
-    if let Some(v) = &request.state { q = q.bind(v); }
-    if let Some(v) = &request.zip_code { q = q.bind(v); }
-    if let Some(v) = &request.country { q = q.bind(v); }
-    if let Some(v) = &request.payment_terms { q = q.bind(v); }
-    if let Some(v) = &request.tax_id { q = q.bind(v); }
-    if let Some(v) = &request.notes { q = q.bind(v); }
-    if let Some(v) = &request.rating { q = q.bind(v); }
-    if let Some(v) = request.is_active { q = q.bind(v); }
+    if let Some(v) = &request.company_name {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.contact_name {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.email {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.phone {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.website {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.address {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.city {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.state {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.zip_code {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.country {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.payment_terms {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.tax_id {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.notes {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.rating {
+        q = q.bind(v);
+    }
+    if let Some(v) = request.is_active {
+        q = q.bind(v);
+    }
 
     q = q.bind(supplier_id);
 
-    q.execute(pool_ref)
-        .await
-        .map_err(|e| {
-            println!("DEBUG(suppliers): update error: {}", e);
-            format!("Database error: {}", e)
-        })?;
+    q.execute(pool_ref).await.map_err(|e| {
+        println!("DEBUG(suppliers): update error: {}", e);
+        format!("Database error: {}", e)
+    })?;
 
     println!("DEBUG(suppliers): updated supplier id={}", supplier_id);
 
@@ -331,15 +353,15 @@ pub async fn search_suppliers(
             OR phone LIKE ?1
             OR supplier_number LIKE ?1
          ORDER BY company_name ASC
-         LIMIT 50"
+         LIMIT 50",
     )
-        .bind(&search_pattern)
-        .fetch_all(pool_ref)
-        .await
-        .map_err(|e| {
-            println!("DEBUG(suppliers): search error: {}", e);
-            format!("Database error: {}", e)
-        })?;
+    .bind(&search_pattern)
+    .fetch_all(pool_ref)
+    .await
+    .map_err(|e| {
+        println!("DEBUG(suppliers): search error: {}", e);
+        format!("Database error: {}", e)
+    })?;
 
     let mut suppliers = Vec::with_capacity(rows.len());
     for row in rows {

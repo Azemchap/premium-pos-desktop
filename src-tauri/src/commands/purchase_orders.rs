@@ -1,6 +1,8 @@
+use crate::models::{
+    CreatePurchaseOrderRequest, PurchaseOrder, PurchaseOrderItem, UpdatePurchaseOrderRequest,
+};
+use sqlx::{Row, SqlitePool};
 use tauri::{command, State};
-use crate::models::{PurchaseOrder, PurchaseOrderItem, CreatePurchaseOrderRequest, UpdatePurchaseOrderRequest};
-use sqlx::{SqlitePool, Row};
 
 // Generate unique PO number
 async fn generate_po_number(pool: &SqlitePool) -> Result<String, String> {
@@ -106,10 +108,14 @@ pub async fn get_purchase_order_items(
     for row in rows {
         items.push(PurchaseOrderItem {
             id: row.try_get("id").map_err(|e| e.to_string())?,
-            purchase_order_id: row.try_get("purchase_order_id").map_err(|e| e.to_string())?,
+            purchase_order_id: row
+                .try_get("purchase_order_id")
+                .map_err(|e| e.to_string())?,
             product_id: row.try_get("product_id").map_err(|e| e.to_string())?,
             quantity: row.try_get("quantity").map_err(|e| e.to_string())?,
-            received_quantity: row.try_get("received_quantity").map_err(|e| e.to_string())?,
+            received_quantity: row
+                .try_get("received_quantity")
+                .map_err(|e| e.to_string())?,
             unit_cost: row.try_get("unit_cost").map_err(|e| e.to_string())?,
             total_cost: row.try_get("total_cost").map_err(|e| e.to_string())?,
             notes: row.try_get("notes").ok(),
@@ -129,7 +135,9 @@ pub async fn create_purchase_order(
     let po_number = generate_po_number(pool_ref).await?;
 
     // Calculate totals
-    let subtotal: f64 = request.items.iter()
+    let subtotal: f64 = request
+        .items
+        .iter()
         .map(|item| item.quantity as f64 * item.unit_cost)
         .sum();
 
@@ -138,28 +146,31 @@ pub async fn create_purchase_order(
     let total_amount = subtotal + tax + shipping_cost;
 
     // Start a transaction
-    let mut tx = pool_ref.begin().await.map_err(|e| format!("Transaction error: {}", e))?;
+    let mut tx = pool_ref
+        .begin()
+        .await
+        .map_err(|e| format!("Transaction error: {}", e))?;
 
     // Insert purchase order
     let result = sqlx::query(
         "INSERT INTO purchase_orders (po_number, supplier_id, order_date, expected_delivery_date,
          subtotal, tax, shipping_cost, total_amount, payment_method, notes, created_by)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)"
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
     )
-        .bind(&po_number)
-        .bind(request.supplier_id)
-        .bind(&request.order_date)
-        .bind(&request.expected_delivery_date)
-        .bind(subtotal)
-        .bind(tax)
-        .bind(shipping_cost)
-        .bind(total_amount)
-        .bind(&request.payment_method)
-        .bind(&request.notes)
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+    .bind(&po_number)
+    .bind(request.supplier_id)
+    .bind(&request.order_date)
+    .bind(&request.expected_delivery_date)
+    .bind(subtotal)
+    .bind(tax)
+    .bind(shipping_cost)
+    .bind(total_amount)
+    .bind(&request.payment_method)
+    .bind(&request.notes)
+    .bind(user_id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| format!("Database error: {}", e))?;
 
     let po_id = result.last_insert_rowid();
 
@@ -182,7 +193,9 @@ pub async fn create_purchase_order(
     }
 
     // Commit transaction
-    tx.commit().await.map_err(|e| format!("Transaction commit error: {}", e))?;
+    tx.commit()
+        .await
+        .map_err(|e| format!("Transaction commit error: {}", e))?;
 
     // Fetch and return the created purchase order
     get_purchase_order(pool, po_id).await
@@ -198,43 +211,98 @@ pub async fn update_purchase_order(
 
     let mut updates = Vec::new();
 
-    if request.supplier_id.is_some() { updates.push("supplier_id = ?"); }
-    if request.order_date.is_some() { updates.push("order_date = ?"); }
-    if request.expected_delivery_date.is_some() { updates.push("expected_delivery_date = ?"); }
-    if request.actual_delivery_date.is_some() { updates.push("actual_delivery_date = ?"); }
-    if request.status.is_some() { updates.push("status = ?"); }
-    if request.payment_status.is_some() { updates.push("payment_status = ?"); }
-    if request.payment_method.is_some() { updates.push("payment_method = ?"); }
-    if request.tax.is_some() { updates.push("tax = ?"); }
-    if request.shipping_cost.is_some() { updates.push("shipping_cost = ?"); }
-    if request.notes.is_some() { updates.push("notes = ?"); }
+    if request.supplier_id.is_some() {
+        updates.push("supplier_id = ?");
+    }
+    if request.order_date.is_some() {
+        updates.push("order_date = ?");
+    }
+    if request.expected_delivery_date.is_some() {
+        updates.push("expected_delivery_date = ?");
+    }
+    if request.actual_delivery_date.is_some() {
+        updates.push("actual_delivery_date = ?");
+    }
+    if request.status.is_some() {
+        updates.push("status = ?");
+    }
+    if request.payment_status.is_some() {
+        updates.push("payment_status = ?");
+    }
+    if request.payment_method.is_some() {
+        updates.push("payment_method = ?");
+    }
+    if request.tax.is_some() {
+        updates.push("tax = ?");
+    }
+    if request.shipping_cost.is_some() {
+        updates.push("shipping_cost = ?");
+    }
+    if request.notes.is_some() {
+        updates.push("notes = ?");
+    }
 
     if updates.is_empty() {
         return Err("No fields to update".to_string());
     }
 
     updates.push("updated_at = CURRENT_TIMESTAMP");
-    let query_str = format!("UPDATE purchase_orders SET {} WHERE id = ?", updates.join(", "));
+    let query_str = format!(
+        "UPDATE purchase_orders SET {} WHERE id = ?",
+        updates.join(", ")
+    );
     let mut q = sqlx::query(&query_str);
 
-    if let Some(v) = request.supplier_id { q = q.bind(v); }
-    if let Some(v) = &request.order_date { q = q.bind(v); }
-    if let Some(v) = &request.expected_delivery_date { q = q.bind(v); }
-    if let Some(v) = &request.actual_delivery_date { q = q.bind(v); }
-    if let Some(v) = &request.status { q = q.bind(v); }
-    if let Some(v) = &request.payment_status { q = q.bind(v); }
-    if let Some(v) = &request.payment_method { q = q.bind(v); }
-    if let Some(v) = request.tax { q = q.bind(v); }
-    if let Some(v) = request.shipping_cost { q = q.bind(v); }
-    if let Some(v) = &request.notes { q = q.bind(v); }
+    if let Some(v) = request.supplier_id {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.order_date {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.expected_delivery_date {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.actual_delivery_date {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.status {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.payment_status {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.payment_method {
+        q = q.bind(v);
+    }
+    if let Some(v) = request.tax {
+        q = q.bind(v);
+    }
+    if let Some(v) = request.shipping_cost {
+        q = q.bind(v);
+    }
+    if let Some(v) = &request.notes {
+        q = q.bind(v);
+    }
     q = q.bind(po_id);
 
-    q.execute(pool_ref).await.map_err(|e| format!("Database error: {}", e))?;
+    q.execute(pool_ref)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
     // If tax or shipping_cost changed, recalculate total
     if request.tax.is_some() || request.shipping_cost.is_some() {
-        let po = get_purchase_order(State::from(pool_ref.clone()), po_id).await?;
-        let new_total = po.subtotal + po.tax + po.shipping_cost;
+        // Query the current values directly
+        let row =
+            sqlx::query("SELECT subtotal, tax, shipping_cost FROM purchase_orders WHERE id = ?1")
+                .bind(po_id)
+                .fetch_one(pool_ref)
+                .await
+                .map_err(|e| format!("Database error: {}", e))?;
+
+        let subtotal: f64 = row.try_get("subtotal").map_err(|e| e.to_string())?;
+        let tax: f64 = row.try_get("tax").map_err(|e| e.to_string())?;
+        let shipping_cost: f64 = row.try_get("shipping_cost").map_err(|e| e.to_string())?;
+        let new_total = subtotal + tax + shipping_cost;
 
         sqlx::query("UPDATE purchase_orders SET total_amount = ?1 WHERE id = ?2")
             .bind(new_total)
@@ -277,12 +345,14 @@ pub async fn receive_purchase_order_item(
     let pool_ref = pool.inner();
 
     // Update received quantity
-    sqlx::query("UPDATE purchase_order_items SET received_quantity = received_quantity + ?1 WHERE id = ?2")
-        .bind(received_qty)
-        .bind(item_id)
-        .execute(pool_ref)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+    sqlx::query(
+        "UPDATE purchase_order_items SET received_quantity = received_quantity + ?1 WHERE id = ?2",
+    )
+    .bind(received_qty)
+    .bind(item_id)
+    .execute(pool_ref)
+    .await
+    .map_err(|e| format!("Database error: {}", e))?;
 
     // Get the updated item
     let row = sqlx::query("SELECT * FROM purchase_order_items WHERE id = ?1")
@@ -294,10 +364,14 @@ pub async fn receive_purchase_order_item(
 
     let item = PurchaseOrderItem {
         id: row.try_get("id").map_err(|e| e.to_string())?,
-        purchase_order_id: row.try_get("purchase_order_id").map_err(|e| e.to_string())?,
+        purchase_order_id: row
+            .try_get("purchase_order_id")
+            .map_err(|e| e.to_string())?,
         product_id: row.try_get("product_id").map_err(|e| e.to_string())?,
         quantity: row.try_get("quantity").map_err(|e| e.to_string())?,
-        received_quantity: row.try_get("received_quantity").map_err(|e| e.to_string())?,
+        received_quantity: row
+            .try_get("received_quantity")
+            .map_err(|e| e.to_string())?,
         unit_cost: row.try_get("unit_cost").map_err(|e| e.to_string())?,
         total_cost: row.try_get("total_cost").map_err(|e| e.to_string())?,
         notes: row.try_get("notes").ok(),
@@ -305,10 +379,25 @@ pub async fn receive_purchase_order_item(
 
     // Check if all items are received and update PO status
     let po_id = item.purchase_order_id;
-    let items = get_purchase_order_items(State::from(pool_ref.clone()), po_id).await?;
 
-    let all_received = items.iter().all(|i| i.received_quantity >= i.quantity);
-    let partial_received = items.iter().any(|i| i.received_quantity > 0);
+    // Query items directly
+    let item_rows = sqlx::query(
+        "SELECT quantity, received_quantity FROM purchase_order_items WHERE purchase_order_id = ?1",
+    )
+    .bind(po_id)
+    .fetch_all(pool_ref)
+    .await
+    .map_err(|e| format!("Database error: {}", e))?;
+
+    let all_received = item_rows.iter().all(|row| {
+        let qty: i32 = row.try_get("quantity").unwrap_or(0);
+        let received: i32 = row.try_get("received_quantity").unwrap_or(0);
+        received >= qty
+    });
+    let partial_received = item_rows.iter().any(|row| {
+        let received: i32 = row.try_get("received_quantity").unwrap_or(0);
+        received > 0
+    });
 
     if all_received {
         sqlx::query("UPDATE purchase_orders SET status = 'Received' WHERE id = ?1")
