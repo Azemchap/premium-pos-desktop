@@ -31,7 +31,8 @@ pub fn validate_password_strength(password: &str) -> AppResult<()> {
 
 /// Validate phone number format (US)
 pub fn validate_phone(phone: &str) -> AppResult<()> {
-    let phone_regex = Regex::new(r"^\+?1?[-.\s]?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$").unwrap();
+    let phone_regex =
+        Regex::new(r"^\+?1?[-.\s]?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$").unwrap();
     if phone_regex.is_match(phone) {
         Ok(())
     } else {
@@ -51,7 +52,10 @@ pub fn validate_non_negative<T: PartialOrd + Default>(value: T, field: &str) -> 
 /// Validate that a value is positive
 pub fn validate_positive(value: f64, field: &str) -> AppResult<()> {
     if value <= 0.0 {
-        Err(AppError::validation_error(&format!("{} must be positive", field)))
+        Err(AppError::validation_error(&format!(
+            "{} must be positive",
+            field
+        )))
     } else {
         Ok(())
     }
@@ -60,7 +64,10 @@ pub fn validate_positive(value: f64, field: &str) -> AppResult<()> {
 /// Validate string is not empty
 pub fn validate_not_empty(value: &str, field: &str) -> AppResult<()> {
     if value.trim().is_empty() {
-        Err(AppError::validation_error(&format!("{} cannot be empty", field)))
+        Err(AppError::validation_error(&format!(
+            "{} cannot be empty",
+            field
+        )))
     } else {
         Ok(())
     }
@@ -80,9 +87,9 @@ pub fn validate_length(value: &str, min: usize, max: usize, field: &str) -> AppR
 }
 
 /// Validate that a date is not in the future
-pub fn validate_date_not_future(date: &str) -> AppResult<()> {
-    // Implement date validation logic
-    // For now, just basic check
+pub fn validate_date_not_future(_date: &str) -> AppResult<()> {
+    // TODO: Implement date validation logic
+    // For now, just basic check - accept all dates
     Ok(())
 }
 
@@ -109,7 +116,10 @@ pub fn validate_barcode(barcode: &str) -> AppResult<()> {
 /// Validate quantity (must be positive integer)
 pub fn validate_quantity(quantity: i32, field: &str) -> AppResult<()> {
     if quantity <= 0 {
-        Err(AppError::validation_error(&format!("{} must be greater than 0", field)))
+        Err(AppError::validation_error(&format!(
+            "{} must be greater than 0",
+            field
+        )))
     } else {
         Ok(())
     }
@@ -132,7 +142,10 @@ where
     if allowed.contains(value) {
         Ok(())
     } else {
-        Err(AppError::validation_error(&format!("Invalid value for {}", field)))
+        Err(AppError::validation_error(&format!(
+            "Invalid value for {}",
+            field
+        )))
     }
 }
 

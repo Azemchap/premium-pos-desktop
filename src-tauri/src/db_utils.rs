@@ -1,29 +1,62 @@
 use crate::error::{AppError, AppResult};
 use sqlx::{Pool, Sqlite, Transaction};
+use std::future::Future;
 
 /// Execute a database operation with automatic rollback on error
 /// This ensures atomicity for complex operations
-pub async fn execute_transaction<F, T>(
-    pool: &Pool<Sqlite>,
-    operation: F,
-) -> AppResult<T>
+pub async fn execute_transaction<F, Fut, T>(pool: &Pool<Sqlite>, operation: F) -> AppResult<T>
 where
-    F: for<'a> FnOnce(&'a mut Transaction<'a, Sqlite>) -> std::pin::Pin<Box<dyn std::future::Future<Output = AppResult<T>> + Send + 'a>>,
+    F: FnOnce(Transaction<'static, Sqlite>) -> Fut,
+    Fut: Future<
+        Output = Result<
+            (T, Transaction<'static, Sqlite>),
+            (AppError, Transaction<'static, Sqlite>),
+        >,
+    >,
 {
-    let mut tx = pool
+    let tx = pool
         .begin()
         .await
         .map_err(|e| AppError::database_error(&e.to_string()))?;
 
-    match operation(&mut tx).await {
-        Ok(result) => {
+    match operation(tx).await {
+        Ok((result, tx)) => {
             tx.commit()
                 .await
                 .map_err(|e| AppError::database_error(&e.to_string()))?;
             Ok(result)
         }
-        Err(e) => {
+        Err((e, tx)) => {
             let _ = tx.rollback().await; // Ignore rollback errors
+            Err(e)
+        }
+    }
+}
+
+/// A simpler transaction helper that handles commit/rollback automatically
+/// The operation should return Ok(result) on success, Err(error) on failure
+pub async fn with_transaction<F, Fut, T>(pool: &Pool<Sqlite>, operation: F) -> AppResult<T>
+where
+    F: FnOnce(&Pool<Sqlite>) -> Fut,
+    Fut: Future<Output = AppResult<T>>,
+{
+    // For SQLite, we can use the pool directly with IMMEDIATE transactions
+    // This is simpler and avoids the lifetime complexity
+    sqlx::query("BEGIN IMMEDIATE")
+        .execute(pool)
+        .await
+        .map_err(|e| AppError::database_error(&e.to_string()))?;
+
+    match operation(pool).await {
+        Ok(result) => {
+            sqlx::query("COMMIT")
+                .execute(pool)
+                .await
+                .map_err(|e| AppError::database_error(&e.to_string()))?;
+            Ok(result)
+        }
+        Err(e) => {
+            let _ = sqlx::query("ROLLBACK").execute(pool).await;
             Err(e)
         }
     }
@@ -112,20 +145,19 @@ pub async fn acquire_lock(
             resource_id INTEGER NOT NULL,
             locked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (resource_type, resource_id)
-        )"
+        )",
     )
     .execute(pool)
     .await
     .map_err(|e| AppError::database_error(&e.to_string()))?;
 
     // Try to acquire lock
-    let result = sqlx::query(
-        "INSERT INTO resource_locks (resource_type, resource_id) VALUES (?, ?)"
-    )
-    .bind(resource_type)
-    .bind(resource_id)
-    .execute(pool)
-    .await;
+    let result =
+        sqlx::query("INSERT INTO resource_locks (resource_type, resource_id) VALUES (?, ?)")
+            .bind(resource_type)
+            .bind(resource_id)
+            .execute(pool)
+            .await;
 
     match result {
         Ok(_) => Ok(()),
@@ -139,35 +171,28 @@ pub async fn release_lock(
     resource_type: &str,
     resource_id: i64,
 ) -> AppResult<()> {
-    sqlx::query(
-        "DELETE FROM resource_locks WHERE resource_type = ? AND resource_id = ?"
-    )
-    .bind(resource_type)
-    .bind(resource_id)
-    .execute(pool)
-    .await
-    .map_err(|e| AppError::database_error(&e.to_string()))?;
+    sqlx::query("DELETE FROM resource_locks WHERE resource_type = ? AND resource_id = ?")
+        .bind(resource_type)
+        .bind(resource_id)
+        .execute(pool)
+        .await
+        .map_err(|e| AppError::database_error(&e.to_string()))?;
 
     Ok(())
 }
 
 /// Clean up old locks (older than 1 hour)
 pub async fn cleanup_stale_locks(pool: &Pool<Sqlite>) -> AppResult<()> {
-    sqlx::query(
-        "DELETE FROM resource_locks WHERE locked_at < datetime('now', '-1 hour')"
-    )
-    .execute(pool)
-    .await
-    .map_err(|e| AppError::database_error(&e.to_string()))?;
+    sqlx::query("DELETE FROM resource_locks WHERE locked_at < datetime('now', '-1 hour')")
+        .execute(pool)
+        .await
+        .map_err(|e| AppError::database_error(&e.to_string()))?;
 
     Ok(())
 }
 
 /// Execute with retry logic for transient failures
-pub async fn execute_with_retry<F, T>(
-    max_retries: u32,
-    operation: F,
-) -> AppResult<T>
+pub async fn execute_with_retry<F, T>(max_retries: u32, operation: F) -> AppResult<T>
 where
     F: Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = AppResult<T>>>>,
 {
