@@ -1,20 +1,26 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SettingsApplier from "@/components/SettingsApplier";
 import DashboardLayout from "@/layouts/DashboardLayout";
+import Appointments from "@/pages/Appointments";
 import Cart from "@/pages/Cart";
 import Dashboard from "@/pages/Dashboard";
+import Employees from "@/pages/Employees";
+import Finance from "@/pages/Finance";
 import Inventory from "@/pages/Inventory";
 import LoginPage from "@/pages/LoginPage";
 import MasterData from "@/pages/MasterData";
 import Notifications from "@/pages/Notifications";
+import Organization from "@/pages/Organization";
 import Products from "@/pages/Products";
 import Profile from "@/pages/Profile";
+import Promotions from "@/pages/Promotions";
 import PurchaseOrders from "@/pages/PurchaseOrders";
 import Reports from "@/pages/Reports";
 import Returns from "@/pages/Returns";
 import Sales from "@/pages/Sales";
 import SalesRecords from "@/pages/SalesRecords";
 import Settings from "@/pages/Settings";
+import TimeTracking from "@/pages/TimeTracking";
 import Unauthorized from "@/pages/Unauthorized";
 import Users from "@/pages/Users";
 import { useAuthStore } from "@/store/authStore";
@@ -194,6 +200,47 @@ useEffect(() => {
             element={
               <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employees"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+                <Employees />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/promotions"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+                <Promotions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/time-tracking"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+                <TimeTracking />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/appointments" element={<Appointments />} />
+          <Route
+            path="/organization"
+            element={
+              <ProtectedRoute allowedRoles={["Admin"]}>
+                <Organization />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/finance"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+                <Finance />
               </ProtectedRoute>
             }
           />

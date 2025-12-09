@@ -163,7 +163,7 @@ const navigationGroups: NavigationGroup[] = [productsGroup, financeGroup, hrGrou
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [openGroup, setOpenGroup] = useState<string>("products");
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [storeConfig, setStoreConfig] = useState<StoreConfig | null>(null);
@@ -234,9 +234,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return location.pathname === href || location.pathname.startsWith(href + "/");
   };
 
-  // Toggle group - accordion behavior (only one open at a time)
+  // Toggle group - accordion behavior (only one open at a time, always keep one open)
   const toggleGroup = (groupId: string) => {
-    setOpenGroup(prev => prev === groupId ? null : groupId);
+    // Don't allow closing the currently open group, only switch to another
+    if (openGroup !== groupId) {
+      setOpenGroup(groupId);
+    }
   };
 
   // Nav item component with reduced spacing
@@ -535,7 +538,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <div className="mx-auto max-w-screen-2xl">
             {children}
           </div>

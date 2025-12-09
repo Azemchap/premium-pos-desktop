@@ -211,10 +211,10 @@ export default function ProductVariantManager({
         <CardContent className="space-y-4">
           {/* Variant Type Selection */}
           <div>
-            <Label className="text-base font-semibold mb-3 block">
+            <Label className="text-xs sm:text-sm font-semibold mb-2 block">
               Step 1: Select Variant Types
             </Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {variantTypes.map((type) => (
                 <div key={type.id} className="flex items-center space-x-2">
                   <Checkbox
@@ -222,7 +222,7 @@ export default function ProductVariantManager({
                     checked={selectedTypeIds.includes(type.id)}
                     onCheckedChange={(checked) => toggleVariantType(type.id, checked as boolean)}
                   />
-                  <Label htmlFor={`type-${type.id}`} className="cursor-pointer">
+                  <Label htmlFor={`type-${type.id}`} className="cursor-pointer text-xs sm:text-sm">
                     {type.name}
                   </Label>
                 </div>
@@ -232,21 +232,21 @@ export default function ProductVariantManager({
 
           {/* Variant Value Selection per Type */}
           {selectedTypeIds.length > 0 && (
-            <div className="space-y-4">
-              <Label className="text-base font-semibold mb-3 block">
+            <div className="space-y-3">
+              <Label className="text-xs sm:text-sm font-semibold mb-2 block">
                 Step 2: Select Values for Each Type
               </Label>
               {selectedTypeIds.map((typeId) => {
                 const type = variantTypes.find((t) => t.id === typeId);
                 const values = getValuesForType(typeId);
                 return (
-                  <div key={typeId} className="border rounded-lg p-4">
-                    <Label className="text-sm font-semibold mb-2 block">
+                  <div key={typeId} className="border rounded-lg p-3">
+                    <Label className="text-xs sm:text-sm font-semibold mb-2 block">
                       {type?.name}
                     </Label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                       {values.map((value) => (
-                        <div key={value.id} className="flex items-center space-x-2">
+                        <div key={value.id} className="flex items-center space-x-2 min-w-0">
                           <Checkbox
                             id={`value-${value.id}`}
                             checked={(selectedValueIds[typeId] || []).includes(value.id)}
@@ -256,17 +256,17 @@ export default function ProductVariantManager({
                           />
                           <Label
                             htmlFor={`value-${value.id}`}
-                            className="cursor-pointer flex items-center gap-2"
+                            className="cursor-pointer flex items-center gap-1.5 text-xs sm:text-sm truncate"
                           >
                             {value.hex_color && (
                               <div
-                                className="w-4 h-4 rounded border"
+                                className="w-3 h-3 sm:w-4 sm:h-4 rounded border flex-shrink-0"
                                 style={{ backgroundColor: value.hex_color }}
                               />
                             )}
-                            {value.value}
+                            <span className="truncate">{value.value}</span>
                             {value.code && (
-                              <span className="text-xs text-muted-foreground">({value.code})</span>
+                              <span className="text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">({value.code})</span>
                             )}
                           </Label>
                         </div>
@@ -280,10 +280,10 @@ export default function ProductVariantManager({
 
           {/* Generate Button */}
           {selectedTypeIds.length > 0 && Object.values(selectedValueIds).some((arr) => arr.length > 0) && (
-            <div className="flex justify-center">
-              <Button onClick={generateVariantCombinations} size="lg" className="gap-2">
+            <div className="flex justify-center pt-2">
+              <Button onClick={generateVariantCombinations} size="default" className="gap-2 w-full sm:w-auto">
                 <Wand2 className="w-4 h-4" />
-                Generate Variant Combinations
+                <span className="text-xs sm:text-sm">Generate Variant Combinations</span>
               </Button>
             </div>
           )}
@@ -294,13 +294,13 @@ export default function ProductVariantManager({
       {variantCombinations.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Generated Variants ({variantCombinations.length})</span>
-              <Badge variant="outline">{productName}</Badge>
+            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <span className="text-sm sm:text-base">Generated Variants ({variantCombinations.length})</span>
+              <Badge variant="outline" className="text-xs">{productName}</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
+          <CardContent className="p-0 sm:p-6">
+            <div className="overflow-x-auto -mx-0 sm:mx-0">
               <Table>
                 <TableHeader>
                   <TableRow>
