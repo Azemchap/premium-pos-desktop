@@ -187,18 +187,18 @@ pub async fn create_return(
             .await
             .map_err(|e| format!("Failed to log inventory movement: {}", e))?;
         }
-
-        // Create notification for return
-        sqlx::query(
-            "INSERT INTO notifications (notification_type, title, message, severity, reference_id, reference_type)
-             VALUES ('return', 'Return Processed', 'Return ' || ?1 || ' has been processed', 'info', ?2, 'return')"
-        )
-        .bind(&return_number)
-        .bind(return_id)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| format!("Failed to create notification: {}", e))?;
     }
+
+    // Create notification for return
+    sqlx::query(
+        "INSERT INTO notifications (notification_type, title, message, severity, reference_id, reference_type)
+         VALUES ('return', 'Return Processed', 'Return ' || ?1 || ' has been processed', 'info', ?2, 'return')"
+    )
+    .bind(&return_number)
+    .bind(return_id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| format!("Failed to create notification: {}", e))?;
 
     // Commit transaction
     tx.commit()
@@ -223,7 +223,7 @@ pub async fn get_returns(
         .map(|s| format!("%{}%", s))
         .unwrap_or_else(|| "%".to_string());
 
-    let returns = sqlx::query_as::<_, ReturnWithDetails>(
+    let rows = sqlx::query(
         "SELECT
             r.id,
             r.return_number,
@@ -254,6 +254,27 @@ pub async fn get_returns(
     .await
     .map_err(|e| format!("Failed to fetch returns: {}", e))?;
 
+    let mut returns = Vec::new();
+    for row in rows {
+        returns.push(ReturnWithDetails {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            return_number: row.try_get("return_number").map_err(|e| e.to_string())?,
+            original_sale_id: row.try_get("original_sale_id").ok(),
+            original_sale_number: row.try_get("original_sale_number").ok(),
+            subtotal: row.try_get("subtotal").map_err(|e| e.to_string())?,
+            tax_amount: row.try_get("tax_amount").map_err(|e| e.to_string())?,
+            total_amount: row.try_get("total_amount").map_err(|e| e.to_string())?,
+            refund_method: row.try_get("refund_method").map_err(|e| e.to_string())?,
+            processed_by: row.try_get("processed_by").map_err(|e| e.to_string())?,
+            processed_by_name: row.try_get("processed_by_name").ok(),
+            reason: row.try_get("reason").ok(),
+            notes: row.try_get("notes").ok(),
+            shift_id: row.try_get("shift_id").ok(),
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+            items_count: row.try_get("items_count").map_err(|e| e.to_string())?,
+        });
+    }
+
     Ok(returns)
 }
 
@@ -264,7 +285,7 @@ pub async fn get_return_by_id(
 ) -> Result<ReturnWithDetails, String> {
     let pool_ref = pool.inner();
 
-    let return_record = sqlx::query_as::<_, ReturnWithDetails>(
+    let row = sqlx::query(
         "SELECT
             r.id,
             r.return_number,
@@ -291,7 +312,23 @@ pub async fn get_return_by_id(
     .await
     .map_err(|e| format!("Failed to fetch return: {}", e))?;
 
-    Ok(return_record)
+    Ok(ReturnWithDetails {
+        id: row.try_get("id").map_err(|e| e.to_string())?,
+        return_number: row.try_get("return_number").map_err(|e| e.to_string())?,
+        original_sale_id: row.try_get("original_sale_id").ok(),
+        original_sale_number: row.try_get("original_sale_number").ok(),
+        subtotal: row.try_get("subtotal").map_err(|e| e.to_string())?,
+        tax_amount: row.try_get("tax_amount").map_err(|e| e.to_string())?,
+        total_amount: row.try_get("total_amount").map_err(|e| e.to_string())?,
+        refund_method: row.try_get("refund_method").map_err(|e| e.to_string())?,
+        processed_by: row.try_get("processed_by").map_err(|e| e.to_string())?,
+        processed_by_name: row.try_get("processed_by_name").ok(),
+        reason: row.try_get("reason").ok(),
+        notes: row.try_get("notes").ok(),
+        shift_id: row.try_get("shift_id").ok(),
+        created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+        items_count: row.try_get("items_count").map_err(|e| e.to_string())?,
+    })
 }
 
 #[command]
@@ -301,7 +338,7 @@ pub async fn get_return_items(
 ) -> Result<Vec<ReturnItemDetail>, String> {
     let pool_ref = pool.inner();
 
-    let items = sqlx::query_as::<_, ReturnItemDetail>(
+    let rows = sqlx::query(
         "SELECT
             ri.id,
             ri.return_id,
@@ -321,6 +358,21 @@ pub async fn get_return_items(
     .fetch_all(pool_ref)
     .await
     .map_err(|e| format!("Failed to fetch return items: {}", e))?;
+
+    let mut items = Vec::new();
+    for row in rows {
+        items.push(ReturnItemDetail {
+            id: row.try_get("id").map_err(|e| e.to_string())?,
+            return_id: row.try_get("return_id").map_err(|e| e.to_string())?,
+            product_id: row.try_get("product_id").map_err(|e| e.to_string())?,
+            product_name: row.try_get("product_name").map_err(|e| e.to_string())?,
+            product_sku: row.try_get("product_sku").map_err(|e| e.to_string())?,
+            quantity: row.try_get("quantity").map_err(|e| e.to_string())?,
+            unit_price: row.try_get("unit_price").map_err(|e| e.to_string())?,
+            line_total: row.try_get("line_total").map_err(|e| e.to_string())?,
+            created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
+        });
+    }
 
     Ok(items)
 }
