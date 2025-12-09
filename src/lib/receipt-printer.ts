@@ -4,7 +4,7 @@ import { currencyFormatter } from "./currency";
 import { toast } from "sonner";
 import { formatLocalDateTime as formatLocalDateTimeUtil } from "./date-utils";
 
-interface SaleItem {
+export interface SaleItem {
   product_id: number;
   product_name?: string;
   quantity: number;
@@ -13,7 +13,7 @@ interface SaleItem {
   tax_amount?: number;
 }
 
-interface SaleData {
+export interface SaleData {
   sale_number: string;
   created_at: string;
   cashier_name?: string;

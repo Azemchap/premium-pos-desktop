@@ -205,7 +205,17 @@ export default function Reports() {
     loadReports();
   }, [dateRange, startDate, endDate]);
 
-  const MetricCard = ({ title, value, subtitle, icon: Icon, trend, trendValue, gradient }: any) => (
+  interface MetricCardProps {
+    title: string;
+    value: string | number;
+    subtitle?: string;
+    icon: React.ComponentType<{ className?: string }>;
+    trend?: number;
+    trendValue?: string;
+    gradient?: string;
+  }
+
+  const MetricCard = ({ title, value, subtitle, icon: Icon, trend, trendValue, gradient }: MetricCardProps) => (
     <Card className="overflow-hidden border-none shadow-md hover:shadow-md transition-all duration-200">
       <div className={`${gradient || 'bg-gradient-to-br from-blue-500 to-blue-600'} p-3 sm:p-4`}>
         <div className="flex items-center justify-between">
@@ -376,7 +386,7 @@ export default function Reports() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: any) => formatCurrency(value)} />
+                      <Tooltip formatter={(value: number) => formatCurrency(value)} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
@@ -485,7 +495,7 @@ export default function Reports() {
                     <XAxis dataKey="dateFormatted" />
                     <YAxis tickFormatter={(value) => formatCurrency(value)} />
                     <Tooltip 
-                      formatter={(value: any) => formatCurrency(value)}
+                      formatter={(value: number) => formatCurrency(value)}
                       labelFormatter={(label) => `Date: ${label}`}
                     />
                     <Legend />
@@ -820,7 +830,7 @@ export default function Reports() {
                           />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: any) => formatCurrency(value)} />
+                      <Tooltip formatter={(value: number) => formatCurrency(value)} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
@@ -843,7 +853,7 @@ export default function Reports() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="category" angle={-45} textAnchor="end" height={100} />
                       <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                      <Tooltip formatter={(value: any) => formatCurrency(value)} />
+                      <Tooltip formatter={(value: number) => formatCurrency(value)} />
                       <Legend />
                       <Bar dataKey="total_profit" fill="#10b981" name="Profit" />
                     </BarChart>

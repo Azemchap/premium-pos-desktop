@@ -29,7 +29,7 @@ const RETRYABLE_ERROR_CODES = [
 /**
  * Parse error from backend
  */
-function parseError(error: any): AppError {
+function parseError(error: unknown): AppError {
     if (typeof error === "string") {
         try {
             // Try to parse as JSON first
@@ -48,13 +48,13 @@ function parseError(error: any): AppError {
         };
     }
 
-    if (error.code && error.message) {
+    if (typeof error === "object" && error !== null && "code" in error && "message" in error) {
         return error as AppError;
     }
 
     return {
         code: "UNKNOWN",
-        message: error.toString(),
+        message: String(error),
     };
 }
 
@@ -156,8 +156,8 @@ export async function apiBatch<T>(
 /**
  * Check if result is an error
  */
-export function isError(result: any): result is AppError {
-    return result && typeof result === "object" && "code" in result && "message" in result;
+export function isError(result: unknown): result is AppError {
+    return result !== null && typeof result === "object" && "code" in result && "message" in result;
 }
 
 /**

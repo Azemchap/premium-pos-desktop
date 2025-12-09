@@ -403,7 +403,7 @@ export default function Products() {
     });
 
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: string | number, bValue: string | number;
       switch (sortColumn) {
         case "name":
           aValue = a.name.toLowerCase();

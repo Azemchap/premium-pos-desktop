@@ -270,58 +270,244 @@ export interface SalesReport {
 
 export interface Customer {
   id: number;
-  name: string;
+  customer_number: string;
+  first_name: string;
+  last_name: string;
   email?: string;
   phone?: string;
-  company_name?: string;
-  tax_id?: string;
+  company?: string;
   address?: string;
   city?: string;
   state?: string;
   zip_code?: string;
-  customer_type: 'retail' | 'wholesale' | 'contractor' | 'business';
-  credit_limit?: number;
-  credit_balance?: number;
-  is_active: boolean;
+  country?: string;
+  date_of_birth?: string;
+  customer_type: 'Retail' | 'Wholesale' | 'VIP' | 'Corporate';
+  status: 'Active' | 'Inactive' | 'Blocked';
+  loyalty_points: number;
+  total_spent: number;
+  total_orders: number;
+  average_order_value: number;
+  last_purchase_date?: string;
+  notes?: string;
+  tags?: string;
+  created_by?: number;
   created_at: string;
   updated_at: string;
 }
 
-// ==================== SUPPLIER TYPES (For Future) ====================
+export interface CreateCustomerRequest {
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  date_of_birth?: string;
+  customer_type?: 'Retail' | 'Wholesale' | 'VIP' | 'Corporate';
+  notes?: string;
+  tags?: string;
+}
+
+export interface UpdateCustomerRequest {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  date_of_birth?: string;
+  customer_type?: 'Retail' | 'Wholesale' | 'VIP' | 'Corporate';
+  status?: 'Active' | 'Inactive' | 'Blocked';
+  notes?: string;
+  tags?: string;
+}
+
+// ==================== SUPPLIER TYPES ====================
 
 export interface Supplier {
   id: number;
-  name: string;
-  contact_person?: string;
+  supplier_number: string;
+  company_name: string;
+  contact_name?: string;
   email?: string;
   phone?: string;
+  website?: string;
   address?: string;
   city?: string;
   state?: string;
   zip_code?: string;
-  tax_id?: string;
+  country?: string;
   payment_terms?: string;
+  tax_id?: string;
+  notes?: string;
+  rating?: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
 }
 
-// ==================== PURCHASE ORDER TYPES (For Future) ====================
+export interface CreateSupplierRequest {
+  company_name: string;
+  contact_name?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  payment_terms?: string;
+  tax_id?: string;
+  notes?: string;
+  rating?: number;
+}
+
+export interface UpdateSupplierRequest {
+  company_name?: string;
+  contact_name?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  payment_terms?: string;
+  tax_id?: string;
+  notes?: string;
+  rating?: number;
+  is_active?: boolean;
+}
+
+// ==================== PURCHASE ORDER TYPES ====================
+
+export type PurchaseOrderStatus = 'Draft' | 'Sent' | 'Confirmed' | 'Partial' | 'Received' | 'Cancelled';
+export type PaymentStatus = 'Unpaid' | 'Partial' | 'Paid';
 
 export interface PurchaseOrder {
   id: number;
   po_number: string;
   supplier_id: number;
   order_date: string;
-  expected_delivery?: string;
-  status: 'pending' | 'approved' | 'ordered' | 'received' | 'cancelled';
+  expected_delivery_date?: string;
+  actual_delivery_date?: string;
   subtotal: number;
-  tax_amount: number;
+  tax: number;
+  shipping_cost: number;
   total_amount: number;
+  status: PurchaseOrderStatus;
+  payment_status: PaymentStatus;
+  payment_method?: string;
   notes?: string;
-  created_by: number;
+  created_by?: number;
   created_at: string;
   updated_at: string;
+  supplier?: Supplier; // For joined queries
+}
+
+export interface PurchaseOrderItem {
+  id: number;
+  purchase_order_id: number;
+  product_id: number;
+  quantity: number;
+  received_quantity: number;
+  unit_cost: number;
+  total_cost: number;
+  notes?: string;
+  product?: Product; // For joined queries
+}
+
+export interface CreatePurchaseOrderRequest {
+  supplier_id: number;
+  order_date: string;
+  expected_delivery_date?: string;
+  items: Array<{
+    product_id: number;
+    quantity: number;
+    unit_cost: number;
+  }>;
+  tax?: number;
+  shipping_cost?: number;
+  payment_method?: string;
+  notes?: string;
+}
+
+export interface UpdatePurchaseOrderRequest {
+  supplier_id?: number;
+  order_date?: string;
+  expected_delivery_date?: string;
+  actual_delivery_date?: string;
+  status?: PurchaseOrderStatus;
+  payment_status?: PaymentStatus;
+  payment_method?: string;
+  tax?: number;
+  shipping_cost?: number;
+  notes?: string;
+}
+
+// ==================== EXPENSE TYPES ====================
+
+export interface Expense {
+  id: number;
+  expense_number: string;
+  category_id?: number;
+  vendor?: string;
+  description: string;
+  amount: number;
+  expense_date: string;
+  payment_method: 'Cash' | 'Credit Card' | 'Debit Card' | 'Check' | 'Bank Transfer' | 'Other';
+  reference_number?: string;
+  receipt_url?: string;
+  is_recurring: boolean;
+  recurring_frequency?: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly';
+  tags?: string;
+  notes?: string;
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Paid';
+  approved_by?: number;
+  approved_at?: string;
+  created_by?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateExpenseRequest {
+  category_id?: number;
+  vendor?: string;
+  description: string;
+  amount: number;
+  expense_date: string;
+  payment_method: 'Cash' | 'Credit Card' | 'Debit Card' | 'Check' | 'Bank Transfer' | 'Other';
+  reference_number?: string;
+  is_recurring?: boolean;
+  recurring_frequency?: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly';
+  tags?: string;
+  notes?: string;
+}
+
+export interface UpdateExpenseRequest {
+  category_id?: number;
+  vendor?: string;
+  description?: string;
+  amount?: number;
+  expense_date?: string;
+  payment_method?: 'Cash' | 'Credit Card' | 'Debit Card' | 'Check' | 'Bank Transfer' | 'Other';
+  reference_number?: string;
+  is_recurring?: boolean;
+  recurring_frequency?: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly';
+  tags?: string;
+  notes?: string;
+  status?: 'Pending' | 'Approved' | 'Rejected' | 'Paid';
 }
 
 // ==================== VALIDATION HELPERS ====================

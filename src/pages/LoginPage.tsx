@@ -54,11 +54,12 @@ export default function LoginPage() {
 
       toast.success("Login successful!");
       navigate("/"); // Navigate to the dashboard or main application page
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Log and display login errors
       console.error("Login failed:", error);
-      setError(error.message || "Login failed. Please check your credentials.");
-      toast.error(`Login failed: ${error.message || 'An unknown error occurred'}`);
+      const errorMessage = error instanceof Error ? error.message : "Login failed. Please check your credentials.";
+      setError(errorMessage);
+      toast.error(`Login failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

@@ -53,6 +53,257 @@ pub struct LoginResponse {
     pub session_token: String,
 }
 
+// Customer models
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Customer {
+    pub id: i64,
+    pub customer_number: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub company: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub date_of_birth: Option<String>,
+    pub customer_type: String,
+    pub status: String,
+    pub loyalty_points: i32,
+    pub total_spent: f64,
+    pub total_orders: i32,
+    pub average_order_value: f64,
+    pub last_purchase_date: Option<String>,
+    pub notes: Option<String>,
+    pub tags: Option<String>,
+    pub created_by: Option<i64>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateCustomerRequest {
+    pub first_name: String,
+    pub last_name: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub company: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub date_of_birth: Option<String>,
+    pub customer_type: Option<String>,
+    pub notes: Option<String>,
+    pub tags: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateCustomerRequest {
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub company: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub date_of_birth: Option<String>,
+    pub customer_type: Option<String>,
+    pub status: Option<String>,
+    pub notes: Option<String>,
+    pub tags: Option<String>,
+}
+
+// Supplier models
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Supplier {
+    pub id: i64,
+    pub supplier_number: String,
+    pub company_name: String,
+    pub contact_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub website: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub payment_terms: Option<String>,
+    pub tax_id: Option<String>,
+    pub notes: Option<String>,
+    pub rating: Option<i32>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateSupplierRequest {
+    pub company_name: String,
+    pub contact_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub website: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub payment_terms: Option<String>,
+    pub tax_id: Option<String>,
+    pub notes: Option<String>,
+    pub rating: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateSupplierRequest {
+    pub company_name: Option<String>,
+    pub contact_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub website: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub payment_terms: Option<String>,
+    pub tax_id: Option<String>,
+    pub notes: Option<String>,
+    pub rating: Option<i32>,
+    pub is_active: Option<bool>,
+}
+
+// Expense models
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Expense {
+    pub id: i64,
+    pub expense_number: String,
+    pub category_id: Option<i64>,
+    pub vendor: Option<String>,
+    pub description: String,
+    pub amount: f64,
+    pub expense_date: String,
+    pub payment_method: String,
+    pub reference_number: Option<String>,
+    pub receipt_url: Option<String>,
+    pub is_recurring: bool,
+    pub recurring_frequency: Option<String>,
+    pub tags: Option<String>,
+    pub notes: Option<String>,
+    pub status: String,
+    pub approved_by: Option<i64>,
+    pub approved_at: Option<String>,
+    pub created_by: Option<i64>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateExpenseRequest {
+    pub category_id: Option<i64>,
+    pub vendor: Option<String>,
+    pub description: String,
+    pub amount: f64,
+    pub expense_date: String,
+    pub payment_method: String,
+    pub reference_number: Option<String>,
+    pub is_recurring: Option<bool>,
+    pub recurring_frequency: Option<String>,
+    pub tags: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateExpenseRequest {
+    pub category_id: Option<i64>,
+    pub vendor: Option<String>,
+    pub description: Option<String>,
+    pub amount: Option<f64>,
+    pub expense_date: Option<String>,
+    pub payment_method: Option<String>,
+    pub reference_number: Option<String>,
+    pub is_recurring: Option<bool>,
+    pub recurring_frequency: Option<String>,
+    pub tags: Option<String>,
+    pub notes: Option<String>,
+    pub status: Option<String>,
+}
+
+// Purchase Order models
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PurchaseOrder {
+    pub id: i64,
+    pub po_number: String,
+    pub supplier_id: i64,
+    pub order_date: String,
+    pub expected_delivery_date: Option<String>,
+    pub actual_delivery_date: Option<String>,
+    pub subtotal: f64,
+    pub tax: f64,
+    pub shipping_cost: f64,
+    pub total_amount: f64,
+    pub status: String,
+    pub payment_status: String,
+    pub payment_method: Option<String>,
+    pub notes: Option<String>,
+    pub created_by: Option<i64>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PurchaseOrderItem {
+    pub id: i64,
+    pub purchase_order_id: i64,
+    pub product_id: i64,
+    pub quantity: i32,
+    pub received_quantity: i32,
+    pub unit_cost: f64,
+    pub total_cost: f64,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PurchaseOrderItemInput {
+    pub product_id: i64,
+    pub quantity: i32,
+    pub unit_cost: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreatePurchaseOrderRequest {
+    pub supplier_id: i64,
+    pub order_date: String,
+    pub expected_delivery_date: Option<String>,
+    pub items: Vec<PurchaseOrderItemInput>,
+    pub tax: Option<f64>,
+    pub shipping_cost: Option<f64>,
+    pub payment_method: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdatePurchaseOrderRequest {
+    pub supplier_id: Option<i64>,
+    pub order_date: Option<String>,
+    pub expected_delivery_date: Option<String>,
+    pub actual_delivery_date: Option<String>,
+    pub status: Option<String>,
+    pub payment_status: Option<String>,
+    pub payment_method: Option<String>,
+    pub tax: Option<f64>,
+    pub shipping_cost: Option<f64>,
+    pub notes: Option<String>,
+}
+
 // Product models
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Product {

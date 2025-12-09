@@ -8,7 +8,7 @@ export interface RealtimeDataConfig {
 
 export function useRealtimeData<T>(
     commandName: string,
-    args?: any,
+    args?: Record<string, unknown>,
     config: RealtimeDataConfig = {}
 ) {
     const [data, setData] = useState<T | null>(null);
