@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sqlx::{Row, SqlitePool};
+use sqlx::{Row, SqlitePool, Column};
 use std::collections::HashMap;
 use tauri::State;
 
@@ -102,19 +102,21 @@ async fn upsert_record(pool: &SqlitePool, table_name: &str, record: &Value) -> R
     let fields: Vec<String> = record_obj.keys().cloned().collect();
     let placeholders: Vec<String> = (1..=fields.len()).map(|i| format!("?{}", i)).collect();
 
+    // Build UPDATE clause, excluding 'id' field
+    let update_clauses: Vec<String> = fields
+        .iter()
+        .enumerate()
+        .filter(|(_, field)| *field != "id") // Skip id field by name, not index
+        .map(|(i, field)| format!("{} = ?{}", field, i + 1))
+        .collect();
+
     // Build UPSERT query
     let query = format!(
         "INSERT INTO {} ({}) VALUES ({}) ON CONFLICT(id) DO UPDATE SET {}",
         table_name,
         fields.join(", "),
         placeholders.join(", "),
-        fields
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| *i > 0) // Skip id field in UPDATE
-            .map(|(i, field)| format!("{} = ?{}", field, i + 1))
-            .collect::<Vec<_>>()
-            .join(", ")
+        update_clauses.join(", ")
     );
 
     // Bind values dynamically
@@ -128,11 +130,15 @@ async fn upsert_record(pool: &SqlitePool, table_name: &str, record: &Value) -> R
                     query_builder = query_builder.bind(i);
                 } else if let Some(f) = n.as_f64() {
                     query_builder = query_builder.bind(f);
+                } else {
+                    return Err(format!("Unsupported number type for field {}", field));
                 }
             }
             Value::Bool(b) => query_builder = query_builder.bind(b),
             Value::Null => query_builder = query_builder.bind(Option::<String>::None),
-            _ => {}
+            _ => {
+                return Err(format!("Unsupported value type for field {}", field));
+            }
         }
     }
 
@@ -200,16 +206,40 @@ async fn fetch_table_data(pool: &SqlitePool, table_name: &str) -> Result<Vec<Val
     let mut records = Vec::new();
 
     for row in rows {
-        // Convert SQLite row to JSON Value
-        // This is a simplified version - you may need to handle specific column types
         let mut record = serde_json::Map::new();
-
-        // Get column names (this is a simplified approach)
-        // In production, you'd want to iterate through columns properly
-        let column_count = row.len();
-        for i in 0..column_count {
-            // You'd need to implement proper column name and value extraction here
-            // This is a placeholder and would need actual implementation
+        
+        // Get column information from the row
+        let columns = row.columns();
+        
+        for (idx, column) in columns.iter().enumerate() {
+            let column_name = column.name();
+            
+            // Try to extract value based on SQLite type
+            // SQLite has dynamic typing, so we try multiple types
+            if let Ok(val) = row.try_get::<String, _>(idx) {
+                record.insert(column_name.to_string(), Value::String(val));
+            } else if let Ok(val) = row.try_get::<i64, _>(idx) {
+                record.insert(column_name.to_string(), Value::Number(val.into()));
+            } else if let Ok(val) = row.try_get::<f64, _>(idx) {
+                if let Some(num) = serde_json::Number::from_f64(val) {
+                    record.insert(column_name.to_string(), Value::Number(num));
+                }
+            } else if let Ok(val) = row.try_get::<bool, _>(idx) {
+                record.insert(column_name.to_string(), Value::Bool(val));
+            } else if let Ok(_) = row.try_get::<Option<String>, _>(idx) {
+                // NULL value
+                record.insert(column_name.to_string(), Value::Null);
+            } else {
+                // If all else fails, try to get as string
+                if let Ok(val) = row.try_get::<Option<String>, _>(idx) {
+                    record.insert(
+                        column_name.to_string(),
+                        val.map(Value::String).unwrap_or(Value::Null),
+                    );
+                } else {
+                    record.insert(column_name.to_string(), Value::Null);
+                }
+            }
         }
 
         records.push(Value::Object(record));
