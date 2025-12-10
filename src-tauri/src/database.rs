@@ -352,6 +352,9 @@ pub fn get_migrations() -> Vec<Migration> {
         version: 4,
         description: "add_address_fields_to_locations",
         sql: r#"
+                -- Clean up any existing locations_old table from previous failed migration
+                DROP TABLE IF EXISTS locations_old;
+                
                 -- Rename existing locations table
                 ALTER TABLE locations RENAME TO locations_old;
                 
