@@ -299,8 +299,101 @@ export default function ProductVariantManager({
               <Badge variant="outline" className="text-xs">{productName}</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0 sm:p-6">
-            <div className="overflow-x-auto -mx-0 sm:mx-0">
+          <CardContent className="p-3 sm:p-6">
+            {/* Mobile/Tablet Card Layout (< 1024px) */}
+            <div className="lg:hidden space-y-3">
+              {variantCombinations.map((variant, index) => (
+                <Card key={index} className="border-2">
+                  <CardContent className="p-4 space-y-3">
+                    {/* Variant Name and Delete Button */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <p className="font-medium text-sm">{variant.variant_name}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {variant.values.map((v, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              {v.value}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeVariant(index)}
+                        className="text-destructive flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    {/* SKU and Barcode */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">SKU</Label>
+                        <Input
+                          value={variant.sku}
+                          onChange={(e) => updateVariant(index, "sku", e.target.value)}
+                          className="font-mono text-sm h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Barcode (Optional)</Label>
+                        <Input
+                          value={variant.barcode}
+                          onChange={(e) => updateVariant(index, "barcode", e.target.value)}
+                          placeholder="Optional"
+                          className="font-mono text-sm h-9"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Cost Price</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={variant.cost_price}
+                          onChange={(e) =>
+                            updateVariant(index, "cost_price", parseFloat(e.target.value) || 0)
+                          }
+                          className="text-sm h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Selling Price</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={variant.selling_price}
+                          onChange={(e) =>
+                            updateVariant(index, "selling_price", parseFloat(e.target.value) || 0)
+                          }
+                          className="text-sm h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Wholesale Price</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={variant.wholesale_price}
+                          onChange={(e) =>
+                            updateVariant(index, "wholesale_price", parseFloat(e.target.value) || 0)
+                          }
+                          className="text-sm h-9"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Desktop Table Layout (>= 1024px) */}
+            <div className="hidden lg:block overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
