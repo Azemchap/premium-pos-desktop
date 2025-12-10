@@ -4,6 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrency } from "@/hooks/useCurrency";
+import { SalesReport, FinancialMetrics, CashFlowSummary, Expense } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import {
   DollarSign,
@@ -15,40 +16,35 @@ import {
   PiggyBank,
   ArrowUpRight,
   ArrowDownRight,
+  BarChart3,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-interface FinanceData {
-  total_revenue: number;
-  total_expenses: number;
-  net_profit: number;
-  revenue_growth: number;
-  expense_growth: number;
-  profit_margin: number;
-  accounts_receivable: number;
-  accounts_payable: number;
-}
-
 export default function Finance() {
   const { format } = useCurrency();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<FinanceData>({
-    total_revenue: 0,
-    total_expenses: 0,
-    net_profit: 0,
-    revenue_growth: 0,
-    expense_growth: 0,
-    profit_margin: 0,
-    accounts_receivable: 0,
-    accounts_payable: 0,
-  });
+  const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
+  const [financialMetrics, setFinancialMetrics] = useState<FinancialMetrics | null>(null);
+  const [cashFlowSummary, setCashFlowSummary] = useState<CashFlowSummary | null>(null);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
 
   const loadFinanceData = async () => {
     try {
       setLoading(true);
-      const result = await invoke<FinanceData>("get_finance_overview");
-      setData(result);
+
+      // Load all financial data in parallel
+      const [salesData, metricsData, cashFlowData, expensesData] = await Promise.all([
+        invoke<SalesReport>("get_sales_report", { start_date: null, end_date: null }),
+        invoke<FinancialMetrics>("get_financial_metrics", { start_date: null, end_date: null }),
+        invoke<CashFlowSummary>("get_cash_flow_summary", { start_date: null, end_date: null }),
+        invoke<Expense[]>("get_expenses", { status: null }),
+      ]);
+
+      setSalesReport(salesData);
+      setFinancialMetrics(metricsData);
+      setCashFlowSummary(cashFlowData);
+      setExpenses(expensesData);
     } catch (error) {
       console.error("Failed to load finance data:", error);
       toast.error("Failed to load finance data");
@@ -78,13 +74,23 @@ export default function Finance() {
             <div className={`flex items-center gap-1 text-sm ${trend >= 0 ? "text-green-600" : "text-red-600"}`}>
               {trend >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
               <span className="font-medium">{Math.abs(trend).toFixed(1)}%</span>
-              <span className="text-muted-foreground">{trendValue}</span>
+              {trendValue && <span className="text-muted-foreground">{trendValue}</span>}
             </div>
           )}
         </div>
       </CardContent>
     </Card>
   );
+
+  // Calculate total expenses
+  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+  // Group expenses by category
+  const expensesByCategory = expenses.reduce((acc, expense) => {
+    const category = expense.category_id ? `Category ${expense.category_id}` : 'Uncategorized';
+    acc[category] = (acc[category] || 0) + expense.amount;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -113,31 +119,29 @@ export default function Finance() {
               <>
                 <StatCard
                   title="Total Revenue"
-                  value={format(data.total_revenue)}
+                  value={format(salesReport?.total_sales || 0)}
                   icon={TrendingUp}
-                  trend={data.revenue_growth}
-                  trendValue="vs last month"
+                  trend={financialMetrics?.revenue_growth_rate}
+                  trendValue="growth rate"
                   color="bg-gradient-to-br from-blue-500 to-blue-600"
                 />
                 <StatCard
                   title="Total Expenses"
-                  value={format(data.total_expenses)}
+                  value={format(totalExpenses)}
                   icon={TrendingDown}
-                  trend={-data.expense_growth}
-                  trendValue="vs last month"
                   color="bg-gradient-to-br from-red-500 to-red-600"
                 />
                 <StatCard
                   title="Net Profit"
-                  value={format(data.net_profit)}
+                  value={format(financialMetrics?.net_profit || 0)}
                   icon={Wallet}
-                  trend={data.revenue_growth - data.expense_growth}
-                  trendValue="vs last month"
+                  trend={financialMetrics?.net_profit_margin}
+                  trendValue="margin"
                   color="bg-gradient-to-br from-green-500 to-green-600"
                 />
                 <StatCard
-                  title="Profit Margin"
-                  value={`${data.profit_margin.toFixed(1)}%`}
+                  title="Gross Profit Margin"
+                  value={`${(financialMetrics?.gross_profit_margin || 0).toFixed(1)}%`}
                   icon={PiggyBank}
                   color="bg-gradient-to-br from-purple-500 to-purple-600"
                 />
@@ -145,13 +149,13 @@ export default function Finance() {
             )}
           </div>
 
-          {/* Accounts Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Cash Flow Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" />
-                  Accounts Receivable
+                  <ArrowUpRight className="w-5 h-5 text-green-600" />
+                  Cash Inflow
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -159,8 +163,8 @@ export default function Finance() {
                   <Skeleton className="h-16 w-full" />
                 ) : (
                   <div>
-                    <p className="text-3xl font-bold text-green-600">{format(data.accounts_receivable)}</p>
-                    <p className="text-sm text-muted-foreground mt-1">Amount owed by customers</p>
+                    <p className="text-3xl font-bold text-green-600">{format(cashFlowSummary?.cash_inflow || 0)}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Total cash received</p>
                   </div>
                 )}
               </CardContent>
@@ -169,8 +173,8 @@ export default function Finance() {
             <Card className="shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Receipt className="w-5 h-5" />
-                  Accounts Payable
+                  <ArrowDownRight className="w-5 h-5 text-red-600" />
+                  Cash Outflow
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -178,8 +182,29 @@ export default function Finance() {
                   <Skeleton className="h-16 w-full" />
                 ) : (
                   <div>
-                    <p className="text-3xl font-bold text-red-600">{format(data.accounts_payable)}</p>
-                    <p className="text-sm text-muted-foreground mt-1">Amount owed to suppliers</p>
+                    <p className="text-3xl font-bold text-red-600">{format(cashFlowSummary?.cash_outflow || 0)}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Total cash paid</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Wallet className="w-5 h-5" />
+                  Net Cash Flow
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <Skeleton className="h-16 w-full" />
+                ) : (
+                  <div>
+                    <p className={`text-3xl font-bold ${(cashFlowSummary?.net_cash_flow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {format(cashFlowSummary?.net_cash_flow || 0)}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">Net position</p>
                   </div>
                 )}
               </CardContent>
@@ -197,20 +222,24 @@ export default function Finance() {
               ) : (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b">
-                    <span className="text-sm font-medium">Revenue</span>
-                    <span className="text-sm font-bold text-green-600">{format(data.total_revenue)}</span>
+                    <span className="text-sm font-medium">Gross Revenue</span>
+                    <span className="text-sm font-bold text-green-600">{format(salesReport?.total_sales || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b">
-                    <span className="text-sm font-medium">Expenses</span>
-                    <span className="text-sm font-bold text-red-600">-{format(data.total_expenses)}</span>
+                    <span className="text-sm font-medium">Cost of Goods Sold</span>
+                    <span className="text-sm font-bold text-red-600">-{format(financialMetrics?.total_cogs || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b">
                     <span className="text-sm font-medium">Gross Profit</span>
-                    <span className="text-sm font-bold">{format(data.total_revenue - data.total_expenses)}</span>
+                    <span className="text-sm font-bold">{format(financialMetrics?.gross_profit || 0)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b">
+                    <span className="text-sm font-medium">Operating Expenses</span>
+                    <span className="text-sm font-bold text-red-600">-{format(financialMetrics?.operating_expenses || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center py-3">
                     <span className="text-base font-semibold">Net Profit</span>
-                    <span className="text-xl font-bold text-green-600">{format(data.net_profit)}</span>
+                    <span className="text-xl font-bold text-green-600">{format(financialMetrics?.net_profit || 0)}</span>
                   </div>
                 </div>
               )}
@@ -219,39 +248,272 @@ export default function Finance() {
         </TabsContent>
 
         <TabsContent value="revenue" className="space-y-4">
-          <Card className="shadow-md">
-            <CardHeader>
-              <CardTitle>Revenue Analysis</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center py-12">
-              <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <p className="text-muted-foreground">Detailed revenue analytics coming soon</p>
-            </CardContent>
-          </Card>
+          {loading ? (
+            <Skeleton className="h-96 w-full" />
+          ) : (
+            <>
+              {/* Revenue Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <StatCard
+                  title="Total Sales"
+                  value={format(salesReport?.total_sales || 0)}
+                  icon={DollarSign}
+                  color="bg-gradient-to-br from-blue-500 to-blue-600"
+                />
+                <StatCard
+                  title="Total Transactions"
+                  value={salesReport?.total_transactions || 0}
+                  icon={Receipt}
+                  color="bg-gradient-to-br from-purple-500 to-purple-600"
+                />
+                <StatCard
+                  title="Average Transaction"
+                  value={format(salesReport?.average_transaction || 0)}
+                  icon={BarChart3}
+                  color="bg-gradient-to-br from-green-500 to-green-600"
+                />
+              </div>
+
+              {/* Revenue by Payment Method */}
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle>Revenue by Payment Method</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center py-3 border-b">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="w-5 h-5 text-green-600" />
+                        <span className="font-medium">Cash</span>
+                      </div>
+                      <span className="font-bold">{format(salesReport?.cash_sales || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 border-b">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-5 h-5 text-blue-600" />
+                        <span className="font-medium">Card</span>
+                      </div>
+                      <span className="font-bold">{format(salesReport?.card_sales || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 border-b">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-5 h-5 text-purple-600" />
+                        <span className="font-medium">Mobile Payment</span>
+                      </div>
+                      <span className="font-bold">{format(salesReport?.mobile_sales || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3">
+                      <div className="flex items-center gap-2">
+                        <Receipt className="w-5 h-5 text-orange-600" />
+                        <span className="font-medium">Check</span>
+                      </div>
+                      <span className="font-bold">{format(salesReport?.check_sales || 0)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Profitability Metrics */}
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle>Profitability Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Total Profit</p>
+                      <p className="text-3xl font-bold text-green-600">{format(salesReport?.total_profit || 0)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Profit Margin</p>
+                      <p className="text-3xl font-bold text-blue-600">{(salesReport?.profit_margin || 0).toFixed(2)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Average Basket Size</p>
+                      <p className="text-3xl font-bold">{format(financialMetrics?.average_basket_size || 0)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">ROI</p>
+                      <p className="text-3xl font-bold text-purple-600">{(financialMetrics?.return_on_investment || 0).toFixed(2)}%</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-4">
-          <Card className="shadow-md">
-            <CardHeader>
-              <CardTitle>Expense Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center py-12">
-              <TrendingDown className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <p className="text-muted-foreground">Detailed expense analytics coming soon</p>
-            </CardContent>
-          </Card>
+          {loading ? (
+            <Skeleton className="h-96 w-full" />
+          ) : (
+            <>
+              {/* Expense Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <StatCard
+                  title="Total Expenses"
+                  value={format(totalExpenses)}
+                  icon={TrendingDown}
+                  color="bg-gradient-to-br from-red-500 to-red-600"
+                />
+                <StatCard
+                  title="Total Items"
+                  value={expenses.length}
+                  icon={Receipt}
+                  color="bg-gradient-to-br from-orange-500 to-orange-600"
+                />
+                <StatCard
+                  title="Operating Expenses"
+                  value={format(financialMetrics?.operating_expenses || 0)}
+                  icon={DollarSign}
+                  color="bg-gradient-to-br from-purple-500 to-purple-600"
+                />
+              </div>
+
+              {/* Expense Breakdown by Category */}
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle>Expense Breakdown by Category</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {Object.keys(expensesByCategory).length > 0 ? (
+                    <div className="space-y-4">
+                      {Object.entries(expensesByCategory)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([category, amount]) => (
+                          <div key={category} className="flex justify-between items-center py-3 border-b last:border-0">
+                            <span className="font-medium">{category}</span>
+                            <span className="font-bold">{format(amount)}</span>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No expenses recorded yet
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Expenses */}
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle>Recent Expenses</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {expenses.length > 0 ? (
+                    <div className="space-y-3">
+                      {expenses.slice(0, 10).map((expense) => (
+                        <div key={expense.id} className="flex justify-between items-start py-2 border-b last:border-0">
+                          <div className="flex-1">
+                            <p className="font-medium">{expense.description}</p>
+                            <div className="flex gap-3 mt-1">
+                              <span className="text-sm text-muted-foreground">{expense.expense_date}</span>
+                              {expense.vendor && (
+                                <span className="text-sm text-muted-foreground">• {expense.vendor}</span>
+                              )}
+                              <span className={`text-sm px-2 py-0.5 rounded ${
+                                expense.status === 'Paid' ? 'bg-green-100 text-green-700' :
+                                expense.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {expense.status}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="font-bold text-red-600">{format(expense.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No expenses recorded yet
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="cashflow" className="space-y-4">
-          <Card className="shadow-md">
-            <CardHeader>
-              <CardTitle>Cash Flow Statement</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center py-12">
-              <Wallet className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <p className="text-muted-foreground">Cash flow analytics coming soon</p>
-            </CardContent>
-          </Card>
+          {loading ? (
+            <Skeleton className="h-96 w-full" />
+          ) : (
+            <>
+              {/* Cash Flow Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <StatCard
+                  title="Cash Inflow"
+                  value={format(cashFlowSummary?.cash_inflow || 0)}
+                  icon={ArrowUpRight}
+                  color="bg-gradient-to-br from-green-500 to-green-600"
+                />
+                <StatCard
+                  title="Cash Outflow"
+                  value={format(cashFlowSummary?.cash_outflow || 0)}
+                  icon={ArrowDownRight}
+                  color="bg-gradient-to-br from-red-500 to-red-600"
+                />
+                <StatCard
+                  title="Net Cash Flow"
+                  value={format(cashFlowSummary?.net_cash_flow || 0)}
+                  icon={Wallet}
+                  color={`bg-gradient-to-br ${(cashFlowSummary?.net_cash_flow || 0) >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'}`}
+                />
+              </div>
+
+              {/* Cash Flow Statement */}
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle>Cash Flow Statement</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center py-3 border-b">
+                      <span className="text-sm font-medium">Opening Balance</span>
+                      <span className="text-sm font-bold">{format(cashFlowSummary?.opening_balance || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 border-b">
+                      <span className="text-sm font-medium text-green-600">+ Cash Inflow</span>
+                      <span className="text-sm font-bold text-green-600">{format(cashFlowSummary?.cash_inflow || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 border-b">
+                      <span className="text-sm font-medium text-red-600">- Cash Outflow</span>
+                      <span className="text-sm font-bold text-red-600">{format(cashFlowSummary?.cash_outflow || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 border-b">
+                      <span className="text-sm font-medium">Cash from Operations</span>
+                      <span className="text-sm font-bold">{format(cashFlowSummary?.cash_from_operations || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3">
+                      <span className="text-base font-semibold">Closing Balance</span>
+                      <span className="text-xl font-bold text-green-600">{format(cashFlowSummary?.closing_balance || 0)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Additional Metrics */}
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle>Additional Financial Metrics</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Inventory Turnover Ratio</p>
+                      <p className="text-3xl font-bold">{(financialMetrics?.inventory_turnover_ratio || 0).toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Revenue Growth Rate</p>
+                      <p className="text-3xl font-bold text-green-600">{(financialMetrics?.revenue_growth_rate || 0).toFixed(2)}%</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

@@ -3,8 +3,10 @@ import SettingsApplier from "@/components/SettingsApplier";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import Appointments from "@/pages/Appointments";
 import Cart from "@/pages/Cart";
+import Customers from "@/pages/Customers";
 import Dashboard from "@/pages/Dashboard";
 import Employees from "@/pages/Employees";
+import Expenses from "@/pages/Expenses";
 import Finance from "@/pages/Finance";
 import Inventory from "@/pages/Inventory";
 import LoginPage from "@/pages/LoginPage";
@@ -20,6 +22,7 @@ import Returns from "@/pages/Returns";
 import Sales from "@/pages/Sales";
 import SalesRecords from "@/pages/SalesRecords";
 import Settings from "@/pages/Settings";
+import Suppliers from "@/pages/Suppliers";
 import TimeTracking from "@/pages/TimeTracking";
 import Unauthorized from "@/pages/Unauthorized";
 import Users from "@/pages/Users";
@@ -176,6 +179,15 @@ useEffect(() => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/suppliers"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+                <Suppliers />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/customers" element={<Customers />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/reports" element={<Reports />} />
           <Route
@@ -241,6 +253,14 @@ useEffect(() => {
             element={
               <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
                 <Finance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+                <Expenses />
               </ProtectedRoute>
             }
           />

@@ -116,6 +116,7 @@ const productsGroup: NavigationGroup = {
     { name: "Product Catalog", href: "/products", icon: Package },
     { name: "Master Data", href: "/master-data", icon: Tag, roles: ["Admin"] },
     { name: "Inventory", href: "/inventory", icon: Database },
+    { name: "Customers", href: "/customers", icon: Users },
     { name: "Suppliers", href: "/suppliers", icon: Truck },
     { name: "Purchase Orders", href: "/purchase-orders", icon: ShoppingBag },
   ],

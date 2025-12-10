@@ -259,11 +259,35 @@ export interface SalesReport {
   total_transactions: number;
   average_transaction: number;
   total_profit: number;
+  total_tax?: number;
+  total_discount?: number;
   profit_margin: number;
   cash_sales: number;
   card_sales: number;
   mobile_sales: number;
   check_sales: number;
+}
+
+export interface FinancialMetrics {
+  gross_profit: number;
+  gross_profit_margin: number;
+  net_profit: number;
+  net_profit_margin: number;
+  revenue_growth_rate: number;
+  average_basket_size: number;
+  inventory_turnover_ratio: number;
+  return_on_investment: number;
+  total_cogs: number;
+  operating_expenses: number;
+}
+
+export interface CashFlowSummary {
+  cash_inflow: number;
+  cash_outflow: number;
+  net_cash_flow: number;
+  cash_from_operations: number;
+  opening_balance: number;
+  closing_balance: number;
 }
 
 // ==================== CUSTOMER TYPES (For Future) ====================
