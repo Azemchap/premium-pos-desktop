@@ -692,3 +692,291 @@ pub struct VariantInventory {
     pub available_stock: i32,
     pub last_updated: String,
 }
+
+// ==================== EMPLOYEE MODELS ====================
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Employee {
+    pub id: i64,
+    pub user_id: i64,
+    pub employee_number: String,
+    pub department: Option<String>,
+    pub position: Option<String>,
+    pub hire_date: Option<String>,
+    pub employment_type: String,
+    pub salary_type: String,
+    pub hourly_rate: f64,
+    pub salary: f64,
+    pub commission_rate: f64,
+    pub emergency_contact_name: Option<String>,
+    pub emergency_contact_phone: Option<String>,
+    pub notes: Option<String>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateEmployeeRequest {
+    pub user_id: i64,
+    pub department: Option<String>,
+    pub position: Option<String>,
+    pub hire_date: Option<String>,
+    pub employment_type: String,
+    pub salary_type: String,
+    pub hourly_rate: Option<f64>,
+    pub salary: Option<f64>,
+    pub commission_rate: Option<f64>,
+    pub emergency_contact_name: Option<String>,
+    pub emergency_contact_phone: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateEmployeeRequest {
+    pub department: Option<String>,
+    pub position: Option<String>,
+    pub hire_date: Option<String>,
+    pub employment_type: Option<String>,
+    pub salary_type: Option<String>,
+    pub hourly_rate: Option<f64>,
+    pub salary: Option<f64>,
+    pub commission_rate: Option<f64>,
+    pub emergency_contact_name: Option<String>,
+    pub emergency_contact_phone: Option<String>,
+    pub notes: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+// ==================== TIME TRACKING MODELS ====================
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct TimeEntry {
+    pub id: i64,
+    pub employee_id: i64,
+    pub clock_in: String,
+    pub clock_out: Option<String>,
+    pub break_minutes: i32,
+    pub total_hours: f64,
+    pub hourly_rate: f64,
+    pub total_pay: f64,
+    pub notes: Option<String>,
+    pub status: String,
+    pub approved_by: Option<i64>,
+    pub approved_at: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateTimeEntryRequest {
+    pub clock_in: Option<String>,
+    pub clock_out: Option<String>,
+    pub break_minutes: Option<i32>,
+    pub notes: Option<String>,
+    pub status: Option<String>,
+    pub approved_by: Option<i64>,
+}
+
+// ==================== ORGANIZATION MODELS ====================
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Organization {
+    pub id: i64,
+    pub name: String,
+    pub slug: String,
+    pub industry: Option<String>,
+    pub business_type: Option<String>,
+    pub logo_url: Option<String>,
+    pub website: Option<String>,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: String,
+    pub tax_id: Option<String>,
+    pub subscription_plan: String,
+    pub subscription_status: String,
+    pub trial_ends_at: Option<String>,
+    pub subscription_ends_at: Option<String>,
+    pub settings: Option<String>,
+    pub custom_fields: Option<String>,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateOrganizationRequest {
+    pub name: Option<String>,
+    pub industry: Option<String>,
+    pub business_type: Option<String>,
+    pub logo_url: Option<String>,
+    pub website: Option<String>,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub tax_id: Option<String>,
+    pub settings: Option<String>,
+    pub custom_fields: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Location {
+    pub id: i64,
+    pub name: String,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: String,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub is_primary: bool,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateLocationRequest {
+    pub name: String,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub is_primary: Option<bool>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateLocationRequest {
+    pub name: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub is_primary: Option<bool>,
+    pub is_active: Option<bool>,
+}
+
+// ==================== PROMOTION MODELS ====================
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Promotion {
+    pub id: i64,
+    pub code: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub discount_type: String,
+    pub discount_value: f64,
+    pub min_purchase_amount: f64,
+    pub max_discount_amount: Option<f64>,
+    pub start_date: String,
+    pub end_date: Option<String>,
+    pub usage_limit: Option<i32>,
+    pub usage_count: i32,
+    pub customer_type: Option<String>,
+    pub applicable_products: Option<String>,
+    pub applicable_categories: Option<String>,
+    pub is_active: bool,
+    pub created_by: Option<i64>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreatePromotionRequest {
+    pub code: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub discount_type: String,
+    pub discount_value: f64,
+    pub min_purchase_amount: Option<f64>,
+    pub max_discount_amount: Option<f64>,
+    pub start_date: String,
+    pub end_date: Option<String>,
+    pub usage_limit: Option<i32>,
+    pub customer_type: Option<String>,
+    pub applicable_products: Option<String>,
+    pub applicable_categories: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdatePromotionRequest {
+    pub code: Option<String>,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub discount_type: Option<String>,
+    pub discount_value: Option<f64>,
+    pub min_purchase_amount: Option<f64>,
+    pub max_discount_amount: Option<f64>,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+    pub usage_limit: Option<i32>,
+    pub customer_type: Option<String>,
+    pub applicable_products: Option<String>,
+    pub applicable_categories: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+// ==================== APPOINTMENT MODELS ====================
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Appointment {
+    pub id: i64,
+    pub appointment_number: String,
+    pub customer_id: Option<i64>,
+    pub service_id: Option<i64>,
+    pub employee_id: Option<i64>,
+    pub appointment_date: String,
+    pub start_time: String,
+    pub end_time: String,
+    pub duration_minutes: i32,
+    pub status: String,
+    pub price: f64,
+    pub notes: Option<String>,
+    pub reminder_sent: bool,
+    pub created_by: Option<i64>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateAppointmentRequest {
+    pub customer_id: Option<i64>,
+    pub service_id: Option<i64>,
+    pub employee_id: Option<i64>,
+    pub appointment_date: String,
+    pub start_time: String,
+    pub end_time: String,
+    pub duration_minutes: i32,
+    pub status: Option<String>,
+    pub price: f64,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateAppointmentRequest {
+    pub customer_id: Option<i64>,
+    pub service_id: Option<i64>,
+    pub employee_id: Option<i64>,
+    pub appointment_date: Option<String>,
+    pub start_time: Option<String>,
+    pub end_time: Option<String>,
+    pub duration_minutes: Option<i32>,
+    pub status: Option<String>,
+    pub price: Option<f64>,
+    pub notes: Option<String>,
+    pub reminder_sent: Option<bool>,
+}

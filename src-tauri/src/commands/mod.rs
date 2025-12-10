@@ -18,3 +18,8 @@ pub mod notifications;
 pub mod master_data;
 pub mod stock;
 pub mod variants;
+pub mod employees;
+pub mod time_tracking;
+pub mod organization;
+pub mod promotions;
+pub mod appointments;
