@@ -123,7 +123,7 @@ useEffect(() => {
           marginBottom: "24px",
         }} />
         <h2 style={{ fontSize: "20px", color: "#333", marginBottom: "8px" }}>
-          Loading ZTAD POS
+          Loading QorBooks
         </h2>
         <p style={{ fontSize: "14px", color: "#666" }}>
           Initializing database and services...

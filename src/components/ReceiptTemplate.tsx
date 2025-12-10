@@ -83,7 +83,7 @@ export default function ReceiptTemplate({
       {/* Store Header */}
       <div className="text-center mb-6 border-b-2 border-dashed border-black pb-4">
         <h1 className="text-xl font-bold mb-2">
-          {storeConfig?.store_name || "ZTAD POS"}
+          {storeConfig?.store_name || "QorBooks"}
         </h1>
         {storeConfig && (
           <>
@@ -209,7 +209,7 @@ export default function ReceiptTemplate({
         <p className="font-bold mb-2">Thank you for your purchase!</p>
         <p className="mb-1">Please keep this receipt for your records</p>
         <p className="text-[10px] text-gray-600">
-          Powered by ZTAD POS System
+          Powered by QorBooks
         </p>
       </div>
 

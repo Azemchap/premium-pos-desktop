@@ -1,5 +1,5 @@
 {
-    "name": "premium-pos-desktop",
+    "name": "qorbooks-desktop",
     "private": true,
     "version": "0.1.0",
     "type": "module",
@@ -61,6 +61,7 @@
         "@radix-ui/react-toggle": "^1.1.10",
         "@radix-ui/react-toggle-group": "^1.1.11",
         "@radix-ui/react-tooltip": "^1.2.8",
+        "@supabase/supabase-js": "^2.87.1",
         "@tauri-apps/api": "^2.0.0",
         "@tauri-apps/plugin-barcode-scanner": "^2.4.0",
         "@tauri-apps/plugin-fs": "^2.0.0",

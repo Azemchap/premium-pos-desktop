@@ -62,8 +62,8 @@ export default function StoreLogo({
     );
   }
 
-  const storeName = storeConfig?.name || "ZTAD POS";
-  const storePhone = storeConfig?.phone || "Point of Sale";
+  const storeName = storeConfig?.name || "QorBooks";
+  const storePhone = storeConfig?.phone || "Business Management";
   
   // Convert file path to asset URL for Tauri v2
   const logoUrl = storeConfig?.logo_url ? convertFileSrc(storeConfig.logo_url) : null;
