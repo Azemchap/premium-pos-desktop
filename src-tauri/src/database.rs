@@ -372,7 +372,8 @@ pub fn get_migrations() -> Vec<Migration> {
                 );
                 
                 -- Copy data from old table, providing defaults for new columns
-                INSERT INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at)
+                -- Use INSERT OR IGNORE to handle any potential duplicate IDs
+                INSERT OR IGNORE INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at)
                 SELECT 
                     id, 
                     name, 
