@@ -8,6 +8,7 @@ import Dashboard from "@/pages/Dashboard";
 import Employees from "@/pages/Employees";
 import Expenses from "@/pages/Expenses";
 import Finance from "@/pages/Finance";
+import Integrations from "@/pages/Integrations";
 import Inventory from "@/pages/Inventory";
 import LoginPage from "@/pages/LoginPage";
 import MasterData from "@/pages/MasterData";
@@ -285,6 +286,14 @@ useEffect(() => {
             element={
               <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
                 <Expenses />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/integrations"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+                <Integrations />
               </ProtectedRoute>
             }
           />
