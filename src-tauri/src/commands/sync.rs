@@ -231,3 +231,45 @@ pub async fn check_sync_status(pool: State<'_, SqlitePool>) -> Result<bool, Stri
 
     Ok(result.0 == 0)
 }
+
+/// Sync a single record from realtime update
+#[tauri::command]
+pub async fn sync_single_record(
+    pool: State<'_, SqlitePool>,
+    table: String,
+    record: Value,
+) -> Result<String, String> {
+    println!("🔄 Syncing single record to {}", table);
+
+    match upsert_record(&pool, &table, &record).await {
+        Ok(_) => {
+            println!("✅ Successfully synced record to {}", table);
+            Ok(format!("Record synced to {}", table))
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to sync record to {}: {}", table, e);
+            Err(format!("Failed to sync record: {}", e))
+        }
+    }
+}
+
+/// Delete a single record from local database
+#[tauri::command]
+pub async fn delete_local_record(
+    pool: State<'_, SqlitePool>,
+    table: String,
+    id: i64,
+) -> Result<String, String> {
+    println!("🗑️ Deleting record {} from {}", id, table);
+
+    let query = format!("DELETE FROM {} WHERE id = ?", table);
+
+    sqlx::query(&query)
+        .bind(id)
+        .execute(&**pool)
+        .await
+        .map_err(|e| format!("Failed to delete record: {}", e))?;
+
+    println!("✅ Successfully deleted record from {}", table);
+    Ok(format!("Record deleted from {}", table))
+}

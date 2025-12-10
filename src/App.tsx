@@ -31,7 +31,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
-import { autoSync, setupPeriodicSync } from "@/lib/sync-service";
+import { autoSync, setupPeriodicSync, setupRealtimeSync } from "@/lib/sync-service";
 
 function App() {
   const { isAuthenticated, theme } = useAuthStore();
@@ -84,8 +84,12 @@ useEffect(() => {
     // Set up periodic sync (every 5 minutes)
     const cleanupSync = setupPeriodicSync();
 
+    // Set up realtime subscriptions for live updates
+    const cleanupRealtime = setupRealtimeSync();
+
     return () => {
         cleanupSync();
+        cleanupRealtime();
     };
 }, [theme]);
 
