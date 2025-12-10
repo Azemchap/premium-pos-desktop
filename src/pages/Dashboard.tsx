@@ -205,7 +205,7 @@ export default function Dashboard() {
                                 <DollarSign className="w-5 h-5 text-white" />
                             </div>
                         </div>
-                        {getSalesGrowth() !== 0 && (
+                        {/* {getSalesGrowth() !== 0 && (
                             <div className="mt-3 pt-3 border-t border-white/20">
                                 <div className="flex items-center gap-1">
                                     <TrendingUp className={`w-3 h-3 ${getSalesGrowth() > 0 ? 'text-white' : 'text-white/70'}`} />
@@ -214,7 +214,7 @@ export default function Dashboard() {
                                     </span>
                                 </div>
                             </div>
-                        )}
+                        )} */}
                     </div>
                 </Card>
 

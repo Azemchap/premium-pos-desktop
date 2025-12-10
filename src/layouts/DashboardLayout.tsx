@@ -100,11 +100,11 @@ const storeSettingsItems: NavigationItem[] = [
 
 // Core items - always visible at top (no collapsible)
 const coreItems: NavigationItem[] = [
-  { name: "Home", href: "/", icon: Home },
+  { name: "Dashboard", href: "/", icon: Home },
   { name: "New Sale", href: "/sales", icon: ShoppingCart },
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
-  { name: "Returns", href: "/returns", icon: PackageX },
   { name: "Inventory", href: "/inventory", icon: Database },
+  { name: "Returns", href: "/returns", icon: PackageX },
 ];
 
 // Products group
@@ -114,8 +114,7 @@ const productsGroup: NavigationGroup = {
   icon: Package,
   items: [
     { name: "Product Catalog", href: "/products", icon: Package },
-    { name: "Master Data", href: "/master-data", icon: Tag, roles: ["Admin"] },
-    { name: "Inventory", href: "/inventory", icon: Database },
+    { name: "Product Data", href: "/master-data", icon: Tag, roles: ["Admin"] },
     { name: "Suppliers", href: "/suppliers", icon: Truck },
     { name: "Purchase Orders", href: "/purchase-orders", icon: ShoppingBag },
   ],
