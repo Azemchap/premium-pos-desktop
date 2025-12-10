@@ -1,4 +1,4 @@
-// src/pages/Sales.tsx - Enhanced with Validation, Toasts, and Mobile Responsiveness
+// src/pages/Sales.tsx - Optimized Mobile-First Design
 import PageHeader from "@/components/PageHeader";
 import {
   AlertDialog,
@@ -23,14 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -38,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -57,13 +51,12 @@ import {
   Search,
   ShoppingCart,
   Trash2,
-  User,
+  User
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
-// Zod validation schemas
 const customerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100).optional().or(z.literal("")),
   phone: z.string().regex(/^\+?[\d\s-()]*$/, "Invalid phone number").max(20).optional().or(z.literal("")),
@@ -105,9 +98,6 @@ interface CreateSaleRequest {
   notes?: string;
 }
 
-type SortColumn = "name" | "sku" | "category" | "selling_price" | "available_stock";
-type SortDirection = "asc" | "desc";
-
 export default function Sales() {
   const { user } = useAuthStore();
   const { format } = useCurrency();
@@ -132,40 +122,26 @@ export default function Sales() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
   const [isClearCartDialogOpen, setIsClearCartDialogOpen] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
-    name: "",
-    phone: "",
-    email: "",
-  });
-  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
-    method: "cash",
-    amountReceived: 0,
-  });
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({ name: "", phone: "", email: "" });
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({ method: "cash", amountReceived: 0 });
   const [notes, setNotes] = useState("");
   const [barcodeEntry, setBarcodeEntry] = useState("");
-  const [animatedItemId, setAnimatedItemId] = useState<number | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [completedSaleNumber, setCompletedSaleNumber] = useState("");
   const [completedSaleData, setCompletedSaleData] = useState<SaleData | null>(null);
   const [activeCartProductId, setActiveCartProductId] = useState<number | null>(null);
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 20;
-
-  // Sorting
-  const [sortColumn] = useState<SortColumn>("name");
-  const [sortDirection] = useState<SortDirection>("asc");
 
   const loadProducts = async () => {
     try {
       setLoading(true);
       const result = await invoke<ProductWithStock[]>("get_products_with_stock");
       setProducts(result.filter((p) => p.is_active && p.available_stock > 0));
-      toast.success(`✅ Loaded ${result.length} products`);
+      toast.success(`Loaded ${result.length} products`);
     } catch (error) {
       console.error("Failed to load products:", error);
-      toast.error("❌ Failed to load products");
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -173,16 +149,14 @@ export default function Sales() {
 
   const addToCart = (product: ProductWithStock) => {
     if (addItem(product)) {
-      toast.success(`✅ Added ${product.name} to cart`);
+      toast.success(`Added ${product.name}`);
     } else {
       const existingItem = cart.find((item) => item.product.id === product.id);
       const currentCartQuantity = existingItem ? existingItem.quantity : 0;
       if (product.available_stock <= 0) {
-        toast.error(`❌ ${product.name} is out of stock!`);
+        toast.error(`${product.name} is out of stock`);
       } else {
-        toast.error(
-          `❌ Cannot add more - only ${product.available_stock} available (${currentCartQuantity} already in cart)`
-        );
+        toast.error(`Only ${product.available_stock} available (${currentCartQuantity} in cart)`);
       }
     }
   };
@@ -190,27 +164,23 @@ export default function Sales() {
   const updateCartItemQuantity = (productId: number, newQuantity: number) => {
     const item = cart.find((item) => item.product.id === productId);
     if (!item) return;
-
     if (!updateCartQuantity(productId, newQuantity)) {
       if (newQuantity > item.product.available_stock) {
-        toast.error(`❌ Only ${item.product.available_stock} available in stock`);
+        toast.error(`Only ${item.product.available_stock} available`);
       }
-    } else {
-      setAnimatedItemId(productId);
-      setTimeout(() => setAnimatedItemId(null), 180);
     }
   };
 
   const removeFromCart = (productId: number) => {
     const item = cart.find((item) => item.product.id === productId);
     removeItem(productId);
-    toast.success(`🗑️ Removed ${item?.product.name} from cart`);
+    toast.success(`Removed ${item?.product.name}`);
   };
 
   const clearCartHandler = () => {
     clearCart();
     setIsClearCartDialogOpen(false);
-    toast.success("🗑️ Cart cleared");
+    toast.success("Cart cleared");
   };
 
   const validateCustomerInfo = (): boolean => {
@@ -222,12 +192,10 @@ export default function Sales() {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
         error.errors.forEach((err) => {
-          if (err.path[0]) {
-            errors[err.path[0].toString()] = err.message;
-          }
+          if (err.path[0]) errors[err.path[0].toString()] = err.message;
         });
         setValidationErrors(errors);
-        toast.error("❌ Please fix customer information errors");
+        toast.error("Please fix customer information");
       }
       return false;
     }
@@ -236,8 +204,8 @@ export default function Sales() {
   const validatePayment = (): boolean => {
     try {
       paymentSchema.parse(paymentInfo);
-      if (paymentInfo.amountReceived < getSubtotal() + getTaxAmount()) {
-        toast.error("❌ Payment amount is less than total");
+      if (paymentInfo.amountReceived < getTotal()) {
+        toast.error("Payment amount is less than total");
         return false;
       }
       setValidationErrors({});
@@ -246,12 +214,10 @@ export default function Sales() {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
         error.errors.forEach((err) => {
-          if (err.path[0]) {
-            errors[err.path[0].toString()] = err.message;
-          }
+          if (err.path[0]) errors[err.path[0].toString()] = err.message;
         });
         setValidationErrors(errors);
-        toast.error("❌ Please fix payment errors");
+        toast.error("Please fix payment errors");
       }
       return false;
     }
@@ -259,17 +225,15 @@ export default function Sales() {
 
   const proceedToPayment = () => {
     if (cart.length === 0) {
-      toast.error("❌ Cart is empty!");
+      toast.error("Cart is empty");
       return;
     }
     setIsPaymentDialogOpen(true);
-    setPaymentInfo({ ...paymentInfo, amountReceived: getSubtotal() + getTaxAmount() });
+    setPaymentInfo({ ...paymentInfo, amountReceived: getTotal() });
   };
 
   const completeSale = async () => {
-    if (!validatePayment()) {
-      return;
-    }
+    if (!validatePayment()) return;
 
     try {
       const saleRequest: CreateSaleRequest = {
@@ -297,12 +261,10 @@ export default function Sales() {
         shiftId: null,
       });
 
-      const saleData = result;
-      const saleNumber = saleData.sale_number || "SALE-000";
-      setCompletedSaleNumber(saleNumber);
+      setCompletedSaleNumber(result.sale_number || "SALE-000");
 
       const receiptData = {
-        ...saleData,
+        ...result,
         items: cart.map((item) => ({
           product_id: item.product.id,
           product_name: item.product.name,
@@ -321,16 +283,12 @@ export default function Sales() {
       setIsPaymentDialogOpen(false);
       setIsCompletionDialogOpen(true);
 
-      toast.success(`🎉 Sale ${saleNumber} completed successfully!`, {
-        duration: 3000,
-      });
+      toast.success(`Sale ${result.sale_number} completed!`, { duration: 3000 });
 
-      setTimeout(() => {
-        printReceiptWithData(receiptData);
-      }, 800);
+      setTimeout(() => printReceipt(receiptData), 800);
     } catch (error) {
       console.error("Failed to complete sale:", error);
-      toast.error(`❌ Failed to complete sale: ${error}`);
+      toast.error(`Failed to complete sale: ${error}`);
     }
   };
 
@@ -341,7 +299,7 @@ export default function Sales() {
     setNotes("");
     setPaymentInfo({ method: "cash", amountReceived: 0 });
     loadProducts();
-    toast.success("✨ Ready for new sale");
+    toast.success("Ready for new sale");
   };
 
   const handleCloseCompletion = () => {
@@ -353,102 +311,38 @@ export default function Sales() {
     loadProducts();
   };
 
-  const printReceiptWithData = async (saleData: SaleData) => {
-    if (!saleData) {
-      toast.error("❌ No sale data available");
-      return;
-    }
-
-    await printReceipt(saleData);
-  };
-
-  const handlePrintReceipt = () => {
-    if (!completedSaleData) {
-      toast.error("❌ No sale data available");
-      return;
-    }
-    printReceiptWithData(completedSaleData);
-  };
-
-  // Debounce search query
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 300);
-
-    return () => {
-      clearTimeout(handler);
-    };
+    const handler = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
+    return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Filtered and sorted products
-  const filteredAndSortedProducts = useMemo(() => {
-    let filtered = products.filter((product) => {
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
       const matchesSearch =
         !debouncedSearchQuery ||
         product.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         product.sku.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         (product.barcode && product.barcode.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
-
       const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-
       return matchesSearch && matchesCategory;
     });
+  }, [products, debouncedSearchQuery, selectedCategory]);
 
-    filtered.sort((a, b) => {
-      let aValue: string | number, bValue: string | number;
-      switch (sortColumn) {
-        case "name":
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case "sku":
-          aValue = a.sku.toLowerCase();
-          bValue = b.sku.toLowerCase();
-          break;
-        case "category":
-          aValue = (a.category || "").toLowerCase();
-          bValue = (b.category || "").toLowerCase();
-          break;
-        case "selling_price":
-          aValue = a.selling_price;
-          bValue = b.selling_price;
-          break;
-        case "available_stock":
-          aValue = a.available_stock;
-          bValue = b.available_stock;
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    return filtered;
-  }, [products, debouncedSearchQuery, selectedCategory, sortColumn, sortDirection]);
-
-  // Unique categories
   const categories = useMemo(() => {
     return [...new Set(products.map((p) => p.category).filter(Boolean))];
   }, [products]);
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredAndSortedProducts.length / productsPerPage);
-  const paginatedProducts = filteredAndSortedProducts.slice(
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const paginatedProducts = filteredProducts.slice(
     (currentPage - 1) * productsPerPage,
     currentPage * productsPerPage
   );
 
-  // Calculate cart totals
   const cartSubtotal = getSubtotal();
   const cartTax = getTaxAmount();
   const cartTotal = getTotal();
   const change = paymentInfo.amountReceived - cartTotal;
 
-  // Keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -466,29 +360,20 @@ export default function Sales() {
       }
 
       if (e.key === "Enter") {
-        if (isPaymentDialogOpen) {
-          completeSale();
-        } else if (!isCustomerDialogOpen && !isCompletionDialogOpen) {
-          proceedToPayment();
-        }
+        if (isPaymentDialogOpen) completeSale();
+        else if (!isCustomerDialogOpen && !isCompletionDialogOpen) proceedToPayment();
       }
 
-      if (e.key === "+" || e.key === "=") {
-        if (activeCartProductId != null) {
-          const item = cart.find((ci) => ci.product.id === activeCartProductId);
-          if (item) updateCartItemQuantity(item.product.id, item.quantity + 1);
-        }
+      if ((e.key === "+" || e.key === "=") && activeCartProductId != null) {
+        const item = cart.find((ci) => ci.product.id === activeCartProductId);
+        if (item) updateCartItemQuantity(item.product.id, item.quantity + 1);
       }
-      if (e.key === "-" || e.key === "_") {
-        if (activeCartProductId != null) {
-          const item = cart.find((ci) => ci.product.id === activeCartProductId);
-          if (item) updateCartItemQuantity(item.product.id, Math.max(1, item.quantity - 1));
-        }
+      if ((e.key === "-" || e.key === "_") && activeCartProductId != null) {
+        const item = cart.find((ci) => ci.product.id === activeCartProductId);
+        if (item) updateCartItemQuantity(item.product.id, Math.max(1, item.quantity - 1));
       }
-      if (e.key === "Delete" || e.key === "Backspace") {
-        if (activeCartProductId != null) {
-          removeFromCart(activeCartProductId);
-        }
+      if ((e.key === "Delete" || e.key === "Backspace") && activeCartProductId != null) {
+        removeFromCart(activeCartProductId);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -501,49 +386,35 @@ export default function Sales() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchQuery, selectedCategory, sortColumn, sortDirection]);
+  }, [debouncedSearchQuery, selectedCategory]);
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 pb-20 sm:pb-6">
-      <div className="min-h-[60px]">
+    <div className="flex flex-col items-stretch w-full h-screen max-h-screen overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="flex-none border-b bg-background/95">
         <PageHeader icon={ShoppingCart} title="Sales" subtitle="Process sales and manage transactions" />
       </div>
 
-      {/* Sticky Mobile Checkout Bar */}
-      {cart.length > 0 && (
-        <div className="fixed bottom-0 inset-x-0 z-50 sm:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t px-4 py-3 shadow-lg">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-col leading-tight">
-              <span className="text-xs text-muted-foreground">Total</span>
-              <span className="text-lg font-bold">{format(cartTotal)}</span>
-            </div>
-            <Button onClick={proceedToPayment} className="h-10 text-sm font-semibold flex-1 max-w-[200px]" size="sm">
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Checkout ({cart.length})
-            </Button>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Products Section */}
-        <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-          {/* Search and Filters */}
-          <Card className="shadow-md border-2 hover:shadow-lg transition-shadow duration-200">
-            <CardContent className="p-3 sm:p-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-4">
+          {/* Products Section */}
+          <div className="lg:col-span-2 flex flex-col min-h-0 h-full">
+            {/* Search & Filters - Fixed */}
+            <div className="flex-none p-3 border-b lg:border lg:rounded-lg lg:mb-3 bg-background">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="relative col-span-2">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
                     placeholder="Search products..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-9 text-sm"
+                    className="pl-10 h-11 touch-manipulation"
                   />
                 </div>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="All Categories" />
+                  <SelectTrigger className="h-11 touch-manipulation">
+                    <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
@@ -554,411 +425,310 @@ export default function Sales() {
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="">
-                  <Input
-                    placeholder="Scan barcode or enter SKU..."
-                    value={barcodeEntry}
-                    onChange={(e) => setBarcodeEntry(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && barcodeEntry.trim()) {
-                        const code = barcodeEntry.trim().toLowerCase();
-                        const found = products.find(
-                          (p) => (p.barcode && p.barcode.toLowerCase() === code) || p.sku.toLowerCase() === code
-                        );
-                        if (found) {
-                          addToCart(found);
-                          setBarcodeEntry("");
-                        } else {
-                          toast.error("❌ No product matches that barcode/SKU");
-                        }
+                <Input
+                  placeholder="Scan barcode..."
+                  value={barcodeEntry}
+                  onChange={(e) => setBarcodeEntry(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && barcodeEntry.trim()) {
+                      const code = barcodeEntry.trim().toLowerCase();
+                      const found = products.find(
+                        (p) => (p.barcode && p.barcode.toLowerCase() === code) || p.sku.toLowerCase() === code
+                      );
+                      if (found) {
+                        addToCart(found);
+                        setBarcodeEntry("");
+                      } else {
+                        toast.error("No product found");
                       }
-                    }}
-                    className="h-9 text-sm"
-                  />
-                </div>
+                    }
+                  }}
+                  className="h-11 touch-manipulation"
+                />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Products Grid */}
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-40 rounded-lg" />
-              ))}
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 max-h-[calc(100vh-380px)] sm:max-h-[calc(100vh-320px)] overflow-y-auto pr-1 custom-scrollbar">
-                {paginatedProducts.map((product) => (
-                  <Card
-                    key={product.id}
-                    className="group relative overflow-hidden hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer"
-                    onClick={() => addToCart(product)}
-                  >
-                    <CardContent className="p-3 sm:p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-sm sm:text-base line-clamp-2 mb-1 group-hover:text-primary transition-colors">
-                            {product.name}
-                          </h3>
-                          <p className="text-xs text-muted-foreground font-mono truncate">{product.sku}</p>
-                        </div>
-                        {product.available_stock <= product.minimum_stock && (
-                          <Badge variant="destructive" className="text-xs ml-2 px-2 py-0.5 flex-shrink-0">
-                            Low
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <span className="text-xl font-bold text-primary truncate">{format(product.selling_price)}</span>
-                          <Badge variant="outline" className="text-xs font-semibold px-2 py-0.5 flex-shrink-0">
-                            {product.available_stock} left
-                          </Badge>
-                        </div>
-                        {product.category && (
-                          <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                            {product.category}
-                          </Badge>
-                        )}
-                        {/* <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button size="sm" className="w-full h-8 text-xs" variant="secondary">
-                            <Plus className="w-3 h-3 mr-1.5" />
-                            Add to Cart
-                          </Button>
-                        </div> */}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
 
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-4">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (currentPage > 1) setCurrentPage(currentPage - 1);
-                          }}
-                          className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                        />
-                      </PaginationItem>
-                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                        let pageNum: number;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        return (
-                          <PaginationItem key={pageNum}>
-                            <PaginationLink
-                              href="#"
-                              isActive={currentPage === pageNum}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setCurrentPage(pageNum);
-                              }}
-                            >
-                              {pageNum}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      })}
-                      <PaginationItem>
-                        <PaginationNext
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                          }}
-                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
+            {/* Products Grid - Scrollable */}
+            <ScrollArea className="flex-1 min-h-0">
+              {loading ? (
+                <div className="grid grid-cols-2 gap-3 p-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-40 rounded-lg" />
+                  ))}
                 </div>
-              )}
-            </>
-          )}
-
-          {!loading && filteredAndSortedProducts.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-8 sm:py-12">
-                <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No products found</h3>
-                <p className="text-muted-foreground text-sm">Try adjusting your search criteria</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Cart Sidebar */}
-        <div className="lg:col-span-1 space-y-3 sm:space-y-4">
-          <Card className="sticky top-6 shadow-lg border-2">
-            <CardHeader className="border-b-2 p-3 sm:p-4 bg-gradient-to-r from-muted/30 to-muted/10">
-              <CardTitle className="flex items-center justify-between text-base sm:text-lg">
-                <span className="flex items-center gap-2">
-                  <ShoppingCart className="w-5 h-5 text-primary" />
-                  <span>Cart</span>
-                </span>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="px-2.5 py-1 text-sm font-bold">
-                    {cart.reduce((sum, item) => sum + item.quantity, 0)}
-                  </Badge>
-                  {cart.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => setIsClearCartDialogOpen(true)}
-                      aria-label="Clear cart"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
+              ) : filteredProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                  <Package className="w-16 h-16 text-muted-foreground/50 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No products found</h3>
+                  <p className="text-sm text-muted-foreground">Try adjusting your search</p>
                 </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-3 sm:p-4">
-              {/* Cart Items */}
-              <div className="space-y-2 max-h-[300px] sm:max-h-96 overflow-y-auto custom-scrollbar pr-1">
-                {cart.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12 text-muted-foreground">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-xl bg-muted/50 flex items-center justify-center">
-                      <ShoppingCart className="w-8 h-8 sm:w-10 sm:h-10 opacity-30" />
-                    </div>
-                    <p className="font-medium text-sm sm:text-base">Your cart is empty</p>
-                    <p className="text-xs sm:text-sm mt-1">Start adding products</p>
-                  </div>
-                ) : (
-                  cart.map((item) => (
-                    <div
-                      key={item.product.id}
-                      onClick={() => setActiveCartProductId(item.product.id)}
-                      className={`group p-3 bg-muted/30 hover:bg-muted/50 border rounded-lg transition-all cursor-pointer ${activeCartProductId === item.product.id
-                          ? "border-primary/50 ring-2 ring-primary/20"
-                          : "border-transparent hover:border-primary/30"
-                        }`}
+              ) : (
+                <div className="grid grid-cols-2 gap-3 p-3 pb-24 lg:pb-3">
+                  {paginatedProducts.map((product) => (
+                    <button
+                      key={product.id}
+                      onClick={() => addToCart(product)}
+                      className="group relative p-3 bg-card border-2 rounded-lg hover:border-primary/50 hover:shadow-lg transition-all duration-200 touch-manipulation text-left"
                     >
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-sm line-clamp-1" title={item.product.name}>
-                              {item.product.name}
-                            </h4>
-                            <p className="text-xs text-muted-foreground font-mono">{item.product.sku}</p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeFromCart(item.product.id);
-                            }}
-                            aria-label="Remove from cart"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                          <h3 className="font-semibold text-sm line-clamp-2 flex-1 group-hover:text-primary transition-colors">
+                            {product.name}
+                          </h3>
+                          {product.available_stock <= product.minimum_stock && (
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5 flex-shrink-0">
+                              Low
+                            </Badge>
+                          )}
                         </div>
-                        <div className="flex flex-col items-start gap-2">
-                          <div
-                            className={`flex  items-center gap-1 bg-background rounded-md p-1 transition-transform duration-150 ${animatedItemId === item.product.id ? "scale-105" : ""
-                              }`}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 hover:bg-primary/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateCartItemQuantity(item.product.id, item.quantity - 1);
-                              }}
-                              aria-label="Decrease quantity"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </Button>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={item.product.available_stock}
-                              value={item.quantity}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                updateCartItemQuantity(item.product.id, Math.max(1, parseInt(e.target.value) || 1));
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-14 h-7 text-center text-sm"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 hover:bg-primary/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateCartItemQuantity(item.product.id, item.quantity + 1);
-                              }}
-                              aria-label="Increase quantity"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                          <div className="flex items-center gap-2 flex-1">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min={0}
-                              value={item.price}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                updatePrice(item.product.id, Math.max(0, parseFloat(e.target.value) || 0));
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-20 h-7 text-sm"
-                            />
-                            <span className="text-sm font-bold text-primary whitespace-nowrap">
-                              {format(item.total)}
-                            </span>
-                          </div>
+                        <p className="text-xs text-muted-foreground font-mono truncate">{product.sku}</p>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-lg font-bold text-primary truncate">{format(product.selling_price)}</span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 flex-shrink-0">
+                            {product.available_stock}
+                          </Badge>
                         </div>
+                        {product.category && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                            {product.category}
+                          </Badge>
+                        )}
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
 
-              {/* Cart Totals & Actions */}
-              {cart.length > 0 && (
-                <>
-                  <div className="border-t-2 pt-3 space-y-2">
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <span className="font-semibold">{format(cartSubtotal)}</span>
+          {/* Cart Sidebar - Desktop */}
+          <div className="hidden lg:flex lg:col-span-1 flex-col min-h-0 h-full">
+            <Card className="flex flex-col flex-1 min-h-0 border-2">
+              {/* Cart Header */}
+              <CardHeader className="flex-none border-b p-3 bg-muted/30">
+                <CardTitle className="flex items-center justify-between text-base">
+                  <span className="flex items-center gap-2">
+                    <ShoppingCart className="w-5 h-5 text-primary" />
+                    Cart
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="px-2 py-1 text-sm font-bold">
+                      {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                    </Badge>
+                    {cart.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                        onClick={() => setIsClearCartDialogOpen(true)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+
+              {/* Cart Items - Scrollable */}
+              <ScrollArea className="flex-1 min-h-0">
+                <CardContent className="p-3 space-y-2">
+                  {cart.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="w-20 h-20 rounded-xl bg-muted/50 flex items-center justify-center mb-4">
+                        <ShoppingCart className="w-10 h-10 opacity-30" />
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tax</span>
-                        <span className="font-semibold">{format(cartTax)}</span>
-                      </div>
+                      <p className="font-medium">Cart is empty</p>
+                      <p className="text-sm text-muted-foreground mt-1">Add products to get started</p>
                     </div>
-                    <div className="flex justify-between items-baseline p-3 bg-primary/5 rounded-lg border-2 border-primary/20">
-                      <span className="text-base font-bold">Total</span>
-                      <span className="text-xl font-bold text-primary">{format(cartTotal)}</span>
+                  ) : (
+                    cart.map((item) => (
+                      <div
+                        key={item.product.id}
+                        onClick={() => setActiveCartProductId(item.product.id)}
+                        className={`group p-3 bg-muted/30 border-2 rounded-lg cursor-pointer transition-all ${
+                          activeCartProductId === item.product.id
+                            ? "border-primary/50 ring-2 ring-primary/20"
+                            : "border-transparent hover:border-primary/30"
+                        }`}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-sm line-clamp-1">{item.product.name}</h4>
+                              <p className="text-xs text-muted-foreground font-mono">{item.product.sku}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:bg-destructive/10 flex-shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeFromCart(item.product.id);
+                              }}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 bg-background rounded-md p-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 hover:bg-primary/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateCartItemQuantity(item.product.id, item.quantity - 1);
+                                }}
+                              >
+                                <Minus className="w-3.5 h-3.5" />
+                              </Button>
+                              <Input
+                                type="number"
+                                min={1}
+                                max={item.product.available_stock}
+                                value={item.quantity}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  updateCartItemQuantity(item.product.id, Math.max(1, parseInt(e.target.value) || 1));
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-14 h-7 text-center text-sm"
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 hover:bg-primary/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateCartItemQuantity(item.product.id, item.quantity + 1);
+                                }}
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                            <span className="text-sm font-bold text-primary ml-auto">{format(item.total)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </ScrollArea>
+
+              {/* Cart Footer - Fixed */}
+              {cart.length > 0 && (
+                <CardContent className="flex-none border-t p-3 space-y-3">
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-semibold">{format(cartSubtotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Tax</span>
+                      <span className="font-semibold">{format(cartTax)}</span>
                     </div>
                   </div>
-
-                  {/* Customer Info Button */}
+                  <Separator />
+                  <div className="flex justify-between items-baseline p-3 bg-primary/5 rounded-lg border-2 border-primary/20">
+                    <span className="text-base font-bold">Total</span>
+                    <span className="text-xl font-bold text-primary">{format(cartTotal)}</span>
+                  </div>
                   <Button
                     variant="outline"
-                    className="w-full h-10 text-sm hover:border-primary/50 hover:bg-primary/5"
+                    className="w-full h-11 touch-manipulation"
                     onClick={() => setIsCustomerDialogOpen(true)}
                   >
                     <User className="w-4 h-4 mr-2" />
-                    {customerInfo.name || "Add Customer (Optional)"}
+                    {customerInfo.name || "Add Customer"}
                   </Button>
-
-                  {/* Notes */}
                   <Textarea
-                    placeholder="Add notes..."
+                    placeholder="Notes (optional)..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={2}
-                    className="text-sm resize-none"
+                    className="resize-none text-sm"
                   />
-
-                  {/* Checkout Button - Hidden on Mobile (sticky bar shown instead) */}
-                  <Button
-                    className="w-full h-12 text-base font-bold hidden sm:flex"
-                    size="lg"
-                    onClick={proceedToPayment}
-                  >
+                  <Button className="w-full h-12 text-base font-bold touch-manipulation" size="lg" onClick={proceedToPayment}>
                     <CheckCircle2 className="w-5 h-5 mr-2" />
                     Checkout
                   </Button>
-                </>
+                </CardContent>
               )}
-            </CardContent>
-          </Card>
+            </Card>
+          </div>
         </div>
       </div>
 
-      {/* Customer Info Dialog - Mobile Responsive */}
-      <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="text-base sm:text-lg">Customer Information</DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">Add customer details (optional)</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 mt-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="customerName" className="text-xs sm:text-sm font-medium">
-                Name
-              </Label>
-              <Input
-                id="customerName"
-                value={customerInfo.name}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                placeholder="Customer name"
-                className={`h-9 text-sm ${validationErrors.name ? "border-red-500" : ""}`}
-              />
-              {validationErrors.name && <p className="text-xs text-red-500">{validationErrors.name}</p>}
+      {/* Mobile Sticky Checkout Bar */}
+      {cart.length > 0 && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur border-t px-3 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="text-xs text-muted-foreground">Total</span>
+              <span className="text-lg font-bold truncate">{format(cartTotal)}</span>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="customerPhone" className="text-xs sm:text-sm font-medium">
-                Phone
-              </Label>
-              <Input
-                id="customerPhone"
-                value={customerInfo.phone}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                placeholder="Phone number"
-                className={`h-9 text-sm ${validationErrors.phone ? "border-red-500" : ""}`}
-              />
-              {validationErrors.phone && <p className="text-xs text-red-500">{validationErrors.phone}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="customerEmail" className="text-xs sm:text-sm font-medium">
-                Email
-              </Label>
-              <Input
-                id="customerEmail"
-                type="email"
-                value={customerInfo.email}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                placeholder="Email address"
-                className={`h-9 text-sm ${validationErrors.email ? "border-red-500" : ""}`}
-              />
-              {validationErrors.email && <p className="text-xs text-red-500">{validationErrors.email}</p>}
-            </div>
+            <Button onClick={proceedToPayment} className="h-11 px-6 touch-manipulation" size="sm">
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Checkout ({cart.length})
+            </Button>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setIsCustomerDialogOpen(false)}
-              size="sm"
-              className="w-full sm:w-auto"
-            >
+        </div>
+      )}
+
+      {/* Customer Dialog */}
+      <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 py-3 border-b flex-none">
+            <DialogTitle className="text-base">Customer Information</DialogTitle>
+            <DialogDescription className="text-xs">Optional customer details</DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Name</Label>
+                <Input
+                  value={customerInfo.name}
+                  onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+                  placeholder="Customer name"
+                  className={`h-11 touch-manipulation ${validationErrors.name ? "border-red-500" : ""}`}
+                />
+                {validationErrors.name && <p className="text-xs text-red-500">{validationErrors.name}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Phone</Label>
+                <Input
+                  value={customerInfo.phone}
+                  onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+                  placeholder="Phone number"
+                  className={`h-11 touch-manipulation ${validationErrors.phone ? "border-red-500" : ""}`}
+                />
+                {validationErrors.phone && <p className="text-xs text-red-500">{validationErrors.phone}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Email</Label>
+                <Input
+                  type="email"
+                  value={customerInfo.email}
+                  onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                  placeholder="Email address"
+                  className={`h-11 touch-manipulation ${validationErrors.email ? "border-red-500" : ""}`}
+                />
+                {validationErrors.email && <p className="text-xs text-red-500">{validationErrors.email}</p>}
+              </div>
+            </div>
+          </ScrollArea>
+          <DialogFooter className="flex-none border-t p-3 flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsCustomerDialogOpen(false)} className="flex-1 h-11 touch-manipulation">
               Cancel
             </Button>
             <Button
               onClick={() => {
                 if (validateCustomerInfo()) {
                   setIsCustomerDialogOpen(false);
-                  toast.success("✅ Customer info saved");
+                  toast.success("Customer info saved");
                 }
               }}
-              size="sm"
-              className="w-full sm:w-auto"
+              className="flex-1 h-11 touch-manipulation"
             >
               Save
             </Button>
@@ -966,115 +736,97 @@ export default function Sales() {
         </DialogContent>
       </Dialog>
 
-      {/* Payment Dialog - Mobile Responsive */}
+      {/* Payment Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="text-base sm:text-lg">Complete Payment</DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Total: <span className="font-bold text-base">{format(cartTotal)}</span>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 py-3 border-b flex-none">
+            <DialogTitle className="text-base">Complete Payment</DialogTitle>
+            <DialogDescription className="text-xs">
+              Total: <span className="font-bold text-lg">{format(cartTotal)}</span>
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 mt-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="paymentMethod" className="text-xs sm:text-sm font-medium">
-                Payment Method *
-              </Label>
-              <Select
-                value={paymentInfo.method}
-                onValueChange={(value) => setPaymentInfo({ ...paymentInfo, method: value })}
-              >
-                <SelectTrigger className={`h-9 text-sm ${validationErrors.method ? "border-red-500" : ""}`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Credit/Debit Card</SelectItem>
-                  <SelectItem value="mobile">Mobile Payment</SelectItem>
-                  <SelectItem value="check">Check</SelectItem>
-                </SelectContent>
-              </Select>
-              {validationErrors.method && <p className="text-xs text-red-500">{validationErrors.method}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="amountReceived" className="text-xs sm:text-sm font-medium">
-                Amount Received *
-              </Label>
-              <Input
-                id="amountReceived"
-                type="number"
-                step="0.01"
-                min="0"
-                value={paymentInfo.amountReceived}
-                onChange={(e) => setPaymentInfo({ ...paymentInfo, amountReceived: parseFloat(e.target.value) || 0 })}
-                placeholder="0.00"
-                className={`h-9 text-sm ${validationErrors.amountReceived ? "border-red-500" : ""}`}
-              />
-              {validationErrors.amountReceived && (
-                <p className="text-xs text-red-500">{validationErrors.amountReceived}</p>
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Payment Method *</Label>
+                <Select value={paymentInfo.method} onValueChange={(value) => setPaymentInfo({ ...paymentInfo, method: value })}>
+                  <SelectTrigger className={`h-11 touch-manipulation ${validationErrors.method ? "border-red-500" : ""}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="mobile">Mobile Payment</SelectItem>
+                    <SelectItem value="check">Check</SelectItem>
+                  </SelectContent>
+                </Select>
+                {validationErrors.method && <p className="text-xs text-red-500">{validationErrors.method}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Amount Received *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={paymentInfo.amountReceived}
+                  onChange={(e) => setPaymentInfo({ ...paymentInfo, amountReceived: parseFloat(e.target.value) || 0 })}
+                  className={`h-11 touch-manipulation ${validationErrors.amountReceived ? "border-red-500" : ""}`}
+                />
+                {validationErrors.amountReceived && <p className="text-xs text-red-500">{validationErrors.amountReceived}</p>}
+              </div>
+              {change > 0 && paymentInfo.amountReceived > 0 && (
+                <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border-2 border-green-200 dark:border-green-800">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-green-800 dark:text-green-200 font-medium">Change</span>
+                    <span className="text-xl font-bold text-green-600 dark:text-green-400">{format(change)}</span>
+                  </div>
+                </div>
               )}
             </div>
-
-            {change > 0 && paymentInfo.amountReceived > 0 && (
-              <div className="bg-green-50 dark:bg-green-950 p-3 sm:p-4 rounded-lg border border-green-200 dark:border-green-800">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-green-800 dark:text-green-200 font-medium">Change</span>
-                  <span className="text-xl font-bold text-green-600 dark:text-green-400">{format(change)}</span>
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setIsPaymentDialogOpen(false)}
-              size="sm"
-              className="w-full sm:w-auto"
-            >
+          </ScrollArea>
+          <DialogFooter className="flex-none border-t p-3 flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)} className="flex-1 h-11 touch-manipulation">
               Cancel
             </Button>
-            <Button onClick={completeSale} size="sm" className="w-full sm:w-auto">
+            <Button onClick={completeSale} className="flex-1 h-11 touch-manipulation">
               <Check className="w-4 h-4 mr-2" />
-              Complete Sale
+              Complete
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Sale Completion Dialog - Mobile Responsive */}
+      {/* Completion Dialog */}
       <Dialog open={isCompletionDialogOpen} onOpenChange={handleCloseCompletion}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-green-600 dark:text-green-400 text-base sm:text-lg">
-              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 py-3 border-b flex-none">
+            <DialogTitle className="flex items-center text-green-600 dark:text-green-400 text-base">
+              <CheckCircle2 className="w-5 h-5 mr-2" />
               Sale Completed!
             </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Sale Number: <span className="font-mono font-bold">{completedSaleNumber}</span>
-            </DialogDescription>
+            <DialogDescription className="text-xs font-mono">{completedSaleNumber}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-4">
-            <div className="bg-green-50 dark:bg-green-950 p-4 sm:p-5 rounded-lg border-2 border-green-200 dark:border-green-800 text-center">
-              <p className="text-xs sm:text-sm text-green-800 dark:text-green-200 mb-2 font-medium">Total Amount</p>
-              <p className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">{format(cartTotal)}</p>
+          <div className="p-4 space-y-3">
+            <div className="bg-green-50 dark:bg-green-950 p-5 rounded-lg border-2 border-green-200 dark:border-green-800 text-center">
+              <p className="text-xs text-green-800 dark:text-green-200 mb-2 font-medium">Total Amount</p>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-400">{format(cartTotal)}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="text-center p-3 bg-muted rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1 font-medium">Payment Method</p>
+                <p className="text-xs text-muted-foreground mb-1">Payment</p>
                 <p className="text-sm font-medium capitalize">{paymentInfo.method}</p>
               </div>
               <div className="text-center p-3 bg-muted rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1 font-medium">Items</p>
+                <p className="text-xs text-muted-foreground mb-1">Items</p>
                 <p className="text-sm font-medium">{cart.length}</p>
               </div>
             </div>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={handlePrintReceipt} size="sm" className="w-full sm:flex-1">
+          <DialogFooter className="flex-none border-t p-3 flex-row gap-2">
+            <Button variant="outline" onClick={() => completedSaleData && printReceipt(completedSaleData)} className="flex-1 h-11 touch-manipulation">
               <Printer className="w-4 h-4 mr-2" />
-              Print Receipt
+              Print
             </Button>
-            <Button onClick={startNewSale} size="sm" className="w-full sm:flex-1">
+            <Button onClick={startNewSale} className="flex-1 h-11 touch-manipulation">
               <ReceiptIcon className="w-4 h-4 mr-2" />
               New Sale
             </Button>
@@ -1082,19 +834,19 @@ export default function Sales() {
         </DialogContent>
       </Dialog>
 
-      {/* Clear Cart Confirmation Dialog - Mobile Responsive */}
+      {/* Clear Cart Dialog */}
       <AlertDialog open={isClearCartDialogOpen} onOpenChange={setIsClearCartDialogOpen}>
-        <AlertDialogContent className="max-w-[95vw] sm:max-w-md p-4 sm:p-6">
+        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-base sm:text-lg">Clear Cart?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs sm:text-sm">
-              This will remove all items from your cart. This action cannot be undone.
+            <AlertDialogTitle className="text-base">Clear Cart?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              This will remove all items. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel className="w-full sm:w-auto h-9 text-sm">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={clearCartHandler} className="w-full sm:w-auto h-9 text-sm">
-              Clear Cart
+          <AlertDialogFooter className="flex-row gap-2">
+            <AlertDialogCancel className="flex-1 h-11 touch-manipulation">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={clearCartHandler} className="flex-1 h-11 touch-manipulation">
+              Clear
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

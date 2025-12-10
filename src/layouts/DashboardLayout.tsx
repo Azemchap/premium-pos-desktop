@@ -100,8 +100,7 @@ interface StoreConfig {
 
 // Store settings items (shown in store selector dropdown) - only essentials
 const storeSettingsItems: NavigationItem[] = [
-  { name: "General Settings", href: "/settings", icon: Settings },
-  { name: "Integrations", href: "/integrations", icon: Link2, roles: ["Admin", "Manager"] },
+  { name: "Settings", href: "/settings", icon: Settings }
 ];
 
 // Core items - always visible at top (no collapsible)
@@ -119,7 +118,7 @@ const productsGroup: NavigationGroup = {
   name: "Products",
   icon: Package,
   items: [
-    { name: "Product Catalog", href: "/products", icon: Package },
+    { name: "Products", href: "/products", icon: Package },
     { name: "Product Data", href: "/master-data", icon: Tag, roles: ["Admin"] },
     { name: "Suppliers", href: "/suppliers", icon: Truck },
     { name: "Purchase Orders", href: "/purchase-orders", icon: ShoppingBag },
@@ -129,13 +128,13 @@ const productsGroup: NavigationGroup = {
 // Finance group
 const financeGroup: NavigationGroup = {
   id: "finance",
-  name: "Finance",
+  name: "Finance Overview",
   icon: DollarSign,
   roles: ["Admin", "Manager"],
   items: [
     { name: "Reports", href: "/reports", icon: TrendingUp },
     { name: "Expenses", href: "/expenses", icon: DollarSign },
-    { name: "Finance Overview", href: "/finance", icon: FileText },
+    { name: "Finances", href: "/finance", icon: FileText },
   ],
 };
 

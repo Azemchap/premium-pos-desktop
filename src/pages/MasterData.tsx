@@ -1,4 +1,5 @@
-// src/pages/MasterData.tsx - Master Data Management
+// src/pages/MasterData.tsx - Optimized Mobile-First Design
+import PageHeader from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -33,11 +35,9 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-// import { useAuthStore } from "@/store/authStore";
 import { invoke } from "@tauri-apps/api/core";
-import { Edit, MoreHorizontal, Package, Plus, Ruler, Tag, Trash2, Palette, Layers } from "lucide-react";
+import { Edit, Layers, MoreHorizontal, Package, Palette, Plus, Ruler, Tag, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -126,34 +126,28 @@ const variantValueSchema = z.object({
 type EntityType = "category" | "brand" | "unit" | "variant_type" | "variant_value";
 
 export default function MasterData() {
-  // const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<EntityType>("category");
   
-  // Categories
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryForm, setCategoryForm] = useState({ name: "", description: "" });
   
-  // Brands
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isBrandDialogOpen, setIsBrandDialogOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [brandForm, setBrandForm] = useState({ name: "", description: "" });
   
-  // Units
   const [units, setUnits] = useState<Unit[]>([]);
   const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [unitForm, setUnitForm] = useState({ name: "", abbreviation: "", description: "" });
   
-  // Variant Types
   const [variantTypes, setVariantTypes] = useState<VariantType[]>([]);
   const [isVariantTypeDialogOpen, setIsVariantTypeDialogOpen] = useState(false);
   const [editingVariantType, setEditingVariantType] = useState<VariantType | null>(null);
   const [variantTypeForm, setVariantTypeForm] = useState({ name: "", description: "", display_order: 0 });
   
-  // Variant Values
   const [variantValues, setVariantValues] = useState<VariantValue[]>([]);
   const [isVariantValueDialogOpen, setIsVariantValueDialogOpen] = useState(false);
   const [editingVariantValue, setEditingVariantValue] = useState<VariantValue | null>(null);
@@ -185,10 +179,7 @@ export default function MasterData() {
   const openCategoryDialog = (category?: Category) => {
     if (category) {
       setEditingCategory(category);
-      setCategoryForm({
-        name: category.name,
-        description: category.description || "",
-      });
+      setCategoryForm({ name: category.name, description: category.description || "" });
     } else {
       setEditingCategory(null);
       setCategoryForm({ name: "", description: "" });
@@ -204,10 +195,10 @@ export default function MasterData() {
 
       if (editingCategory) {
         await invoke("update_category", { id: editingCategory.id, request: categoryForm });
-        toast.success(`✅ Category "${categoryForm.name}" updated!`);
+        toast.success(`Category "${categoryForm.name}" updated`);
       } else {
         await invoke("create_category", { request: categoryForm });
-        toast.success(`✅ Category "${categoryForm.name}" created!`);
+        toast.success(`Category "${categoryForm.name}" created`);
       }
 
       setIsCategoryDialogOpen(false);
@@ -220,20 +211,19 @@ export default function MasterData() {
         });
         setValidationErrors(errors);
       } else {
-        toast.error(`❌ Failed to save category: ${error}`);
+        toast.error(`Failed to save category: ${error}`);
       }
     }
   };
 
   const deleteCategory = async (id: number, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
-    
+    if (!confirm(`Delete "${name}"?`)) return;
     try {
       await invoke("delete_category", { id });
-      toast.success(`🗑️ Category "${name}" deleted!`);
+      toast.success(`Category "${name}" deleted`);
       loadCategories();
     } catch (error) {
-      toast.error(`❌ Failed to delete category: ${error}`);
+      toast.error(`Failed to delete: ${error}`);
     }
   };
 
@@ -254,10 +244,7 @@ export default function MasterData() {
   const openBrandDialog = (brand?: Brand) => {
     if (brand) {
       setEditingBrand(brand);
-      setBrandForm({
-        name: brand.name,
-        description: brand.description || "",
-      });
+      setBrandForm({ name: brand.name, description: brand.description || "" });
     } else {
       setEditingBrand(null);
       setBrandForm({ name: "", description: "" });
@@ -273,10 +260,10 @@ export default function MasterData() {
 
       if (editingBrand) {
         await invoke("update_brand", { id: editingBrand.id, request: brandForm });
-        toast.success(`✅ Brand "${brandForm.name}" updated!`);
+        toast.success(`Brand "${brandForm.name}" updated`);
       } else {
         await invoke("create_brand", { request: brandForm });
-        toast.success(`✅ Brand "${brandForm.name}" created!`);
+        toast.success(`Brand "${brandForm.name}" created`);
       }
 
       setIsBrandDialogOpen(false);
@@ -289,20 +276,19 @@ export default function MasterData() {
         });
         setValidationErrors(errors);
       } else {
-        toast.error(`❌ Failed to save brand: ${error}`);
+        toast.error(`Failed to save brand: ${error}`);
       }
     }
   };
 
   const deleteBrand = async (id: number, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
-    
+    if (!confirm(`Delete "${name}"?`)) return;
     try {
       await invoke("delete_brand", { id });
-      toast.success(`🗑️ Brand "${name}" deleted!`);
+      toast.success(`Brand "${name}" deleted`);
       loadBrands();
     } catch (error) {
-      toast.error(`❌ Failed to delete brand: ${error}`);
+      toast.error(`Failed to delete: ${error}`);
     }
   };
 
@@ -323,11 +309,7 @@ export default function MasterData() {
   const openUnitDialog = (unit?: Unit) => {
     if (unit) {
       setEditingUnit(unit);
-      setUnitForm({
-        name: unit.name,
-        abbreviation: unit.abbreviation || "",
-        description: unit.description || "",
-      });
+      setUnitForm({ name: unit.name, abbreviation: unit.abbreviation || "", description: unit.description || "" });
     } else {
       setEditingUnit(null);
       setUnitForm({ name: "", abbreviation: "", description: "" });
@@ -343,10 +325,10 @@ export default function MasterData() {
 
       if (editingUnit) {
         await invoke("update_unit", { id: editingUnit.id, request: unitForm });
-        toast.success(`✅ Unit "${unitForm.name}" updated!`);
+        toast.success(`Unit "${unitForm.name}" updated`);
       } else {
         await invoke("create_unit", { request: unitForm });
-        toast.success(`✅ Unit "${unitForm.name}" created!`);
+        toast.success(`Unit "${unitForm.name}" created`);
       }
 
       setIsUnitDialogOpen(false);
@@ -359,20 +341,19 @@ export default function MasterData() {
         });
         setValidationErrors(errors);
       } else {
-        toast.error(`❌ Failed to save unit: ${error}`);
+        toast.error(`Failed to save unit: ${error}`);
       }
     }
   };
 
   const deleteUnit = async (id: number, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
-    
+    if (!confirm(`Delete "${name}"?`)) return;
     try {
       await invoke("delete_unit", { id });
-      toast.success(`🗑️ Unit "${name}" deleted!`);
+      toast.success(`Unit "${name}" deleted`);
       loadUnits();
     } catch (error) {
-      toast.error(`❌ Failed to delete unit: ${error}`);
+      toast.error(`Failed to delete: ${error}`);
     }
   };
 
@@ -393,11 +374,7 @@ export default function MasterData() {
   const openVariantTypeDialog = (variantType?: VariantType) => {
     if (variantType) {
       setEditingVariantType(variantType);
-      setVariantTypeForm({
-        name: variantType.name,
-        description: variantType.description || "",
-        display_order: variantType.display_order,
-      });
+      setVariantTypeForm({ name: variantType.name, description: variantType.description || "", display_order: variantType.display_order });
     } else {
       setEditingVariantType(null);
       setVariantTypeForm({ name: "", description: "", display_order: 0 });
@@ -413,15 +390,15 @@ export default function MasterData() {
 
       if (editingVariantType) {
         await invoke("update_variant_type", { id: editingVariantType.id, request: variantTypeForm });
-        toast.success(`✅ Variant Type "${variantTypeForm.name}" updated!`);
+        toast.success(`Variant Type "${variantTypeForm.name}" updated`);
       } else {
         await invoke("create_variant_type", { request: variantTypeForm });
-        toast.success(`✅ Variant Type "${variantTypeForm.name}" created!`);
+        toast.success(`Variant Type "${variantTypeForm.name}" created`);
       }
 
       setIsVariantTypeDialogOpen(false);
       loadVariantTypes();
-      loadVariantValues(); // Reload values in case type was updated
+      loadVariantValues();
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
@@ -430,21 +407,20 @@ export default function MasterData() {
         });
         setValidationErrors(errors);
       } else {
-        toast.error(`❌ Failed to save variant type: ${error}`);
+        toast.error(`Failed to save variant type: ${error}`);
       }
     }
   };
 
   const deleteVariantType = async (id: number, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"? This will also delete all associated values.`)) return;
-    
+    if (!confirm(`Delete "${name}"? This will delete all associated values.`)) return;
     try {
       await invoke("delete_variant_type", { id });
-      toast.success(`🗑️ Variant Type "${name}" deleted!`);
+      toast.success(`Variant Type "${name}" deleted`);
       loadVariantTypes();
       loadVariantValues();
     } catch (error) {
-      toast.error(`❌ Failed to delete variant type: ${error}`);
+      toast.error(`Failed to delete: ${error}`);
     }
   };
 
@@ -493,10 +469,10 @@ export default function MasterData() {
 
       if (editingVariantValue) {
         await invoke("update_variant_value", { id: editingVariantValue.id, request: variantValueForm });
-        toast.success(`✅ Variant Value "${variantValueForm.value}" updated!`);
+        toast.success(`Variant Value "${variantValueForm.value}" updated`);
       } else {
         await invoke("create_variant_value", { request: variantValueForm });
-        toast.success(`✅ Variant Value "${variantValueForm.value}" created!`);
+        toast.success(`Variant Value "${variantValueForm.value}" created`);
       }
 
       setIsVariantValueDialogOpen(false);
@@ -509,20 +485,19 @@ export default function MasterData() {
         });
         setValidationErrors(errors);
       } else {
-        toast.error(`❌ Failed to save variant value: ${error}`);
+        toast.error(`Failed to save variant value: ${error}`);
       }
     }
   };
 
   const deleteVariantValue = async (id: number, value: string) => {
-    if (!confirm(`Are you sure you want to delete "${value}"?`)) return;
-    
+    if (!confirm(`Delete "${value}"?`)) return;
     try {
       await invoke("delete_variant_value", { id });
-      toast.success(`🗑️ Variant Value "${value}" deleted!`);
+      toast.success(`Variant Value "${value}" deleted`);
       loadVariantValues();
     } catch (error) {
-      toast.error(`❌ Failed to delete variant value: ${error}`);
+      toast.error(`Failed to delete: ${error}`);
     }
   };
 
@@ -540,731 +515,906 @@ export default function MasterData() {
   }, []);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <PageHeader
-        icon={Layers}
-        title="Master Data"
-        subtitle="Manage categories, brands, units, and product variants"
-      />
-
-      {/* Statistics - Enhanced with Gradients */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white">
-                <p className="text-xs sm:text-sm opacity-90 font-medium">Categories</p>
-                <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{categories.length}</p>
-                <p className="text-xs opacity-80 mt-1">
-                  {categories.filter(c => c.is_active).length} active
-                </p>
-              </div>
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Tag className="w-7 h-7 text-white" />
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white">
-                <p className="text-xs sm:text-sm opacity-90 font-medium">Brands</p>
-                <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{brands.length}</p>
-                <p className="text-xs opacity-80 mt-1">
-                  {brands.filter(b => b.is_active).length} active
-                </p>
-              </div>
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Package className="w-7 h-7 text-white" />
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
-          <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white">
-                <p className="text-xs sm:text-sm opacity-90 font-medium">Units</p>
-                <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{units.length}</p>
-                <p className="text-xs opacity-80 mt-1">
-                  {units.filter(u => u.is_active).length} active
-                </p>
-              </div>
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Ruler className="w-7 h-7 text-white" />
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
-          <div className="bg-gradient-to-br from-orange-500 to-pink-600 p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white">
-                <p className="text-xs sm:text-sm opacity-90 font-medium">Variant Types</p>
-                <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{variantTypes.length}</p>
-                <p className="text-xs opacity-80 mt-1">
-                  {variantTypes.filter(v => v.is_active).length} active
-                </p>
-              </div>
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Layers className="w-7 h-7 text-white" />
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-200">
-          <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white">
-                <p className="text-xs sm:text-sm opacity-90 font-medium">Variant Values</p>
-                <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2">{variantValues.length}</p>
-                <p className="text-xs opacity-80 mt-1">
-                  {variantValues.filter(v => v.is_active).length} active
-                </p>
-              </div>
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Palette className="w-7 h-7 text-white" />
-              </div>
-            </div>
-          </div>
-        </Card>
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="flex-none px-3 py-2 sm:px-6 sm:py-4 border-b bg-background/95">
+        <PageHeader
+          icon={Layers}
+          title="Master Data"
+          subtitle="Manage categories, brands, units, and product variants"
+        />
       </div>
 
-      {/* Tabbed Interface */}
-      <Card className="shadow-md w-full">
-        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
-          <CardTitle>Manage Master Data</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0 py-4">
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EntityType)}>
-            <TabsList className="grid w-full grid-cols-3 md:grid-cols-3 lg:grid-cols-5 h-full">
-              <TabsTrigger value="category">Categories</TabsTrigger>
-              <TabsTrigger value="brand">Brands</TabsTrigger>
-              <TabsTrigger value="unit">Units</TabsTrigger>
-              <TabsTrigger value="variant_type">Variant Types</TabsTrigger>
-              <TabsTrigger value="variant_value">Variant Values</TabsTrigger>
-            </TabsList>
-
-            {/* CATEGORIES TAB */}
-            <TabsContent value="category" className="space-y-2 md:space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={() => openCategoryDialog()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Category
-                </Button>
+      {/* Main Content - Scrollable */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-3 sm:p-6 space-y-4">
+          {/* Statistics */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <Card className="overflow-hidden border-none shadow-sm">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-white flex-1 min-w-0">
+                    <p className="text-xs opacity-90 font-medium">Categories</p>
+                    <p className="text-3xl font-bold mt-1 truncate">{categories.length}</p>
+                    <p className="text-[10px] opacity-80 mt-0.5 truncate">
+                      {categories.filter(c => c.is_active).length} active
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
+                    <Tag className="w-5 h-5 text-white" />
+                  </div>
+                </div>
               </div>
+            </Card>
 
-              <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Name</TableHead>
-                    <TableHead className="text-xs">Description</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categories.map((category) => (
-                    <TableRow key={category.id} className="hover:bg-primary/5 transition-colors duration-150">
-                      <TableCell className="font-semibold text-foreground text-sm">{category.name}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {category.description || "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline"
-                          className={category.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}
-                        >
-                          {category.is_active ? "✓ Active" : "○ Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openCategoryDialog(category)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => deleteCategory(category.id, category.name)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <Card className="overflow-hidden border-none shadow-sm">
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-white flex-1 min-w-0">
+                    <p className="text-xs opacity-90 font-medium">Brands</p>
+                    <p className="text-3xl font-bold mt-1 truncate">{brands.length}</p>
+                    <p className="text-[10px] opacity-80 mt-0.5 truncate">
+                      {brands.filter(b => b.is_active).length} active
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
+                    <Package className="w-5 h-5 text-white" />
+                  </div>
+                </div>
               </div>
-            </TabsContent>
+            </Card>
 
-            {/* BRANDS TAB */}
-            <TabsContent value="brand" className="space-y-2 md:space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={() => openBrandDialog()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Brand
-                </Button>
+            <Card className="overflow-hidden border-none shadow-sm">
+              <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-white flex-1 min-w-0">
+                    <p className="text-xs opacity-90 font-medium">Units</p>
+                    <p className="text-3xl font-bold mt-1 truncate">{units.length}</p>
+                    <p className="text-[10px] opacity-80 mt-0.5 truncate">
+                      {units.filter(u => u.is_active).length} active
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
+                    <Ruler className="w-5 h-5 text-white" />
+                  </div>
+                </div>
               </div>
+            </Card>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Name</TableHead>
-                    <TableHead className="text-xs">Description</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {brands.map((brand) => (
-                    <TableRow key={brand.id} className="hover:bg-primary/5 transition-colors duration-150">
-                      <TableCell className="font-semibold text-foreground text-sm">{brand.name}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {brand.description || "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline"
-                          className={brand.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}
-                        >
-                          {brand.is_active ? "✓ Active" : "○ Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openBrandDialog(brand)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => deleteBrand(brand.id, brand.name)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TabsContent>
-
-            {/* UNITS TAB */}
-            <TabsContent value="unit" className="space-y-2 md:space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={() => openUnitDialog()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Unit
-                </Button>
+            <Card className="overflow-hidden border-none shadow-sm">
+              <div className="bg-gradient-to-br from-orange-500 to-pink-600 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-white flex-1 min-w-0">
+                    <p className="text-xs opacity-90 font-medium">Types</p>
+                    <p className="text-3xl font-bold mt-1 truncate">{variantTypes.length}</p>
+                    <p className="text-[10px] opacity-80 mt-0.5 truncate">
+                      {variantTypes.filter(v => v.is_active).length} active
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
+                    <Layers className="w-5 h-5 text-white" />
+                  </div>
+                </div>
               </div>
+            </Card>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Name</TableHead>
-                    <TableHead className="text-xs">Abbreviation</TableHead>
-                    <TableHead className="text-xs">Description</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {units.map((unit) => (
-                    <TableRow key={unit.id} className="hover:bg-primary/5 transition-colors duration-150">
-                      <TableCell className="font-semibold text-foreground text-sm">{unit.name}</TableCell>
-                      <TableCell><Badge variant="outline" className="font-mono text-xs">{unit.abbreviation || "—"}</Badge></TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {unit.description || "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline"
-                          className={unit.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}
-                        >
-                          {unit.is_active ? "✓ Active" : "○ Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openUnitDialog(unit)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => deleteUnit(unit.id, unit.name)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TabsContent>
-
-            {/* VARIANT TYPES TAB */}
-            <TabsContent value="variant_type" className="space-y-2 md:space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={() => openVariantTypeDialog()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Variant Type
-                </Button>
+            <Card className="overflow-hidden border-none shadow-sm">
+              <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-white flex-1 min-w-0">
+                    <p className="text-xs opacity-90 font-medium">Values</p>
+                    <p className="text-3xl font-bold mt-1 truncate">{variantValues.length}</p>
+                    <p className="text-[10px] opacity-80 mt-0.5 truncate">
+                      {variantValues.filter(v => v.is_active).length} active
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
+                    <Palette className="w-5 h-5 text-white" />
+                  </div>
+                </div>
               </div>
+            </Card>
+          </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Name</TableHead>
-                    <TableHead className="text-xs">Description</TableHead>
-                    <TableHead className="text-xs">Display Order</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {variantTypes.map((variantType) => (
-                    <TableRow key={variantType.id} className="hover:bg-primary/5 transition-colors duration-150">
-                      <TableCell className="font-semibold text-foreground text-sm">{variantType.name}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {variantType.description || "—"}
-                      </TableCell>
-                      <TableCell><Badge variant="secondary" className="text-xs px-2">{variantType.display_order}</Badge></TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline"
-                          className={variantType.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}
-                        >
-                          {variantType.is_active ? "✓ Active" : "○ Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openVariantTypeDialog(variantType)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => deleteVariantType(variantType.id, variantType.name)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TabsContent>
+          {/* Tabbed Interface */}
+          <Card className="border-2">
+            <CardHeader className="bg-muted/30 border-b p-3">
+              <CardTitle className="text-base">Manage Master Data</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EntityType)} className="w-full">
+                <div className="border-b px-3 pt-3">
+                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 h-auto bg-transparent p-0 gap-1">
+                    <TabsTrigger value="category" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      Categories
+                    </TabsTrigger>
+                    <TabsTrigger value="brand" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      Brands
+                    </TabsTrigger>
+                    <TabsTrigger value="unit" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      Units
+                    </TabsTrigger>
+                    <TabsTrigger value="variant_type" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      Types
+                    </TabsTrigger>
+                    <TabsTrigger value="variant_value" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      Values
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
-            {/* VARIANT VALUES TAB */}
-            <TabsContent value="variant_value" className="space-y-2 md:space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={() => openVariantValueDialog()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Variant Value
-                </Button>
-              </div>
+                {/* CATEGORIES TAB */}
+                <TabsContent value="category" className="mt-0 p-3 space-y-3">
+                  <div className="flex justify-end">
+                    <Button onClick={() => openCategoryDialog()} className="h-11 touch-manipulation">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add
+                    </Button>
+                  </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Type</TableHead>
-                    <TableHead className="text-xs">Value</TableHead>
-                    <TableHead className="text-xs">Code</TableHead>
-                    <TableHead className="text-xs">Color</TableHead>
-                    <TableHead className="text-xs">Order</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-xs text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {variantValues.map((variantValue) => (
-                    <TableRow key={variantValue.id} className="hover:bg-primary/5 transition-colors duration-150">
-                      <TableCell>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {getVariantTypeName(variantValue.variant_type_id)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-semibold text-foreground text-sm">{variantValue.value}</TableCell>
-                      <TableCell>
-                        {variantValue.code ? (
-                          <Badge variant="outline" className="font-mono text-xs">{variantValue.code}</Badge>
-                        ) : <span className="text-muted-foreground">—</span>}
-                      </TableCell>
-                      <TableCell>
-                        {variantValue.hex_color ? (
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-8 h-8 rounded-lg border-2 shadow-sm"
-                              style={{ backgroundColor: variantValue.hex_color }}
-                            />
-                            <span className="text-xs text-muted-foreground font-mono">
-                              {variantValue.hex_color}
-                            </span>
+                  {/* Mobile: Cards */}
+                  <div className="lg:hidden space-y-2">
+                    {categories.map((category) => (
+                      <Card key={category.id} className="border-2">
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-sm line-clamp-1">{category.name}</h3>
+                              {category.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{category.description}</p>
+                              )}
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openCategoryDialog(category)}>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => deleteCategory(category.id, category.name)} className="text-destructive">
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                        ) : <span className="text-muted-foreground">—</span>}
-                      </TableCell>
-                      <TableCell><Badge variant="secondary" className="text-xs px-2">{variantValue.display_order}</Badge></TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline"
-                          className={variantValue.is_active ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200"}
-                        >
-                          {variantValue.is_active ? "✓ Active" : "○ Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openVariantValueDialog(variantValue)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => deleteVariantValue(variantValue.id, variantValue.value)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                          <Badge variant={category.is_active ? "default" : "secondary"} className="text-[10px]">
+                            {category.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
 
+                  {/* Desktop: Table */}
+                  <div className="hidden lg:block border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {categories.map((category) => (
+                          <TableRow key={category.id}>
+                            <TableCell className="font-semibold">{category.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{category.description || "—"}</TableCell>
+                            <TableCell>
+                              <Badge variant={category.is_active ? "default" : "secondary"} className="text-xs">
+                                {category.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openCategoryDialog(category)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => deleteCategory(category.id, category.name)} className="text-destructive">
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                {/* BRANDS TAB */}
+                <TabsContent value="brand" className="mt-0 p-3 space-y-3">
+                  <div className="flex justify-end">
+                    <Button onClick={() => openBrandDialog()} className="h-11 touch-manipulation">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add
+                    </Button>
+                  </div>
+
+                  <div className="lg:hidden space-y-2">
+                    {brands.map((brand) => (
+                      <Card key={brand.id} className="border-2">
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-sm line-clamp-1">{brand.name}</h3>
+                              {brand.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{brand.description}</p>
+                              )}
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openBrandDialog(brand)}>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => deleteBrand(brand.id, brand.name)} className="text-destructive">
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          <Badge variant={brand.is_active ? "default" : "secondary"} className="text-[10px]">
+                            {brand.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <div className="hidden lg:block border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {brands.map((brand) => (
+                          <TableRow key={brand.id}>
+                            <TableCell className="font-semibold">{brand.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{brand.description || "—"}</TableCell>
+                            <TableCell>
+                              <Badge variant={brand.is_active ? "default" : "secondary"} className="text-xs">
+                                {brand.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openBrandDialog(brand)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => deleteBrand(brand.id, brand.name)} className="text-destructive">
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                {/* UNITS TAB */}
+                <TabsContent value="unit" className="mt-0 p-3 space-y-3">
+                  <div className="flex justify-end">
+                    <Button onClick={() => openUnitDialog()} className="h-11 touch-manipulation">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add
+                    </Button>
+                  </div>
+
+                  <div className="lg:hidden space-y-2">
+                    {units.map((unit) => (
+                      <Card key={unit.id} className="border-2">
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-sm">{unit.name}</h3>
+                                {unit.abbreviation && (
+                                  <Badge variant="outline" className="text-[10px] font-mono">{unit.abbreviation}</Badge>
+                                )}
+                              </div>
+                              {unit.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2">{unit.description}</p>
+                              )}
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openUnitDialog(unit)}>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => deleteUnit(unit.id, unit.name)} className="text-destructive">
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          <Badge variant={unit.is_active ? "default" : "secondary"} className="text-[10px]">
+                            {unit.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <div className="hidden lg:block border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Abbreviation</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {units.map((unit) => (
+                          <TableRow key={unit.id}>
+                            <TableCell className="font-semibold">{unit.name}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="font-mono text-xs">{unit.abbreviation || "—"}</Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{unit.description || "—"}</TableCell>
+                            <TableCell>
+                              <Badge variant={unit.is_active ? "default" : "secondary"} className="text-xs">
+                                {unit.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openUnitDialog(unit)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => deleteUnit(unit.id, unit.name)} className="text-destructive">
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                {/* VARIANT TYPES TAB */}
+                <TabsContent value="variant_type" className="mt-0 p-3 space-y-3">
+                  <div className="flex justify-end">
+                    <Button onClick={() => openVariantTypeDialog()} className="h-11 touch-manipulation">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add
+                    </Button>
+                  </div>
+
+                  <div className="lg:hidden space-y-2">
+                    {variantTypes.map((type) => (
+                      <Card key={type.id} className="border-2">
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-sm">{type.name}</h3>
+                                <Badge variant="secondary" className="text-[10px]">#{type.display_order}</Badge>
+                              </div>
+                              {type.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2">{type.description}</p>
+                              )}
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openVariantTypeDialog(type)}>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => deleteVariantType(type.id, type.name)} className="text-destructive">
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          <Badge variant={type.is_active ? "default" : "secondary"} className="text-[10px]">
+                            {type.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <div className="hidden lg:block border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Order</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {variantTypes.map((type) => (
+                          <TableRow key={type.id}>
+                            <TableCell className="font-semibold">{type.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{type.description || "—"}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">{type.display_order}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={type.is_active ? "default" : "secondary"} className="text-xs">
+                                {type.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openVariantTypeDialog(type)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => deleteVariantType(type.id, type.name)} className="text-destructive">
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                {/* VARIANT VALUES TAB */}
+                <TabsContent value="variant_value" className="mt-0 p-3 space-y-3">
+                  <div className="flex justify-end">
+                    <Button onClick={() => openVariantValueDialog()} className="h-11 touch-manipulation">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add
+                    </Button>
+                  </div>
+
+                  <div className="lg:hidden space-y-2">
+                    {variantValues.map((value) => (
+                      <Card key={value.id} className="border-2">
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <Badge variant="outline" className="text-[10px] mb-1.5">
+                                {getVariantTypeName(value.variant_type_id)}
+                              </Badge>
+                              <div className="flex items-center gap-2">
+                                {value.hex_color && (
+                                  <div className="w-6 h-6 rounded border-2 flex-shrink-0" style={{ backgroundColor: value.hex_color }} />
+                                )}
+                                <h3 className="font-semibold text-sm">{value.value}</h3>
+                                {value.code && (
+                                  <Badge variant="outline" className="text-[10px] font-mono">{value.code}</Badge>
+                                )}
+                              </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openVariantValueDialog(value)}>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => deleteVariantValue(value.id, value.value)} className="text-destructive">
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={value.is_active ? "default" : "secondary"} className="text-[10px]">
+                              {value.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                            <Badge variant="secondary" className="text-[10px]">#{value.display_order}</Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <div className="hidden lg:block border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Value</TableHead>
+                          <TableHead>Code</TableHead>
+                          <TableHead>Color</TableHead>
+                          <TableHead>Order</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {variantValues.map((value) => (
+                          <TableRow key={value.id}>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {getVariantTypeName(value.variant_type_id)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-semibold">{value.value}</TableCell>
+                            <TableCell>
+                              {value.code ? (
+                                <Badge variant="outline" className="font-mono text-xs">{value.code}</Badge>
+                              ) : "—"}
+                            </TableCell>
+                            <TableCell>
+                              {value.hex_color ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded border-2" style={{ backgroundColor: value.hex_color }} />
+                                  <span className="text-xs text-muted-foreground font-mono">{value.hex_color}</span>
+                                </div>
+                              ) : "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">{value.display_order}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={value.is_active ? "default" : "secondary"} className="text-xs">
+                                {value.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openVariantValueDialog(value)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => deleteVariantValue(value.id, value.value)} className="text-destructive">
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      </ScrollArea>
+
+      {/* Dialogs */}
       {/* Category Dialog */}
       <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-lg">{editingCategory ? "Edit Category" : "Create Category"}</DialogTitle>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 py-3 border-b flex-none">
+            <DialogTitle className="text-base">{editingCategory ? "Edit Category" : "New Category"}</DialogTitle>
             <DialogDescription className="text-xs">
               {editingCategory ? "Update category details" : "Add a new category"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="category-name" className="text-xs">Name *</Label>
-              <Input
-                id="category-name"
-                value={categoryForm.name}
-                onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                className={`h-9 text-sm ${validationErrors.name ? "border-red-500" : ""}`}
-              />
-              {validationErrors.name && (
-                <p className="text-xs text-red-500">{validationErrors.name}</p>
-              )}
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Name *</Label>
+                <Input
+                  value={categoryForm.name}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                  className={`h-11 touch-manipulation ${validationErrors.name ? "border-red-500" : ""}`}
+                />
+                {validationErrors.name && <p className="text-xs text-red-500">{validationErrors.name}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Description</Label>
+                <Textarea
+                  value={categoryForm.description}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="category-desc" className="text-xs">Description</Label>
-              <Textarea
-                id="category-desc"
-                value={categoryForm.description}
-                onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
-                rows={3}
-                className="text-sm"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>
+          </ScrollArea>
+          <DialogFooter className="flex-none border-t p-3 flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)} className="flex-1 h-11 touch-manipulation">
               Cancel
             </Button>
-            <Button onClick={saveCategory}>Save</Button>
+            <Button onClick={saveCategory} className="flex-1 h-11 touch-manipulation">Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Brand Dialog */}
       <Dialog open={isBrandDialogOpen} onOpenChange={setIsBrandDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-lg">{editingBrand ? "Edit Brand" : "Create Brand"}</DialogTitle>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 py-3 border-b flex-none">
+            <DialogTitle className="text-base">{editingBrand ? "Edit Brand" : "New Brand"}</DialogTitle>
             <DialogDescription className="text-xs">
               {editingBrand ? "Update brand details" : "Add a new brand"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="brand-name" className="text-xs">Name *</Label>
-              <Input
-                id="brand-name"
-                value={brandForm.name}
-                onChange={(e) => setBrandForm({ ...brandForm, name: e.target.value })}
-                className={`h-9 text-sm ${validationErrors.name ? "border-red-500" : ""}`}
-              />
-              {validationErrors.name && (
-                <p className="text-xs text-red-500">{validationErrors.name}</p>
-              )}
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Name *</Label>
+                <Input
+                  value={brandForm.name}
+                  onChange={(e) => setBrandForm({ ...brandForm, name: e.target.value })}
+                  className={`h-11 touch-manipulation ${validationErrors.name ? "border-red-500" : ""}`}
+                />
+                {validationErrors.name && <p className="text-xs text-red-500">{validationErrors.name}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Description</Label>
+                <Textarea
+                  value={brandForm.description}
+                  onChange={(e) => setBrandForm({ ...brandForm, description: e.target.value })}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="brand-desc" className="text-xs">Description</Label>
-              <Textarea
-                id="brand-desc"
-                value={brandForm.description}
-                onChange={(e) => setBrandForm({ ...brandForm, description: e.target.value })}
-                rows={3}
-                className="text-sm"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsBrandDialogOpen(false)}>
+          </ScrollArea>
+          <DialogFooter className="flex-none border-t p-3 flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsBrandDialogOpen(false)} className="flex-1 h-11 touch-manipulation">
               Cancel
             </Button>
-            <Button onClick={saveBrand}>Save</Button>
+            <Button onClick={saveBrand} className="flex-1 h-11 touch-manipulation">Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Unit Dialog */}
       <Dialog open={isUnitDialogOpen} onOpenChange={setIsUnitDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-lg">{editingUnit ? "Edit Unit" : "Create Unit"}</DialogTitle>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 py-3 border-b flex-none">
+            <DialogTitle className="text-base">{editingUnit ? "Edit Unit" : "New Unit"}</DialogTitle>
             <DialogDescription className="text-xs">
-              {editingUnit ? "Update unit details" : "Add a new unit of measurement"}
+              {editingUnit ? "Update unit details" : "Add a new unit"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="unit-name" className="text-xs">Name *</Label>
-              <Input
-                id="unit-name"
-                value={unitForm.name}
-                onChange={(e) => setUnitForm({ ...unitForm, name: e.target.value })}
-                className={`h-9 text-sm ${validationErrors.name ? "border-red-500" : ""}`}
-              />
-              {validationErrors.name && (
-                <p className="text-xs text-red-500">{validationErrors.name}</p>
-              )}
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Name *</Label>
+                <Input
+                  value={unitForm.name}
+                  onChange={(e) => setUnitForm({ ...unitForm, name: e.target.value })}
+                  className={`h-11 touch-manipulation ${validationErrors.name ? "border-red-500" : ""}`}
+                />
+                {validationErrors.name && <p className="text-xs text-red-500">{validationErrors.name}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Abbreviation</Label>
+                <Input
+                  value={unitForm.abbreviation}
+                  onChange={(e) => setUnitForm({ ...unitForm, abbreviation: e.target.value })}
+                  placeholder="e.g. kg, lb"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Description</Label>
+                <Textarea
+                  value={unitForm.description}
+                  onChange={(e) => setUnitForm({ ...unitForm, description: e.target.value })}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="unit-abbr" className="text-xs">Abbreviation</Label>
-              <Input
-                id="unit-abbr"
-                value={unitForm.abbreviation}
-                onChange={(e) => setUnitForm({ ...unitForm, abbreviation: e.target.value })}
-                placeholder="e.g. kg, lb, ea"
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="unit-desc" className="text-xs">Description</Label>
-              <Textarea
-                id="unit-desc"
-                value={unitForm.description}
-                onChange={(e) => setUnitForm({ ...unitForm, description: e.target.value })}
-                rows={3}
-                className="text-sm"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsUnitDialogOpen(false)}>
+          </ScrollArea>
+          <DialogFooter className="flex-none border-t p-3 flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsUnitDialogOpen(false)} className="flex-1 h-11 touch-manipulation">
               Cancel
             </Button>
-            <Button onClick={saveUnit}>Save</Button>
+            <Button onClick={saveUnit} className="flex-1 h-11 touch-manipulation">Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Variant Type Dialog */}
       <Dialog open={isVariantTypeDialogOpen} onOpenChange={setIsVariantTypeDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-lg">{editingVariantType ? "Edit Variant Type" : "Create Variant Type"}</DialogTitle>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 py-3 border-b flex-none">
+            <DialogTitle className="text-base">{editingVariantType ? "Edit Type" : "New Variant Type"}</DialogTitle>
             <DialogDescription className="text-xs">
-              {editingVariantType ? "Update variant type details" : "Add a new variant type (e.g., Size, Color, Material)"}
+              {editingVariantType ? "Update variant type" : "Add variant type (e.g. Size, Color)"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="variant-type-name" className="text-xs">Name *</Label>
-              <Input
-                id="variant-type-name"
-                value={variantTypeForm.name}
-                onChange={(e) => setVariantTypeForm({ ...variantTypeForm, name: e.target.value })}
-                placeholder="e.g., Size, Color, Material"
-                className={`h-9 text-sm ${validationErrors.name ? "border-red-500" : ""}`}
-              />
-              {validationErrors.name && (
-                <p className="text-xs text-red-500">{validationErrors.name}</p>
-              )}
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Name *</Label>
+                <Input
+                  value={variantTypeForm.name}
+                  onChange={(e) => setVariantTypeForm({ ...variantTypeForm, name: e.target.value })}
+                  placeholder="e.g. Size, Color"
+                  className={`h-11 touch-manipulation ${validationErrors.name ? "border-red-500" : ""}`}
+                />
+                {validationErrors.name && <p className="text-xs text-red-500">{validationErrors.name}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Display Order</Label>
+                <Input
+                  type="number"
+                  value={variantTypeForm.display_order}
+                  onChange={(e) => setVariantTypeForm({ ...variantTypeForm, display_order: parseInt(e.target.value) || 0 })}
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Description</Label>
+                <Textarea
+                  value={variantTypeForm.description}
+                  onChange={(e) => setVariantTypeForm({ ...variantTypeForm, description: e.target.value })}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="variant-type-desc" className="text-xs">Description</Label>
-              <Textarea
-                id="variant-type-desc"
-                value={variantTypeForm.description}
-                onChange={(e) => setVariantTypeForm({ ...variantTypeForm, description: e.target.value })}
-                rows={3}
-                placeholder="Optional description"
-                className="text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="variant-type-order" className="text-xs">Display Order</Label>
-              <Input
-                id="variant-type-order"
-                type="number"
-                value={variantTypeForm.display_order}
-                onChange={(e) => setVariantTypeForm({ ...variantTypeForm, display_order: parseInt(e.target.value) || 0 })}
-                placeholder="0"
-                className="h-9 text-sm"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsVariantTypeDialogOpen(false)}>
+          </ScrollArea>
+          <DialogFooter className="flex-none border-t p-3 flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsVariantTypeDialogOpen(false)} className="flex-1 h-11 touch-manipulation">
               Cancel
             </Button>
-            <Button onClick={saveVariantType}>Save</Button>
+            <Button onClick={saveVariantType} className="flex-1 h-11 touch-manipulation">Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Variant Value Dialog */}
       <Dialog open={isVariantValueDialogOpen} onOpenChange={setIsVariantValueDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-lg">{editingVariantValue ? "Edit Variant Value" : "Create Variant Value"}</DialogTitle>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 py-3 border-b flex-none">
+            <DialogTitle className="text-base">{editingVariantValue ? "Edit Value" : "New Variant Value"}</DialogTitle>
             <DialogDescription className="text-xs">
-              {editingVariantValue ? "Update variant value details" : "Add a new variant value (e.g., Small, Red, Cotton)"}
+              {editingVariantValue ? "Update variant value" : "Add value (e.g. Small, Red)"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="variant-value-type" className="text-xs">Variant Type *</Label>
-              <select
-                id="variant-value-type"
-                value={variantValueForm.variant_type_id}
-                onChange={(e) => setVariantValueForm({ ...variantValueForm, variant_type_id: parseInt(e.target.value) })}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {variantTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
-              {validationErrors.variant_type_id && (
-                <p className="text-xs text-red-500">{validationErrors.variant_type_id}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="variant-value-name" className="text-xs">Value *</Label>
-              <Input
-                id="variant-value-name"
-                value={variantValueForm.value}
-                onChange={(e) => setVariantValueForm({ ...variantValueForm, value: e.target.value })}
-                placeholder="e.g., Small, Red, Cotton"
-                className={`h-9 text-sm ${validationErrors.value ? "border-red-500" : ""}`}
-              />
-              {validationErrors.value && (
-                <p className="text-xs text-red-500">{validationErrors.value}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="variant-value-code" className="text-xs">Code</Label>
-              <Input
-                id="variant-value-code"
-                value={variantValueForm.code}
-                onChange={(e) => setVariantValueForm({ ...variantValueForm, code: e.target.value })}
-                placeholder="e.g., SM, RED, COT"
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="variant-value-color" className="text-xs">Hex Color (for colors only)</Label>
-              <div className="flex gap-2">
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Variant Type *</Label>
+                <select
+                  value={variantValueForm.variant_type_id}
+                  onChange={(e) => setVariantValueForm({ ...variantValueForm, variant_type_id: parseInt(e.target.value) })}
+                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm touch-manipulation"
+                >
+                  {variantTypes.map((type) => (
+                    <option key={type.id} value={type.id}>{type.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Value *</Label>
                 <Input
-                  id="variant-value-color"
-                  value={variantValueForm.hex_color}
-                  onChange={(e) => setVariantValueForm({ ...variantValueForm, hex_color: e.target.value })}
-                  placeholder="#000000"
-                  className="h-9 text-sm"
+                  value={variantValueForm.value}
+                  onChange={(e) => setVariantValueForm({ ...variantValueForm, value: e.target.value })}
+                  placeholder="e.g. Small, Red"
+                  className={`h-11 touch-manipulation ${validationErrors.value ? "border-red-500" : ""}`}
                 />
-                <input
-                  type="color"
-                  value={variantValueForm.hex_color || "#000000"}
-                  onChange={(e) => setVariantValueForm({ ...variantValueForm, hex_color: e.target.value })}
-                  className="w-10 h-9 rounded border cursor-pointer"
+                {validationErrors.value && <p className="text-xs text-red-500">{validationErrors.value}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Code</Label>
+                <Input
+                  value={variantValueForm.code}
+                  onChange={(e) => setVariantValueForm({ ...variantValueForm, code: e.target.value })}
+                  placeholder="e.g. SM, RED"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Hex Color (optional)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={variantValueForm.hex_color}
+                    onChange={(e) => setVariantValueForm({ ...variantValueForm, hex_color: e.target.value })}
+                    placeholder="#000000"
+                    className="h-11 touch-manipulation flex-1"
+                  />
+                  <input
+                    type="color"
+                    value={variantValueForm.hex_color || "#000000"}
+                    onChange={(e) => setVariantValueForm({ ...variantValueForm, hex_color: e.target.value })}
+                    className="w-12 h-11 rounded border cursor-pointer flex-shrink-0"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Display Order</Label>
+                <Input
+                  type="number"
+                  value={variantValueForm.display_order}
+                  onChange={(e) => setVariantValueForm({ ...variantValueForm, display_order: parseInt(e.target.value) || 0 })}
+                  className="h-11 touch-manipulation"
                 />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="variant-value-order" className="text-xs">Display Order</Label>
-              <Input
-                id="variant-value-order"
-                type="number"
-                value={variantValueForm.display_order}
-                onChange={(e) => setVariantValueForm({ ...variantValueForm, display_order: parseInt(e.target.value) || 0 })}
-                placeholder="0"
-                className="h-9 text-sm"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsVariantValueDialogOpen(false)}>
+          </ScrollArea>
+          <DialogFooter className="flex-none border-t p-3 flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsVariantValueDialogOpen(false)} className="flex-1 h-11 touch-manipulation">
               Cancel
             </Button>
-            <Button onClick={saveVariantValue}>Save</Button>
+            <Button onClick={saveVariantValue} className="flex-1 h-11 touch-manipulation">Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

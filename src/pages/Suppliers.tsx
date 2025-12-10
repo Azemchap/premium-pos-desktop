@@ -1,4 +1,4 @@
-// src/pages/Suppliers.tsx - Supplier Management with full CRUD
+// src/pages/Suppliers.tsx - Optimized Mobile-First with Pagination
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Supplier, CreateSupplierRequest, UpdateSupplierRequest } from "@/types";
@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -45,7 +47,12 @@ import {
   Filter,
   X,
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -53,14 +60,13 @@ export default function Suppliers() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
-  // Form states
   const [formData, setFormData] = useState<Partial<CreateSupplierRequest>>({
     company_name: "",
     contact_name: "",
@@ -80,7 +86,6 @@ export default function Suppliers() {
 
   const [submitting, setSubmitting] = useState(false);
 
-  // Load suppliers
   const loadSuppliers = async () => {
     try {
       setLoading(true);
@@ -101,7 +106,6 @@ export default function Suppliers() {
     loadSuppliers();
   }, [statusFilter]);
 
-  // Filter suppliers based on search query
   const filterSuppliers = (data: Supplier[], query: string) => {
     if (!query.trim()) {
       setFilteredSuppliers(data);
@@ -122,9 +126,9 @@ export default function Suppliers() {
 
   useEffect(() => {
     filterSuppliers(suppliers, searchQuery);
+    setCurrentPage(1);
   }, [searchQuery, suppliers]);
 
-  // Calculate stats
   const stats = {
     total: suppliers.length,
     active: suppliers.filter((s) => s.is_active).length,
@@ -133,7 +137,13 @@ export default function Suppliers() {
       : "0.0",
   };
 
-  // Create supplier
+  // Pagination
+  const totalPages = Math.ceil(filteredSuppliers.length / ITEMS_PER_PAGE);
+  const paginatedSuppliers = filteredSuppliers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const handleCreate = async () => {
     if (!formData.company_name) {
       toast.error("Company name is required");
@@ -142,9 +152,7 @@ export default function Suppliers() {
 
     try {
       setSubmitting(true);
-      await invoke("create_supplier", {
-        request: formData,
-      });
+      await invoke("create_supplier", { request: formData });
       toast.success("Supplier created successfully");
       setIsCreateDialogOpen(false);
       resetForm();
@@ -157,7 +165,6 @@ export default function Suppliers() {
     }
   };
 
-  // Update supplier
   const handleUpdate = async () => {
     if (!selectedSupplier) return;
 
@@ -196,15 +203,12 @@ export default function Suppliers() {
     }
   };
 
-  // Delete supplier
   const handleDelete = async () => {
     if (!selectedSupplier) return;
 
     try {
       setSubmitting(true);
-      await invoke("delete_supplier", {
-        supplierId: selectedSupplier.id,
-      });
+      await invoke("delete_supplier", { supplierId: selectedSupplier.id });
       toast.success("Supplier deleted successfully");
       setIsDeleteDialogOpen(false);
       setSelectedSupplier(null);
@@ -217,7 +221,6 @@ export default function Suppliers() {
     }
   };
 
-  // Open edit dialog
   const openEditDialog = (supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setFormData({
@@ -239,13 +242,11 @@ export default function Suppliers() {
     setIsEditDialogOpen(true);
   };
 
-  // Open delete dialog
   const openDeleteDialog = (supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setIsDeleteDialogOpen(true);
   };
 
-  // Reset form
   const resetForm = () => {
     setFormData({
       company_name: "",
@@ -266,17 +267,14 @@ export default function Suppliers() {
     setSelectedSupplier(null);
   };
 
-  // Render rating stars
   const renderRating = (rating?: number) => {
     if (!rating) return <span className="text-xs text-muted-foreground">No rating</span>;
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             key={i}
-            className={`w-3 h-3 ${
-              i < rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"
-            }`}
+            className={`w-3 h-3 ${i < rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
           />
         ))}
       </div>
@@ -284,199 +282,232 @@ export default function Suppliers() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold">Suppliers</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage supplier relationships and procurement
-          </p>
-        </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Supplier
-        </Button>
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="flex-none px-3 py-2 sm:px-6 sm:py-4 border-b bg-background/95">
+        <PageHeader
+          icon={Building2}
+          title="Suppliers"
+          subtitle="Manage supplier relationships and procurement"
+          actions={
+            <Button onClick={() => setIsCreateDialogOpen(true)} className="h-11 touch-manipulation">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Supplier
+            </Button>
+          }
+        />
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="overflow-hidden border-none shadow-md">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white">
-                <p className="text-xs opacity-90 font-medium">Total Suppliers</p>
-                <p className="text-lg font-bold mt-1">{stats.total}</p>
-              </div>
-              <div className="p-2.5 bg-white/20 rounded-lg">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="overflow-hidden border-none shadow-md">
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white">
-                <p className="text-xs opacity-90 font-medium">Active</p>
-                <p className="text-lg font-bold mt-1">{stats.active}</p>
-              </div>
-              <div className="p-2.5 bg-white/20 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="overflow-hidden border-none shadow-md">
-          <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white">
-                <p className="text-xs opacity-90 font-medium">Avg Rating</p>
-                <p className="text-lg font-bold mt-1">{stats.avgRating}</p>
-              </div>
-              <div className="p-2.5 bg-white/20 rounded-lg">
-                <Star className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
-      <Card className="shadow-md">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by company, contact, email, phone, or number..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px]">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Suppliers List */}
-      {loading ? (
-        <Card className="shadow-md">
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ) : filteredSuppliers.length === 0 ? (
-        <Card className="shadow-md">
-          <CardContent className="p-12 text-center">
-            <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Building2 className="w-10 h-10 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No suppliers found</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              {searchQuery || statusFilter !== "all"
-                ? "Try adjusting your search or filters"
-                : "Get started by adding your first supplier"}
-            </p>
-            {!searchQuery && statusFilter === "all" && (
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Supplier
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="text-base">
-              {filteredSuppliers.length} Supplier{filteredSuppliers.length !== 1 ? "s" : ""}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y">
-              {filteredSuppliers.map((supplier) => (
-                <div
-                  key={supplier.id}
-                  className="p-4 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-semibold text-sm">{supplier.company_name}</h4>
-                        <Badge
-                          className={`text-xs ${
-                            supplier.is_active
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400"
-                          }`}
-                        >
-                          {supplier.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                        {renderRating(supplier.rating)}
-                      </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                        <span>{supplier.supplier_number}</span>
-                        {supplier.contact_name && <span>{supplier.contact_name}</span>}
-                        {supplier.email && <span>{supplier.email}</span>}
-                        {supplier.phone && <span>{supplier.phone}</span>}
-                      </div>
-                      {supplier.payment_terms && (
-                        <div className="mt-2 text-xs">
-                          <span className="text-muted-foreground">Payment Terms: </span>
-                          <span className="font-medium">{supplier.payment_terms}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(supplier)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openDeleteDialog(supplier)}
-                        className="hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+      {/* Main Content - Scrollable */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-3 sm:p-6 space-y-4">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Card className="overflow-hidden border-none shadow-sm">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-white flex-1 min-w-0">
+                    <p className="text-xs opacity-90 font-medium">Total Suppliers</p>
+                    <p className="text-3xl font-bold mt-1 truncate">{stats.total}</p>
+                  </div>
+                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
+                    <Building2 className="w-5 h-5 text-white" />
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            </Card>
+
+            <Card className="overflow-hidden border-none shadow-sm">
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-white flex-1 min-w-0">
+                    <p className="text-xs opacity-90 font-medium">Active</p>
+                    <p className="text-3xl font-bold mt-1 truncate">{stats.active}</p>
+                  </div>
+                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
+                    <CheckCircle className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="overflow-hidden border-none shadow-sm">
+              <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-white flex-1 min-w-0">
+                    <p className="text-xs opacity-90 font-medium">Avg Rating</p>
+                    <p className="text-3xl font-bold mt-1 truncate">{stats.avgRating}</p>
+                  </div>
+                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
+                    <Star className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Search and Filters */}
+          <Card className="border-2">
+            <CardContent className="p-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search suppliers..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-11 touch-manipulation"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground touch-manipulation"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-[140px] h-11 touch-manipulation">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Suppliers List */}
+          {loading ? (
+            <Card className="border-2">
+              <CardContent className="p-3">
+                <div className="space-y-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : filteredSuppliers.length === 0 ? (
+            <Card className="border-2">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <Building2 className="w-8 h-8 text-muted-foreground/50" />
+                </div>
+                <h3 className="font-semibold mb-2">No suppliers found</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {searchQuery || statusFilter !== "all"
+                    ? "Try adjusting your search or filters"
+                    : "Get started by adding your first supplier"}
+                </p>
+                {!searchQuery && statusFilter === "all" && (
+                  <Button onClick={() => setIsCreateDialogOpen(true)} className="h-11 touch-manipulation">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Supplier
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <Card className="border-2">
+                <CardHeader className="border-b p-3">
+                  <CardTitle className="text-base">
+                    {filteredSuppliers.length} Supplier{filteredSuppliers.length !== 1 ? "s" : ""}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y">
+                    {paginatedSuppliers.map((supplier) => (
+                      <div key={supplier.id} className="p-3 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-semibold text-sm line-clamp-1">{supplier.company_name}</h4>
+                              <Badge variant={supplier.is_active ? "default" : "secondary"} className="text-[10px]">
+                                {supplier.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                              {renderRating(supplier.rating)}
+                            </div>
+                            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                              <span className="font-mono">{supplier.supplier_number}</span>
+                              {supplier.contact_name && <span>{supplier.contact_name}</span>}
+                              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                                {supplier.email && <span className="truncate">{supplier.email}</span>}
+                                {supplier.phone && <span>{supplier.phone}</span>}
+                              </div>
+                            </div>
+                            {supplier.payment_terms && (
+                              <div className="text-xs">
+                                <span className="text-muted-foreground">Terms: </span>
+                                <Badge variant="outline" className="text-[10px] font-medium">
+                                  {supplier.payment_terms}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-1 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(supplier)}
+                              className="h-9 w-9 touch-manipulation"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openDeleteDialog(supplier)}
+                              className="h-9 w-9 hover:text-destructive touch-manipulation"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="h-11 w-11 touch-manipulation"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="h-11 w-11 touch-manipulation"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </ScrollArea>
 
       {/* Create/Edit Dialog */}
       <Dialog
@@ -489,155 +520,155 @@ export default function Suppliers() {
           }
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-lg">
-              {isEditDialogOpen ? "Edit Supplier" : "Add New Supplier"}
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl p-0 gap-0 flex flex-col h-[90vh] max-h-[90vh]">
+          <DialogHeader className="px-4 py-3 border-b flex-none">
+            <DialogTitle className="text-base">
+              {isEditDialogOpen ? "Edit Supplier" : "New Supplier"}
             </DialogTitle>
-            <DialogDescription className="text-sm">
-              {isEditDialogOpen
-                ? "Update supplier information"
-                : "Enter supplier details to create a new record"}
+            <DialogDescription className="text-xs">
+              {isEditDialogOpen ? "Update supplier information" : "Enter supplier details"}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="company_name" className="text-sm">
-                Company Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="company_name"
-                value={formData.company_name}
-                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                placeholder="Acme Supplies Inc"
-              />
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs font-medium">
+                  Company Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  value={formData.company_name}
+                  onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                  placeholder="Acme Supplies Inc"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Contact Name</Label>
+                <Input
+                  value={formData.contact_name}
+                  onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                  placeholder="John Doe"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Email</Label>
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="contact@supplier.com"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Phone</Label>
+                <Input
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+1 (555) 123-4567"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Website</Label>
+                <Input
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  placeholder="https://supplier.com"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs font-medium">Address</Label>
+                <Input
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="123 Main St"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">City</Label>
+                <Input
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="New York"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">State</Label>
+                <Input
+                  value={formData.state}
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  placeholder="NY"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Zip Code</Label>
+                <Input
+                  value={formData.zip_code}
+                  onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
+                  placeholder="10001"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Tax ID</Label>
+                <Input
+                  value={formData.tax_id}
+                  onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                  placeholder="XX-XXXXXXX"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs font-medium">Payment Terms</Label>
+                <Input
+                  value={formData.payment_terms}
+                  onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
+                  placeholder="Net 30"
+                  className="h-11 touch-manipulation"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Rating (1-5)</Label>
+                <Select
+                  value={formData.rating?.toString() || ""}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, rating: value ? parseInt(value) : undefined })
+                  }
+                >
+                  <SelectTrigger className="h-11 touch-manipulation">
+                    <SelectValue placeholder="Select rating" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No rating</SelectItem>
+                    <SelectItem value="1">⭐ 1 Star</SelectItem>
+                    <SelectItem value="2">⭐⭐ 2 Stars</SelectItem>
+                    <SelectItem value="3">⭐⭐⭐ 3 Stars</SelectItem>
+                    <SelectItem value="4">⭐⭐⭐⭐ 4 Stars</SelectItem>
+                    <SelectItem value="5">⭐⭐⭐⭐⭐ 5 Stars</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs font-medium">Notes</Label>
+                <Textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Additional notes..."
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="contact_name" className="text-sm">Contact Name</Label>
-              <Input
-                id="contact_name"
-                value={formData.contact_name}
-                onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                placeholder="John Doe"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="contact@supplier.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm">Phone</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+1 (555) 123-4567"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="website" className="text-sm">Website</Label>
-              <Input
-                id="website"
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                placeholder="https://supplier.com"
-              />
-            </div>
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="address" className="text-sm">Address</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="123 Main St"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="city" className="text-sm">City</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                placeholder="New York"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="state" className="text-sm">State</Label>
-              <Input
-                id="state"
-                value={formData.state}
-                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                placeholder="NY"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="zip_code" className="text-sm">Zip Code</Label>
-              <Input
-                id="zip_code"
-                value={formData.zip_code}
-                onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
-                placeholder="10001"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tax_id" className="text-sm">Tax ID</Label>
-              <Input
-                id="tax_id"
-                value={formData.tax_id}
-                onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
-                placeholder="XX-XXXXXXX"
-              />
-            </div>
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="payment_terms" className="text-sm">Payment Terms</Label>
-              <Input
-                id="payment_terms"
-                value={formData.payment_terms}
-                onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
-                placeholder="Net 30"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rating" className="text-sm">Rating (1-5)</Label>
-              <Select
-                value={formData.rating?.toString() || ""}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, rating: value ? parseInt(value) : undefined })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select rating" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">No rating</SelectItem>
-                  <SelectItem value="1">⭐ 1 Star</SelectItem>
-                  <SelectItem value="2">⭐⭐ 2 Stars</SelectItem>
-                  <SelectItem value="3">⭐⭐⭐ 3 Stars</SelectItem>
-                  <SelectItem value="4">⭐⭐⭐⭐ 4 Stars</SelectItem>
-                  <SelectItem value="5">⭐⭐⭐⭐⭐ 5 Stars</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="notes" className="text-sm">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Additional notes about this supplier..."
-                rows={3}
-              />
-            </div>
-          </div>
+          </ScrollArea>
 
-          <DialogFooter>
+          <DialogFooter className="flex-none border-t p-3 flex-row gap-2">
             <Button
               variant="outline"
               onClick={() => {
@@ -646,12 +677,14 @@ export default function Suppliers() {
                 resetForm();
               }}
               disabled={submitting}
+              className="flex-1 h-11 touch-manipulation"
             >
               Cancel
             </Button>
             <Button
               onClick={isEditDialogOpen ? handleUpdate : handleCreate}
               disabled={submitting || !formData.company_name}
+              className="flex-1 h-11 touch-manipulation"
             >
               {submitting ? "Saving..." : isEditDialogOpen ? "Update" : "Create"}
             </Button>
@@ -661,17 +694,18 @@ export default function Suppliers() {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg">Delete Supplier?</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm">
-              Are you sure you want to delete {selectedSupplier?.company_name}? This action
-              cannot be undone.
+            <AlertDialogTitle className="text-base">Delete Supplier?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              Delete {selectedSupplier?.company_name}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={submitting}>
+          <AlertDialogFooter className="flex-row gap-2">
+            <AlertDialogCancel disabled={submitting} className="flex-1 h-11 touch-manipulation">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={submitting} className="flex-1 h-11 touch-manipulation">
               {submitting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
