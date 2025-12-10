@@ -17,10 +17,22 @@ pub async fn seed_database(pool: &SqlitePool) -> Result<(), String> {
     }
 
     // Seed Users
-    seed_users(pool).await?;
+    let user_ids = seed_users(pool).await?;
 
     // Seed Store Config
     seed_store_config(pool).await?;
+
+    // Seed Organization
+    seed_organization(pool).await?;
+
+    // Seed Customers
+    seed_customers(pool).await?;
+
+    // Seed Suppliers
+    seed_suppliers(pool).await?;
+
+    // Seed Employees
+    seed_employees(pool, &user_ids).await?;
 
     // Seed Building Materials Products
     let product_ids = seed_building_materials_products(pool).await?;
@@ -31,11 +43,20 @@ pub async fn seed_database(pool: &SqlitePool) -> Result<(), String> {
     // Seed Sales
     seed_sales(pool, &product_ids).await?;
 
+    // Seed Expenses
+    seed_expenses(pool).await?;
+
+    // Seed Promotions
+    seed_promotions(pool).await?;
+
+    // Seed Appointments
+    seed_appointments(pool).await?;
+
     println!("✅ Database seeding completed successfully!");
     Ok(())
 }
 
-async fn seed_users(pool: &SqlitePool) -> Result<(), String> {
+async fn seed_users(pool: &SqlitePool) -> Result<Vec<i64>, String> {
     println!("👥 Seeding users...");
 
     let users = vec![
@@ -81,10 +102,12 @@ async fn seed_users(pool: &SqlitePool) -> Result<(), String> {
         ),
     ];
 
+    let mut user_ids = Vec::new();
+
     for (username, email, password, first_name, last_name, role) in users {
         let pwd_hash = hash(password, DEFAULT_COST).map_err(|e| e.to_string())?;
 
-        sqlx::query(
+        let result = sqlx::query(
             "INSERT OR IGNORE INTO users (username, email, password_hash, first_name, last_name, role, is_active)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1)"
         )
@@ -97,10 +120,12 @@ async fn seed_users(pool: &SqlitePool) -> Result<(), String> {
         .execute(pool)
         .await
         .map_err(|e| e.to_string())?;
+
+        user_ids.push(result.last_insert_rowid());
     }
 
     println!("   ✓ Created 5 users (+ admin)");
-    Ok(())
+    Ok(user_ids)
 }
 
 async fn seed_store_config(pool: &SqlitePool) -> Result<(), String> {
@@ -1227,5 +1252,207 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
     }
 
     println!("   ✓ Created 15 sales transactions");
+    Ok(())
+}
+
+async fn seed_organization(pool: &SqlitePool) -> Result<(), String> {
+    println!("🏢 Seeding organization...");
+
+    sqlx::query(
+        "INSERT OR IGNORE INTO organizations (id, name, slug, industry, business_type, phone, email, address, city, state, zip_code, subscription_plan, subscription_status)
+         VALUES (1, 'BuildCo Wholesale', 'buildco-wholesale', 'Building Materials', 'Wholesale', '+1-303-555-0199', 'info@buildco.com', '4567 Industrial Parkway', 'Denver', 'CO', '80202', 'Professional', 'Active')"
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    println!("   ✓ Organization created");
+    Ok(())
+}
+
+async fn seed_customers(pool: &SqlitePool) -> Result<(), String> {
+    println!("👥 Seeding customers...");
+
+    let customers = vec![
+        ("John", "Doe", "john.doe@email.com", "+1-555-0101", "Retail"),
+        ("Jane", "Smith", "jane.smith@email.com", "+1-555-0102", "Wholesale"),
+        ("Bob", "Johnson", "bob.j@email.com", "+1-555-0103", "Corporate"),
+        ("Alice", "Williams", "alice.w@email.com", "+1-555-0104", "VIP"),
+        ("Charlie", "Brown", "charlie.b@email.com", "+1-555-0105", "Retail"),
+    ];
+
+    for (i, (first, last, email, phone, cust_type)) in customers.iter().enumerate() {
+        sqlx::query(
+            "INSERT OR IGNORE INTO customers (customer_number, first_name, last_name, email, phone, customer_type, status, loyalty_points)
+             VALUES (?, ?, ?, ?, ?, ?, 'Active', ?)"
+        )
+        .bind(format!("CUST{:05}", i + 1))
+        .bind(first)
+        .bind(last)
+        .bind(email)
+        .bind(phone)
+        .bind(cust_type)
+        .bind((i as i32 + 1) * 100)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+    }
+
+    println!("   ✓ Created 5 customers");
+    Ok(())
+}
+
+async fn seed_suppliers(pool: &SqlitePool) -> Result<(), String> {
+    println!("🚚 Seeding suppliers...");
+
+    let suppliers = vec![
+        ("ABC Building Supply", "Tom Anderson", "tom@abcsupply.com", "+1-555-0201"),
+        ("XYZ Hardware Co", "Lisa Chen", "lisa@xyzhardware.com", "+1-555-0202"),
+        ("Quality Materials Inc", "Mark Davis", "mark@quality.com", "+1-555-0203"),
+    ];
+
+    for (i, (company, contact, email, phone)) in suppliers.iter().enumerate() {
+        sqlx::query(
+            "INSERT OR IGNORE INTO suppliers (supplier_number, company_name, contact_name, email, phone, rating, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, 1)"
+        )
+        .bind(format!("SUP{:05}", i + 1))
+        .bind(company)
+        .bind(contact)
+        .bind(email)
+        .bind(phone)
+        .bind(4 + (i as i32 % 2))
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+    }
+
+    println!("   ✓ Created 3 suppliers");
+    Ok(())
+}
+
+async fn seed_employees(pool: &SqlitePool, user_ids: &[i64]) -> Result<(), String> {
+    println!("👷 Seeding employees...");
+
+    if user_ids.is_empty() {
+        println!("   ⚠️ No user IDs available, skipping employees");
+        return Ok(());
+    }
+
+    for (i, &user_id) in user_ids.iter().enumerate() {
+        let (department, position, hourly_rate, salary) = match i {
+            0 => ("Management", "Store Manager", 0.0, 65000.0),
+            1 => ("Sales", "Cashier", 18.50, 0.0),
+            2 => ("Sales", "Cashier", 18.50, 0.0),
+            3 => ("Warehouse", "Warehouse Manager", 22.0, 0.0),
+            _ => ("Inventory", "Stock Keeper", 16.0, 0.0),
+        };
+
+        sqlx::query(
+            "INSERT OR IGNORE INTO employees (user_id, employee_number, department, position, hire_date, employment_type, salary_type, hourly_rate, salary)
+             VALUES (?, ?, ?, ?, DATE('now', '-' || ? || ' months'), 'Full-time', ?, ?, ?)"
+        )
+        .bind(user_id)
+        .bind(format!("EMP{:05}", i + 1))
+        .bind(department)
+        .bind(position)
+        .bind((i + 3) * 2)
+        .bind(if salary > 0.0 { "Salary" } else { "Hourly" })
+        .bind(hourly_rate)
+        .bind(salary)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+    }
+
+    println!("   ✓ Created {} employees", user_ids.len());
+    Ok(())
+}
+
+async fn seed_expenses(pool: &SqlitePool) -> Result<(), String> {
+    println!("💸 Seeding expenses...");
+
+    let expenses = vec![
+        ("Rent", 3500.0, "Monthly rent payment"),
+        ("Utilities", 450.0, "Electric and water bills"),
+        ("Insurance", 1200.0, "Business insurance premium"),
+        ("Office Supplies", 280.0, "Pens, paper, folders"),
+        ("Marketing", 850.0, "Google Ads campaign"),
+    ];
+
+    for (i, (description, amount, notes)) in expenses.iter().enumerate() {
+        sqlx::query(
+            "INSERT OR IGNORE INTO expenses (expense_number, description, amount, expense_date, payment_method, status, notes)
+             VALUES (?, ?, ?, DATE('now', '-' || ? || ' days'), 'Bank Transfer', 'Paid', ?)"
+        )
+        .bind(format!("EXP{:05}", i + 1))
+        .bind(description)
+        .bind(amount)
+        .bind(i * 5)
+        .bind(notes)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+    }
+
+    println!("   ✓ Created 5 expenses");
+    Ok(())
+}
+
+async fn seed_promotions(pool: &SqlitePool) -> Result<(), String> {
+    println!("🎁 Seeding promotions...");
+
+    let promotions = vec![
+        ("SUMMER25", "Summer Sale", "Percentage", 25.0, 100.0),
+        ("BULK50", "Bulk Discount", "Fixed Amount", 50.0, 500.0),
+        ("NEWCUST15", "New Customer", "Percentage", 15.0, 0.0),
+    ];
+
+    for (code, name, discount_type, value, min_purchase) in promotions {
+        sqlx::query(
+            "INSERT OR IGNORE INTO promotions (code, name, discount_type, discount_value, min_purchase_amount, start_date, end_date, customer_type, is_active)
+             VALUES (?, ?, ?, ?, ?, DATE('now'), DATE('now', '+30 days'), 'All', 1)"
+        )
+        .bind(code)
+        .bind(name)
+        .bind(discount_type)
+        .bind(value)
+        .bind(min_purchase)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+    }
+
+    println!("   ✓ Created 3 promotions");
+    Ok(())
+}
+
+async fn seed_appointments(pool: &SqlitePool) -> Result<(), String> {
+    println!("📅 Seeding appointments...");
+
+    let appointments = vec![
+        ("2025-01-15", "09:00", "10:00", 60, 150.0, "Consultation"),
+        ("2025-01-16", "14:00", "15:30", 90, 225.0, "Site visit"),
+        ("2025-01-18", "11:00", "12:00", 60, 150.0, "Quote preparation"),
+    ];
+
+    for (i, (date, start, end, duration, price, notes)) in appointments.iter().enumerate() {
+        sqlx::query(
+            "INSERT OR IGNORE INTO appointments (appointment_number, appointment_date, start_time, end_time, duration_minutes, status, price, notes)
+             VALUES (?, ?, ?, ?, ?, 'Scheduled', ?, ?)"
+        )
+        .bind(format!("APT{:05}", i + 1))
+        .bind(date)
+        .bind(start)
+        .bind(end)
+        .bind(duration)
+        .bind(price)
+        .bind(notes)
+        .execute(pool)
+        .await
+        .map_err(|e| e.to_string())?;
+    }
+
+    println!("   ✓ Created 3 appointments");
     Ok(())
 }
