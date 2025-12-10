@@ -1,20 +1,15 @@
-// src/components/ProductVariantManager.tsx - Variant Management Component
+// src/components/ProductVariantManager.tsx - Optimized Mobile-First Design
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { invoke } from "@tauri-apps/api/core";
-import { Layers, Trash2, Wand2 } from "lucide-react";
+import { ChevronRight, Layers, Trash2, Wand2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -71,6 +66,8 @@ export default function ProductVariantManager({
   const [selectedTypeIds, setSelectedTypeIds] = useState<number[]>([]);
   const [selectedValueIds, setSelectedValueIds] = useState<Record<number, number[]>>({});
   const [variantCombinations, setVariantCombinations] = useState<VariantCombination[]>(initialVariants);
+  const [activeTab, setActiveTab] = useState<string>("setup");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadVariantData();
@@ -78,7 +75,7 @@ export default function ProductVariantManager({
 
   useEffect(() => {
     onVariantsChange(variantCombinations);
-  }, [variantCombinations]);
+  }, [variantCombinations, onVariantsChange]);
 
   const loadVariantData = async () => {
     try {
@@ -107,8 +104,6 @@ export default function ProductVariantManager({
       const newSelectedValues = { ...selectedValueIds };
       delete newSelectedValues[typeId];
       setSelectedValueIds(newSelectedValues);
-      // Clear generated variants when removing a type
-      setVariantCombinations([]);
     }
   };
 
@@ -128,7 +123,6 @@ export default function ProductVariantManager({
   };
 
   const generateVariantCombinations = () => {
-    // Get all selected value combinations
     const typeValuePairs: Array<{ typeId: number; values: VariantValue[] }> = [];
     
     selectedTypeIds.forEach((typeId) => {
@@ -142,19 +136,16 @@ export default function ProductVariantManager({
     });
 
     if (typeValuePairs.length === 0) {
-      toast.error("Please select at least one variant value");
+      toast.error("Select at least one variant value");
       return;
     }
 
-    // Generate all combinations using cartesian product
     const combinations = cartesianProduct(typeValuePairs.map((pair) => pair.values));
 
     const newVariants: VariantCombination[] = combinations.map((combo) => {
-      // Generate SKU by appending codes
       const codes = combo.map((v) => v.code || v.value.substring(0, 3).toUpperCase());
       const sku = `${baseSku}-${codes.join("-")}`;
 
-      // Generate variant name
       const typeName = combo.map((v) => {
         const type = variantTypes.find((t) => t.id === v.variant_type_id);
         return `${type?.name}: ${v.value}`;
@@ -176,16 +167,15 @@ export default function ProductVariantManager({
     });
 
     setVariantCombinations(newVariants);
-    toast.success(`Generated ${newVariants.length} variant combinations!`);
+    setActiveTab("variants");
+    toast.success(`Generated ${newVariants.length} variants`);
   };
 
   const cartesianProduct = <T,>(arrays: T[][]): T[][] => {
     if (arrays.length === 0) return [[]];
     if (arrays.length === 1) return arrays[0].map((item) => [item]);
-
     const [first, ...rest] = arrays;
     const restProduct = cartesianProduct(rest);
-
     return first.flatMap((item) => restProduct.map((combo) => [item, ...combo]));
   };
 
@@ -197,296 +187,320 @@ export default function ProductVariantManager({
 
   const removeVariant = (index: number) => {
     setVariantCombinations(variantCombinations.filter((_, i) => i !== index));
+    if (editingIndex === index) setEditingIndex(null);
+    toast.success("Variant removed");
   };
 
+  const canGenerate = selectedTypeIds.length > 0 && 
+    Object.values(selectedValueIds).some((arr) => arr.length > 0);
+
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Layers className="w-5 h-5" />
-            Product Variants Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Variant Type Selection */}
-          <div>
-            <Label className="text-xs sm:text-sm font-semibold mb-2 block">
-              Step 1: Select Variant Types
-            </Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {variantTypes.map((type) => (
-                <div key={type.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`type-${type.id}`}
-                    checked={selectedTypeIds.includes(type.id)}
-                    onCheckedChange={(checked) => toggleVariantType(type.id, checked as boolean)}
-                  />
-                  <Label htmlFor={`type-${type.id}`} className="cursor-pointer text-xs sm:text-sm">
-                    {type.name}
-                  </Label>
-                </div>
-              ))}
-            </div>
+    <div className="flex flex-col h-full max-h-[calc(100vh-8rem)] min-h-0">
+      {/* Header - Fixed */}
+      <div className="flex-none px-3 py-2 border-b bg-muted/30">
+        <div className="flex items-center gap-2">
+          <Layers className="w-4 h-4 text-primary flex-shrink-0" />
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-semibold truncate">Variant Manager</h3>
+            <p className="text-xs text-muted-foreground truncate">{productName}</p>
           </div>
+        </div>
+      </div>
 
-          {/* Variant Value Selection per Type */}
-          {selectedTypeIds.length > 0 && (
-            <div className="space-y-3">
-              <Label className="text-xs sm:text-sm font-semibold mb-2 block">
-                Step 2: Select Values for Each Type
-              </Label>
-              {selectedTypeIds.map((typeId) => {
-                const type = variantTypes.find((t) => t.id === typeId);
-                const values = getValuesForType(typeId);
-                return (
-                  <div key={typeId} className="border rounded-lg p-3">
-                    <Label className="text-xs sm:text-sm font-semibold mb-2 block">
-                      {type?.name}
-                    </Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                      {values.map((value) => (
-                        <div key={value.id} className="flex items-center space-x-2 min-w-0">
-                          <Checkbox
-                            id={`value-${value.id}`}
-                            checked={(selectedValueIds[typeId] || []).includes(value.id)}
-                            onCheckedChange={(checked) =>
-                              toggleVariantValue(typeId, value.id, checked as boolean)
-                            }
-                          />
-                          <Label
-                            htmlFor={`value-${value.id}`}
-                            className="cursor-pointer flex items-center gap-1.5 text-xs sm:text-sm truncate"
-                          >
-                            {value.hex_color && (
-                              <div
-                                className="w-3 h-3 sm:w-4 sm:h-4 rounded border flex-shrink-0"
-                                style={{ backgroundColor: value.hex_color }}
-                              />
-                            )}
-                            <span className="truncate">{value.value}</span>
-                            {value.code && (
-                              <span className="text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">({value.code})</span>
-                            )}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
+      {/* Tabs Navigation - Fixed */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
+        <TabsList className="w-full flex-none rounded-none border-b h-auto p-0">
+          <TabsTrigger 
+            value="setup" 
+            className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary h-11"
+          >
+            <span className="text-xs sm:text-sm">Setup</span>
+            {canGenerate && (
+              <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-[10px]">
+                {Object.values(selectedValueIds).reduce((sum, arr) => sum + arr.length, 0)}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="variants" 
+            className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary h-11"
+            disabled={variantCombinations.length === 0}
+          >
+            <span className="text-xs sm:text-sm">Variants</span>
+            {variantCombinations.length > 0 && (
+              <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-[10px]">
+                {variantCombinations.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Setup Tab */}
+        <TabsContent value="setup" className="flex-1 min-h-0 m-0 focus-visible:outline-none">
+          <ScrollArea className="h-full">
+            <div className="p-3 space-y-4 pb-20">
+              {/* Step 1: Variant Types */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex-shrink-0">
+                    1
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <Label className="text-xs font-semibold">Select Variant Types</Label>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {variantTypes.map((type) => (
+                    <label
+                      key={type.id}
+                      className={`
+                        flex items-center gap-2 p-2.5 rounded-lg border-2 cursor-pointer
+                        transition-all duration-200 touch-manipulation
+                        ${selectedTypeIds.includes(type.id)
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                        }
+                      `}
+                    >
+                      <Checkbox
+                        id={`type-${type.id}`}
+                        checked={selectedTypeIds.includes(type.id)}
+                        onCheckedChange={(checked) => toggleVariantType(type.id, checked as boolean)}
+                        className="flex-shrink-0"
+                      />
+                      <span className="text-xs font-medium truncate">{type.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
-          {/* Generate Button */}
-          {selectedTypeIds.length > 0 && Object.values(selectedValueIds).some((arr) => arr.length > 0) && (
-            <div className="flex justify-center pt-2">
-              <Button onClick={generateVariantCombinations} size="default" className="gap-2 w-full sm:w-auto">
+              {/* Step 2: Variant Values */}
+              {selectedTypeIds.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex-shrink-0">
+                      2
+                    </div>
+                    <Label className="text-xs font-semibold">Select Values</Label>
+                  </div>
+                  
+                  {selectedTypeIds.map((typeId) => {
+                    const type = variantTypes.find((t) => t.id === typeId);
+                    const values = getValuesForType(typeId);
+                    const selectedCount = (selectedValueIds[typeId] || []).length;
+                    
+                    return (
+                      <div key={typeId} className="space-y-2">
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {type?.name}
+                          </span>
+                          {selectedCount > 0 && (
+                            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                              {selectedCount} selected
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {values.map((value) => {
+                            const isSelected = (selectedValueIds[typeId] || []).includes(value.id);
+                            return (
+                              <label
+                                key={value.id}
+                                className={`
+                                  flex items-center gap-2 p-2 rounded-lg border-2 cursor-pointer
+                                  transition-all duration-200 touch-manipulation min-w-0
+                                  ${isSelected
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
+                                  }
+                                `}
+                              >
+                                <Checkbox
+                                  id={`value-${value.id}`}
+                                  checked={isSelected}
+                                  onCheckedChange={(checked) =>
+                                    toggleVariantValue(typeId, value.id, checked as boolean)
+                                  }
+                                  className="flex-shrink-0"
+                                />
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                  {value.hex_color && (
+                                    <div
+                                      className="w-3 h-3 rounded-sm border flex-shrink-0"
+                                      style={{ backgroundColor: value.hex_color }}
+                                    />
+                                  )}
+                                  <span className="text-xs truncate flex-1">{value.value}</span>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Generate Preview */}
+              {canGenerate && (
+                <div className="space-y-2 pt-2">
+                  <Separator />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                    <span>Will generate</span>
+                    <Badge variant="outline" className="h-6 px-2">
+                      {Object.values(selectedValueIds)
+                        .filter(arr => arr.length > 0)
+                        .reduce((product, arr) => product * arr.length, 1)} variants
+                    </Badge>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Fixed Generate Button */}
+          {canGenerate && (
+            <div className="flex-none border-t bg-background p-3">
+              <Button 
+                onClick={generateVariantCombinations} 
+                className="w-full h-11 gap-2 touch-manipulation"
+              >
                 <Wand2 className="w-4 h-4" />
-                <span className="text-xs sm:text-sm">Generate Variant Combinations</span>
+                <span className="text-sm font-semibold">Generate Variants</span>
+                <ChevronRight className="w-4 h-4 ml-auto" />
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* Variant Grid */}
-      {variantCombinations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-              <span className="text-sm sm:text-base">Generated Variants ({variantCombinations.length})</span>
-              <Badge variant="outline" className="text-xs">{productName}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6">
-            {/* Mobile/Tablet Card Layout (< 1024px) */}
-            <div className="lg:hidden space-y-3">
+        {/* Variants Tab */}
+        <TabsContent value="variants" className="flex-1 min-h-0 m-0 focus-visible:outline-none">
+          <ScrollArea className="h-full">
+            <div className="p-3 space-y-2 pb-4">
               {variantCombinations.map((variant, index) => (
-                <Card key={index} className="border-2">
-                  <CardContent className="p-4 space-y-3">
-                    {/* Variant Name and Delete Button */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <p className="font-medium text-sm">{variant.variant_name}</p>
-                        <div className="flex flex-wrap gap-1">
-                          {variant.values.map((v, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
-                              {v.value}
-                            </Badge>
-                          ))}
-                        </div>
+                <Card 
+                  key={index} 
+                  className={`
+                    border-2 transition-all duration-200
+                    ${editingIndex === index ? 'border-primary' : 'border-border'}
+                  `}
+                >
+                  <CardContent className="p-3 space-y-3">
+                    {/* Header */}
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <button
+                          onClick={() => setEditingIndex(editingIndex === index ? null : index)}
+                          className="w-full text-left"
+                        >
+                          <p className="text-xs font-semibold truncate">{variant.variant_name}</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {variant.values.map((v, i) => (
+                              <Badge 
+                                key={i} 
+                                variant="secondary" 
+                                className="h-5 px-1.5 text-[10px] font-normal"
+                              >
+                                {v.value}
+                              </Badge>
+                            ))}
+                          </div>
+                        </button>
                       </div>
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => removeVariant(index)}
-                        className="text-destructive flex-shrink-0"
+                        className="flex-shrink-0 h-8 w-8 text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
 
-                    {/* SKU and Barcode */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">SKU</Label>
-                        <Input
-                          value={variant.sku}
-                          onChange={(e) => updateVariant(index, "sku", e.target.value)}
-                          className="font-mono text-sm h-9"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">Barcode (Optional)</Label>
-                        <Input
-                          value={variant.barcode}
-                          onChange={(e) => updateVariant(index, "barcode", e.target.value)}
-                          placeholder="Optional"
-                          className="font-mono text-sm h-9"
-                        />
-                      </div>
-                    </div>
+                    {/* Expandable Details */}
+                    {editingIndex === index && (
+                      <>
+                        <Separator />
+                        <div className="space-y-3">
+                          {/* SKU & Barcode */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-muted-foreground uppercase font-semibold">
+                                SKU
+                              </Label>
+                              <Input
+                                value={variant.sku}
+                                onChange={(e) => updateVariant(index, "sku", e.target.value)}
+                                className="h-9 text-xs font-mono"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-muted-foreground uppercase font-semibold">
+                                Barcode
+                              </Label>
+                              <Input
+                                value={variant.barcode}
+                                onChange={(e) => updateVariant(index, "barcode", e.target.value)}
+                                placeholder="Optional"
+                                className="h-9 text-xs font-mono"
+                              />
+                            </div>
+                          </div>
 
-                    {/* Pricing */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">Cost Price</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={variant.cost_price}
-                          onChange={(e) =>
-                            updateVariant(index, "cost_price", parseFloat(e.target.value) || 0)
-                          }
-                          className="text-sm h-9"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">Selling Price</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={variant.selling_price}
-                          onChange={(e) =>
-                            updateVariant(index, "selling_price", parseFloat(e.target.value) || 0)
-                          }
-                          className="text-sm h-9"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">Wholesale Price</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={variant.wholesale_price}
-                          onChange={(e) =>
-                            updateVariant(index, "wholesale_price", parseFloat(e.target.value) || 0)
-                          }
-                          className="text-sm h-9"
-                        />
-                      </div>
-                    </div>
+                          {/* Pricing */}
+                          <div className="space-y-2">
+                            <Label className="text-[10px] text-muted-foreground uppercase font-semibold">
+                              Pricing
+                            </Label>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="space-y-1">
+                                <Label className="text-[10px] text-muted-foreground">Cost</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={variant.cost_price}
+                                  onChange={(e) =>
+                                    updateVariant(index, "cost_price", parseFloat(e.target.value) || 0)
+                                  }
+                                  className="h-9 text-xs"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[10px] text-muted-foreground">Sell</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={variant.selling_price}
+                                  onChange={(e) =>
+                                    updateVariant(index, "selling_price", parseFloat(e.target.value) || 0)
+                                  }
+                                  className="h-9 text-xs"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[10px] text-muted-foreground">Whole</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={variant.wholesale_price}
+                                  onChange={(e) =>
+                                    updateVariant(index, "wholesale_price", parseFloat(e.target.value) || 0)
+                                  }
+                                  className="h-9 text-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               ))}
             </div>
-
-            {/* Desktop Table Layout (>= 1024px) */}
-            <div className="hidden lg:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[200px]">Variant</TableHead>
-                    <TableHead className="min-w-[150px]">SKU</TableHead>
-                    <TableHead className="min-w-[150px]">Barcode</TableHead>
-                    <TableHead className="min-w-[120px]">Cost Price</TableHead>
-                    <TableHead className="min-w-[120px]">Selling Price</TableHead>
-                    <TableHead className="min-w-[120px]">Wholesale Price</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {variantCombinations.map((variant, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <p className="font-medium text-sm">{variant.variant_name}</p>
-                          <div className="flex flex-wrap gap-1">
-                            {variant.values.map((v, i) => (
-                              <Badge key={i} variant="secondary" className="text-xs">
-                                {v.value}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={variant.sku}
-                          onChange={(e) => updateVariant(index, "sku", e.target.value)}
-                          className="font-mono text-sm"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={variant.barcode}
-                          onChange={(e) => updateVariant(index, "barcode", e.target.value)}
-                          placeholder="Optional"
-                          className="font-mono text-sm"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={variant.cost_price}
-                          onChange={(e) =>
-                            updateVariant(index, "cost_price", parseFloat(e.target.value) || 0)
-                          }
-                          className="text-sm"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={variant.selling_price}
-                          onChange={(e) =>
-                            updateVariant(index, "selling_price", parseFloat(e.target.value) || 0)
-                          }
-                          className="text-sm"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={variant.wholesale_price}
-                          onChange={(e) =>
-                            updateVariant(index, "wholesale_price", parseFloat(e.target.value) || 0)
-                          }
-                          className="text-sm"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeVariant(index)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

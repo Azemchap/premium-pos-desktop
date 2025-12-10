@@ -1160,7 +1160,7 @@ export default function Products() {
             </div>
           )}
 
-          <DialogFooter className="flex-col sm:flex-row gap-2 mt-6">
+          <DialogFooter className="flex-col sm:flex-row gap-2 mt-16">
             <Button
               variant="outline"
               onClick={() => setIsDialogOpen(false)}
