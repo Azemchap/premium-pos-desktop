@@ -452,19 +452,6 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
             </StatsGrid>
-
-            {/* Store Info Footer */}
-            <Card className="shadow-md">
-                <CardContent className="p-4">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                            <Store className="w-4 h-4" />
-                            <span>{storeConfig?.name || 'Business Suite'}</span>
-                        </div>
-                        <span>Tax Rate: {((storeConfig?.tax_rate || 0) * 100).toFixed(1)}%</span>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }
