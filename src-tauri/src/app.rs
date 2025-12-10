@@ -202,6 +202,11 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::appointments::update_appointment,
             commands::appointments::delete_appointment,
             commands::appointments::cancel_appointment,
+            commands::sync::sync_from_cloud,
+            commands::sync::get_local_data_for_sync,
+            commands::sync::check_sync_status,
+            commands::sync::sync_single_record,
+            commands::sync::delete_local_record,
         ])
         .run(tauri::generate_context!())?;
     Ok(())

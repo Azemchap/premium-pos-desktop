@@ -1,4 +1,5 @@
 import MobileBottomNav from "@/components/MobileBottomNav";
+import SyncStatusIndicator, { useSyncStatus } from "@/components/SyncStatusIndicator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  Cloud,
   Database,
   DollarSign,
   FileText,
@@ -45,6 +47,7 @@ import {
   Package,
   PackageX,
   Receipt,
+  RefreshCw,
   Search,
   Settings,
   ShoppingBag,
@@ -60,6 +63,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { syncFromSupabase } from "@/lib/sync-service";
+import { toast } from "sonner";
 
 interface NavigationItem {
   name: string;
@@ -166,11 +171,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [storeConfig, setStoreConfig] = useState<StoreConfig | null>(null);
+  const [isManualSyncing, setIsManualSyncing] = useState(false);
   const { user, logout, theme, setTheme } = useAuthStore();
   const { getItemCount } = useCartStore();
   const navigate = useNavigate();
   const location = useLocation();
   const cartItemCount = getItemCount();
+  const { online } = useSyncStatus();
 
   const hapticFeedback = async (intensity: 'light' | 'medium' | 'heavy') => {
     try {
@@ -223,6 +230,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     await hapticFeedback('medium');
     logout();
     navigate("/login");
+  };
+
+  const handleManualSync = async () => {
+    if (!online) {
+      toast.error('Cannot sync while offline');
+      return;
+    }
+
+    if (isManualSyncing) {
+      return;
+    }
+
+    setIsManualSyncing(true);
+    await hapticFeedback('medium');
+
+    toast.info('Syncing data...', { duration: 1000 });
+
+    try {
+      const result = await syncFromSupabase(true, { strategy: 'newer_wins' });
+
+      if (result.error) {
+        toast.error(`Sync failed: ${result.error}`);
+      } else {
+        const recordsText = result.recordsCount === 0
+          ? 'No new updates'
+          : `${result.recordsCount} record${result.recordsCount === 1 ? '' : 's'} synced`;
+        toast.success(`✅ ${recordsText}`);
+      }
+    } catch (error) {
+      toast.error('Sync failed. Please try again.');
+      console.error('Manual sync error:', error);
+    } finally {
+      setIsManualSyncing(false);
+    }
   };
 
   const getInitials = (firstName: string, lastName: string) =>
@@ -494,6 +535,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               )}
             </Button>
 
+            {/* Sync Status Indicator - clickable */}
+            <div
+              onClick={handleManualSync}
+              className="cursor-pointer"
+              title="Click to sync now"
+            >
+              <SyncStatusIndicator
+                variant="compact"
+                showLabel={false}
+                className={cn(
+                  "transition-opacity",
+                  isManualSyncing && "opacity-50 cursor-not-allowed"
+                )}
+              />
+            </div>
+
             <Separator orientation="vertical" className="h-6 mx-1" />
 
             {/* User menu */}
@@ -525,6 +582,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <DropdownMenuItem onClick={() => navigate("/profile")}>
                   <User className="w-4 h-4 mr-2" />
                   Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleManualSync}
+                  disabled={!online || isManualSyncing}
+                >
+                  <RefreshCw className={cn(
+                    "w-4 h-4 mr-2",
+                    isManualSyncing && "animate-spin"
+                  )} />
+                  {isManualSyncing ? 'Syncing...' : 'Sync Now'}
+                  {!online && <span className="ml-auto text-xs text-muted-foreground">(Offline)</span>}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">

@@ -31,6 +31,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
+import { autoSync, setupPeriodicSync, setupRealtimeSync } from "@/lib/sync-service";
 
 function App() {
   const { isAuthenticated, theme } = useAuthStore();
@@ -60,6 +61,18 @@ useEffect(() => {
                 setIsInitializing(false);
                 console.log("✅ App initialized (UI released)");
             }
+
+            // Auto-sync from Supabase if online (non-blocking)
+            autoSync().then((status) => {
+                if (status.error) {
+                    console.log('📴 Running in offline mode:', status.error);
+                } else {
+                    console.log('☁️ Online data synced successfully');
+                }
+            }).catch((error) => {
+                console.warn('Sync failed, continuing in offline mode:', error);
+            });
+
         } catch (error) {
             console.error("❌ App initialization error:", error);
             setInitError(error instanceof Error ? error.message : "Unknown initialization error");
@@ -67,6 +80,17 @@ useEffect(() => {
     };
 
     initialize();
+
+    // Set up periodic sync (every 5 minutes)
+    const cleanupSync = setupPeriodicSync();
+
+    // Set up realtime subscriptions for live updates
+    const cleanupRealtime = setupRealtimeSync();
+
+    return () => {
+        cleanupSync();
+        cleanupRealtime();
+    };
 }, [theme]);
 
 

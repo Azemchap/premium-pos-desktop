@@ -23,3 +23,4 @@ pub mod time_tracking;
 pub mod organization;
 pub mod promotions;
 pub mod appointments;
+pub mod sync;
