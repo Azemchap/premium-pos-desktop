@@ -68,6 +68,7 @@ const locationSchema = z.object({
   city: z.string().min(1, "City is required"),
   state: z.string().optional(),
   zip_code: z.string().optional(),
+  country: z.string().optional(),
   phone: z.string().optional(),
   manager_name: z.string().optional(),
 });
@@ -101,6 +102,7 @@ interface Location {
   city: string;
   state?: string;
   zip_code?: string;
+  country?: string;
   phone?: string;
   manager_name?: string;
   is_active: boolean;
@@ -134,6 +136,7 @@ export default function Organization() {
     city: "",
     state: "",
     zip_code: "",
+    country: "US",
     phone: "",
     manager_name: "",
   });
@@ -256,6 +259,7 @@ export default function Organization() {
       city: "",
       state: "",
       zip_code: "",
+      country: "US",
       phone: "",
       manager_name: "",
     });
@@ -431,6 +435,7 @@ export default function Organization() {
                                   city: location.city,
                                   state: location.state || "",
                                   zip_code: location.zip_code || "",
+                                  country: location.country || "US",
                                   phone: location.phone || "",
                                   manager_name: location.manager_name || "",
                                 });
@@ -589,6 +594,24 @@ export default function Organization() {
                   id="location_state"
                   value={locationFormData.state}
                   onChange={(e) => setLocationFormData({ ...locationFormData, state: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="location_zip_code">Zip Code</Label>
+                <Input
+                  id="location_zip_code"
+                  value={locationFormData.zip_code}
+                  onChange={(e) => setLocationFormData({ ...locationFormData, zip_code: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="location_country">Country</Label>
+                <Input
+                  id="location_country"
+                  value={locationFormData.country}
+                  onChange={(e) => setLocationFormData({ ...locationFormData, country: e.target.value })}
                 />
               </div>
             </div>

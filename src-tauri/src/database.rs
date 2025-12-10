@@ -366,6 +366,7 @@ pub fn get_migrations() -> Vec<Migration> {
                     city TEXT,
                     state TEXT,
                     zip_code TEXT,
+                    country TEXT,
                     phone TEXT,
                     email TEXT,
                     tax_rate REAL DEFAULT 0.0,
@@ -376,7 +377,7 @@ pub fn get_migrations() -> Vec<Migration> {
                 
                 -- Copy data from old table, providing defaults for new columns
                 -- Use INSERT OR IGNORE to handle any potential duplicate IDs
-                INSERT OR IGNORE INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency, created_at, updated_at)
+                INSERT OR IGNORE INTO locations (id, name, address, city, state, zip_code, country, phone, email, tax_rate, currency, created_at, updated_at)
                 SELECT 
                     id, 
                     name, 
@@ -387,6 +388,7 @@ pub fn get_migrations() -> Vec<Migration> {
                     'New York',
                     'NY',
                     '10001',
+                    'US',
                     phone, 
                     email, 
                     tax_rate, 
