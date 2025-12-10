@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sqlx::SqlitePool;
+use sqlx::{Row, SqlitePool};
 use std::collections::HashMap;
 use tauri::State;
 
@@ -137,7 +137,7 @@ async fn upsert_record(pool: &SqlitePool, table_name: &str, record: &Value) -> R
     }
 
     query_builder
-        .execute(&**pool)
+        .execute(pool)
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
@@ -193,7 +193,7 @@ async fn fetch_table_data(pool: &SqlitePool, table_name: &str) -> Result<Vec<Val
     let query = format!("SELECT * FROM {}", table_name);
 
     let rows = sqlx::query(&query)
-        .fetch_all(&**pool)
+        .fetch_all(pool)
         .await
         .map_err(|e| format!("Failed to fetch {}: {}", table_name, e))?;
 
@@ -225,7 +225,7 @@ pub async fn check_sync_status(pool: State<'_, SqlitePool>) -> Result<bool, Stri
     let query = "SELECT COUNT(*) as count FROM products";
 
     let result: (i64,) = sqlx::query_as(query)
-        .fetch_one(&**pool)
+        .fetch_one(pool.inner())
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
@@ -266,7 +266,7 @@ pub async fn delete_local_record(
 
     sqlx::query(&query)
         .bind(id)
-        .execute(&**pool)
+        .execute(pool.inner())
         .await
         .map_err(|e| format!("Failed to delete record: {}", e))?;
 
