@@ -114,6 +114,7 @@ export const syncFromSupabase = async (
       'sales',
       'sale_items',
       'inventory',
+      'inventory_movements',
       'purchase_orders',
       'purchase_order_items',
       'expenses',
@@ -121,6 +122,9 @@ export const syncFromSupabase = async (
       'promotions',
       'appointments',
       'time_tracking',
+      'organizations',
+      'locations',
+      'integrations',
       'store_config',
     ];
 
@@ -297,6 +301,7 @@ export const setupRealtimeSync = () => {
     'inventory',
     'purchase_orders',
     'expenses',
+    'integrations',
   ];
 
   const subscriptions: any[] = [];

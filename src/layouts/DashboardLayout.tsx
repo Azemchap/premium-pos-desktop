@@ -39,6 +39,7 @@ import {
   FileText,
   Globe,
   Home,
+  Link2,
   LogOut,
   Megaphone,
   Menu,
@@ -100,7 +101,7 @@ interface StoreConfig {
 // Store settings items (shown in store selector dropdown) - only essentials
 const storeSettingsItems: NavigationItem[] = [
   { name: "General Settings", href: "/settings", icon: Settings },
-  { name: "Integrations", href: "/settings/integrations", icon: Globe, roles: ["Admin"] },
+  { name: "Integrations", href: "/integrations", icon: Link2, roles: ["Admin", "Manager"] },
 ];
 
 // Core items - always visible at top (no collapsible)
@@ -157,8 +158,10 @@ const moreGroup: NavigationGroup = {
   name: "More",
   icon: MoreHorizontal,
   items: [
+    { name: "Customers", href: "/customers", icon: Users },
     { name: "Appointments", href: "/appointments", icon: Calendar },
     { name: "Promotions", href: "/promotions", icon: Megaphone, roles: ["Admin", "Manager"] },
+    { name: "Integrations", href: "/integrations", icon: Link2, roles: ["Admin", "Manager"] },
     { name: "Organization", href: "/organization", icon: Building2, roles: ["Admin"] },
   ],
 };

@@ -504,8 +504,10 @@ export default function Sales() {
   }, [debouncedSearchQuery, selectedCategory, sortColumn, sortDirection]);
 
   return (
-    <div className="space-y-4 sm:space-y-6 sm:pb-6 sm:p-6">
-      <PageHeader icon={ShoppingCart} title="Sales" subtitle="Process sales and manage transactions" />
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 pb-20 sm:pb-6">
+      <div className="min-h-[60px]">
+        <PageHeader icon={ShoppingCart} title="Sales" subtitle="Process sales and manage transactions" />
+      </div>
 
       {/* Sticky Mobile Checkout Bar */}
       {cart.length > 0 && (

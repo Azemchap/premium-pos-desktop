@@ -425,6 +425,57 @@ CREATE TABLE IF NOT EXISTS appointments (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Organizations
+CREATE TABLE IF NOT EXISTS organizations (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    legal_name TEXT,
+    tax_id TEXT,
+    address TEXT,
+    city TEXT,
+    state TEXT,
+    zip_code TEXT,
+    country TEXT DEFAULT 'USA',
+    phone TEXT,
+    email TEXT,
+    website TEXT,
+    description TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Locations (Business Locations/Branches)
+CREATE TABLE IF NOT EXISTS locations (
+    id BIGSERIAL PRIMARY KEY,
+    organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    city TEXT NOT NULL,
+    state TEXT,
+    zip_code TEXT,
+    phone TEXT,
+    manager_name TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Integrations (Third-party Tool Integrations)
+CREATE TABLE IF NOT EXISTS integrations (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    api_key TEXT NOT NULL,
+    api_secret TEXT,
+    webhook_url TEXT,
+    config TEXT,
+    is_enabled BOOLEAN DEFAULT true,
+    last_sync TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Notifications
 CREATE TABLE IF NOT EXISTS notifications (
     id BIGSERIAL PRIMARY KEY,
@@ -616,6 +667,20 @@ CREATE INDEX IF NOT EXISTS idx_units_updated_at ON units(updated_at);
 -- Store config indexes
 CREATE INDEX IF NOT EXISTS idx_store_config_updated_at ON store_config(updated_at);
 
+-- Organizations indexes
+CREATE INDEX IF NOT EXISTS idx_organizations_active ON organizations(is_active);
+CREATE INDEX IF NOT EXISTS idx_organizations_updated_at ON organizations(updated_at);
+
+-- Locations indexes
+CREATE INDEX IF NOT EXISTS idx_locations_organization ON locations(organization_id);
+CREATE INDEX IF NOT EXISTS idx_locations_active ON locations(is_active);
+CREATE INDEX IF NOT EXISTS idx_locations_updated_at ON locations(updated_at);
+
+-- Integrations indexes
+CREATE INDEX IF NOT EXISTS idx_integrations_provider ON integrations(provider);
+CREATE INDEX IF NOT EXISTS idx_integrations_enabled ON integrations(is_enabled);
+CREATE INDEX IF NOT EXISTS idx_integrations_updated_at ON integrations(updated_at);
+
 -- ============================================================================
 -- CREATE TRIGGERS FOR AUTO-UPDATING updated_at
 -- ============================================================================
@@ -637,6 +702,9 @@ CREATE TRIGGER update_time_tracking_updated_at BEFORE UPDATE ON time_tracking FO
 CREATE TRIGGER update_promotions_updated_at BEFORE UPDATE ON promotions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_appointments_updated_at BEFORE UPDATE ON appointments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_receipt_templates_updated_at BEFORE UPDATE ON receipt_templates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_organizations_updated_at BEFORE UPDATE ON organizations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_locations_updated_at BEFORE UPDATE ON locations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_integrations_updated_at BEFORE UPDATE ON integrations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================================
 -- ENABLE ROW LEVEL SECURITY (RLS)
@@ -666,6 +734,9 @@ ALTER TABLE receipt_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE returns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE return_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE integrations ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
 -- CREATE RLS POLICIES (Allow all operations for now - customize as needed)
@@ -698,6 +769,9 @@ CREATE POLICY "Allow all on receipt_templates" ON receipt_templates FOR ALL USIN
 CREATE POLICY "Allow all on shifts" ON shifts FOR ALL USING (true);
 CREATE POLICY "Allow all on returns" ON returns FOR ALL USING (true);
 CREATE POLICY "Allow all on return_items" ON return_items FOR ALL USING (true);
+CREATE POLICY "Allow all on organizations" ON organizations FOR ALL USING (true);
+CREATE POLICY "Allow all on locations" ON locations FOR ALL USING (true);
+CREATE POLICY "Allow all on integrations" ON integrations FOR ALL USING (true);
 
 -- ============================================================================
 -- ENABLE REALTIME FOR KEY TABLES
