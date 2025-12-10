@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Cloud, CloudOff, RefreshCw, Check, AlertCircle } from 'lucide-react';
-import { getLastSync, isOnline } from '@/lib/supabase';
+import { getLastSync } from '@/lib/sync-service';
+import { isOnline } from '@/lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
