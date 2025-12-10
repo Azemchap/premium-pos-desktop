@@ -30,4 +30,3 @@ src-tauri/target/
 .env.signing
 signing.properties
 *.keystore
-nul
