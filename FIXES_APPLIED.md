@@ -3,7 +3,7 @@
 ## Session Date: October 26, 2025
 
 ### Overview
-Systematic review and fix of all code issues across the premium-pos-desktop project to ensure stability on the new Android emulator with Expo Go.
+Systematic review and fix of all code issues across the qorbooks-desktop project to ensure stability on the new Android emulator with Expo Go.
 
 ---
 

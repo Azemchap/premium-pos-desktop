@@ -3,8 +3,8 @@
 ## ✅ **Keystore Generated Successfully!**
 
 Your signing key is ready:
-- **Location:** `premium-pos.keystore`
-- **Alias:** `premium-pos`
+- **Location:** `qorbooks.keystore`
+- **Alias:** `qorbooks`
 - **Validity:** 10,000 days (~27 years)
 - **Owner:** CN=Azem, OU=Ztad, O=Ztad, L=bamenda, ST=NWR, C=CM
 
@@ -17,8 +17,8 @@ I've configured your `tauri.conf.json` to use the keystore:
 "android": {
     "minSdkVersion": 24,
     "versionCode": 1,
-    "keystorePath": "../premium-pos.keystore",
-    "keyAlias": "premium-pos"
+    "keystorePath": "../qorbooks.keystore",
+    "keyAlias": "qorbooks"
 }
 ```
 
@@ -75,9 +75,9 @@ pnpm android:build
 **Only for testing!** Don't commit this:
 ```json
 "android": {
-    "keystorePath": "../premium-pos.keystore",
+    "keystorePath": "../qorbooks.keystore",
     "keystorePassword": "your_password",
-    "keyAlias": "premium-pos",
+    "keyAlias": "qorbooks",
     "keyPassword": "your_password"
 }
 ```
@@ -147,7 +147,7 @@ pnpm android:build
 ## 🔒 **Security Notes:**
 
 ### **✅ DO:**
-- Keep `premium-pos.keystore` file safe (backup it!)
+- Keep `qorbooks.keystore` file safe (backup it!)
 - Remember your password
 - Use environment variables for passwords
 - Add `.env.signing` to `.gitignore` (already done)

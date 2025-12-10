@@ -6,7 +6,7 @@
 
 #### ✅ **Database:**
 ```
-✓ Location: /data/data/com.premiumpos.app/files/pos.db
+✓ Location: /data/data/com.qorbooks.app/files/pos.db
 ✓ All 6 migrations applied successfully
 ✓ Admin user created (admin/admin123)
 ✓ 47 building materials products seeded

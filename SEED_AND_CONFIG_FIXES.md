@@ -114,11 +114,11 @@ interface StoreConfig {
 ```sql
 -- BEFORE
 INSERT OR IGNORE INTO locations (id, name, address, phone, email, tax_rate, currency)
-VALUES (1, 'ZTAD POS', '123 Main Street', '+1-555-0123', 'info@ztadpos.com', 0.08, 'USD');
+VALUES (1, 'QorBooks', '123 Main Street', '+1-555-0123', 'info@qorbooks.com', 0.08, 'USD');
 
 -- AFTER
 INSERT OR IGNORE INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency)
-VALUES (1, 'ZTAD POS', '123 Main Street', 'New York', 'NY', '10001', '+1-555-0123', 'info@ztadpos.com', 0.08, 'USD');
+VALUES (1, 'QorBooks', '123 Main Street', 'New York', 'NY', '10001', '+1-555-0123', 'info@qorbooks.com', 0.08, 'USD');
 ```
 
 **Impact**: New installations will have complete default store configuration.
@@ -187,7 +187,7 @@ Checked `src/store/settingsStore.ts`:
 ## Tauri Configuration Verification ✅
 
 Checked `src-tauri/tauri.conf.json`:
-- ✅ App name: "ZTAD POS"
+- ✅ App name: "QorBooks"
 - ✅ Window sizing appropriate
 - ✅ Asset protocol configured for logo access
 - ✅ Bundle configuration complete
@@ -212,7 +212,7 @@ Ran linter checks on all modified files:
 ### 1. Test Seed Files
 ```bash
 # Delete existing database and re-seed
-rm -rf ~/.local/share/com.ztadpos.app/pos.db
+rm -rf ~/.local/share/com.qorbooks.app/pos.db
 cargo tauri dev
 ```
 

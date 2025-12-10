@@ -6,7 +6,7 @@ pub fn get_migrations() -> Vec<Migration> {
         version: 1,
         description: "create_initial_tables",
         sql: r#"
-                -- Store/Location configuration (single row)
+                -- QorBooks/Location configuration (single row)
                 CREATE TABLE IF NOT EXISTS locations (
                     id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -240,7 +240,7 @@ pub fn get_migrations() -> Vec<Migration> {
 
                 -- Insert default store configuration
                 INSERT OR IGNORE INTO locations (id, name, address, city, state, zip_code, phone, email, tax_rate, currency)
-                VALUES (1, 'ZTAD POS', '123 Main Street', 'New York', 'NY', '10001', '+1-555-0123', 'info@ztadpos.com', 0.08, 'USD');
+                VALUES (1, 'QorBooks', '123 Main Street', 'New York', 'NY', '10001', '+1-555-0123', 'info@qorbooks.com', 0.08, 'USD');
 
                 -- Insert default receipt templates
                 INSERT OR IGNORE INTO receipt_templates (name, template_type, printer_type, template_content, is_default, paper_width, font_size)

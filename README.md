@@ -1,4 +1,4 @@
-# Premium POS & Inventory Management System
+# QorBooks & Inventory Management System
 
 > A world-class Point of Sale and Inventory Management system built with Tauri, React, and TypeScript.
 
@@ -56,8 +56,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/premium-pos-desktop.git
-cd premium-pos-desktop
+git clone https://github.com/yourusername/qorbooks-desktop.git
+cd qorbooks-desktop
 
 # Install dependencies
 pnpm install
@@ -123,7 +123,7 @@ pnpm lint               # Run linter
 ## 🏗️ Project Structure
 
 ```
-premium-pos-desktop/
+qorbooks-desktop/
 ├── src/                    # React frontend
 │   ├── components/         # Reusable UI components
 │   │   └── ui/            # shadcn/ui components
@@ -249,9 +249,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Support
 
-- **Email**: support@premiumpos.com
-- **Documentation**: [docs.premiumpos.com](https://docs.premiumpos.com)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/premium-pos-desktop/issues)
+- **Email**: support@qorbooks.com
+- **Documentation**: [docs.qorbooks.com](https://docs.qorbooks.com)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/qorbooks-desktop/issues)
 
 ## 🗺️ Roadmap
 
@@ -292,6 +292,6 @@ If you find this project useful, please consider giving it a star! ⭐
 
 **Made with ❤️ for businesses that demand excellence**
 
-[Website](https://premiumpos.com) • [Documentation](https://docs.premiumpos.com) • [Support](mailto:support@premiumpos.com)
+[Website](https://qorbooks.com) • [Documentation](https://docs.qorbooks.com) • [Support](mailto:support@qorbooks.com)
 
 </div>

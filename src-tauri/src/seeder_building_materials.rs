@@ -1185,7 +1185,7 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
         .bind(admin_id)
         .bind(format!("Contractor {}", i + 1))
         .bind("Building materials order")
-        .bind(i % 30)
+        .bind((i % 30) as i32)
         .execute(pool)
         .await
         .map_err(|e| format!("Failed to insert sale: {} (cashier_id: {})", e, admin_id))?;
@@ -1193,7 +1193,7 @@ async fn seed_sales(pool: &SqlitePool, product_ids: &[i64]) -> Result<(), String
         let sale_id = sale_result.last_insert_rowid();
 
         // Add 1-5 items to each sale
-        let num_items = 1 + (i % 5);
+        let num_items = 1 + ((i % 5) as i32);
         for j in 0i32..num_items {
             let product_idx = (((i * 3) + j) as usize) % product_ids.len();
             let product_id = product_ids[product_idx];
@@ -1356,7 +1356,7 @@ async fn seed_employees(pool: &SqlitePool, user_ids: &[i64]) -> Result<(), Strin
         .bind(format!("EMP{:05}", i + 1))
         .bind(department)
         .bind(position)
-        .bind((i + 3) * 2)
+        .bind(i32::try_from((i + 3) * 2).unwrap_or(6))
         .bind(if salary > 0.0 { "Salary" } else { "Hourly" })
         .bind(hourly_rate)
         .bind(salary)
@@ -1388,7 +1388,7 @@ async fn seed_expenses(pool: &SqlitePool) -> Result<(), String> {
         .bind(format!("EXP{:05}", i + 1))
         .bind(description)
         .bind(amount)
-        .bind(i * 5)
+        .bind((i * 5) as i32)
         .bind(notes)
         .execute(pool)
         .await

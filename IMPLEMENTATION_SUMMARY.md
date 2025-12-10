@@ -100,7 +100,7 @@ Delete the existing database to apply all changes:
 **Windows:**
 ```bash
 # Delete old database
-rm "C:\Users\Azem\AppData\Roaming\premiumpos\Premium POS\data\pos.db"
+rm "C:\Users\Azem\AppData\Roaming\qorbooks\QorBooks\data\pos.db"
 
 # Start app
 npm run tauri dev
@@ -109,7 +109,7 @@ npm run tauri dev
 **Mac/Linux:**
 ```bash
 # Delete old database
-rm ~/Library/Application\ Support/premiumpos/Premium\ POS/data/pos.db
+rm ~/Library/Application\ Support/qorbooks/Premium\ POS/data/pos.db
 
 # Start app
 npm run tauri dev

@@ -52,7 +52,7 @@ cp src-tauri/icons/icon.png src-tauri/icons/icon.ico
 
 #### **Step 1: Generate Signing Key**
 ```bash
-keytool -genkey -v -keystore premium-pos.keystore -alias premium-pos -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkey -v -keystore qorbooks.keystore -alias qorbooks -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 **You'll be asked:**
@@ -65,9 +65,9 @@ Add this to the `android` section:
 "android": {
     "minSdkVersion": 24,
     "versionCode": 1,
-    "keystorePath": "../premium-pos.keystore",
+    "keystorePath": "../qorbooks.keystore",
     "keystorePassword": "YOUR_PASSWORD",
-    "keyAlias": "premium-pos",
+    "keyAlias": "qorbooks",
     "keyPassword": "YOUR_PASSWORD"
 }
 ```
@@ -131,7 +131,7 @@ cargo tauri android build --apk --debug
    cargo build --release --manifest-path src-tauri/Cargo.toml
    
    # Your .exe is at:
-   # src-tauri/target/release/premium-pos.exe
+   # src-tauri/target/release/qorbooks.exe
    ```
 
 ---
@@ -151,7 +151,7 @@ adb install src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-univ
 
 1. **Generate keystore:**
    ```bash
-   keytool -genkey -v -keystore premium-pos.keystore -alias premium-pos -keyalg RSA -keysize 2048 -validity 10000
+   keytool -genkey -v -keystore qorbooks.keystore -alias qorbooks -keyalg RSA -keysize 2048 -validity 10000
    ```
 
 2. **Update tauri.conf.json** (I'll do this for you next)
@@ -190,7 +190,7 @@ cargo tauri android build --apk --debug
 **Proper release (10 minutes):**
 ```bash
 # 1. Generate key
-keytool -genkey -v -keystore premium-pos.keystore -alias premium-pos -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkey -v -keystore qorbooks.keystore -alias qorbooks -keyalg RSA -keysize 2048 -validity 10000
 
 # 2. Tell me the password you set
 

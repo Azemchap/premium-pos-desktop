@@ -29,7 +29,7 @@ Failed to create database file "/pos.db": Read-only file system (os error 30)
 
 ### **Before:**
 ```rust
-let app_dir = ProjectDirs::from("com", "premiumpos", "Premium POS")
+let app_dir = ProjectDirs::from("com", "qorbooks", "QorBooks")
     .map(|pd| pd.data_dir().to_path_buf())
     .or_else(|| {
         println!("DEBUG(main): ProjectDirs not available; falling back to cwd");
@@ -42,10 +42,10 @@ let app_dir = ProjectDirs::from("com", "premiumpos", "Premium POS")
 ```rust
 let app_dir = if cfg!(target_os = "android") {
     // ✅ Android: Use app-specific internal storage
-    std::path::PathBuf::from("/data/data/com.premiumpos.app/files")
+    std::path::PathBuf::from("/data/data/com.qorbooks.app/files")
 } else {
     // ✅ Desktop: Use standard directories
-    ProjectDirs::from("com", "premiumpos", "Premium POS")
+    ProjectDirs::from("com", "qorbooks", "QorBooks")
         .map(|pd| pd.data_dir().to_path_buf())
         .or_else(|| std::env::current_dir().ok())
         .expect("Failed to determine an application directory")
@@ -56,7 +56,7 @@ let app_dir = if cfg!(target_os = "android") {
 
 ## 📱 **Android Storage Path:**
 
-**Path:** `/data/data/com.premiumpos.app/files`
+**Path:** `/data/data/com.qorbooks.app/files`
 
 **Properties:**
 - ✅ **Readable/Writable** - App has full access
@@ -67,7 +67,7 @@ let app_dir = if cfg!(target_os = "android") {
 
 **Database Location:**
 ```
-/data/data/com.premiumpos.app/files/pos.db
+/data/data/com.qorbooks.app/files/pos.db
 ```
 
 ---
@@ -84,9 +84,9 @@ pnpm android:dev
 
 ### **3. Expected Result:**
 ```
-DEBUG(main): resolved app_dir = "/data/data/com.premiumpos.app/files"
-DEBUG(main): final db absolute path = "/data/data/com.premiumpos.app/files/pos.db"
-DEBUG(main): sqlx connection string = sqlite:////data/data/com.premiumpos.app/files/pos.db
+DEBUG(main): resolved app_dir = "/data/data/com.qorbooks.app/files"
+DEBUG(main): final db absolute path = "/data/data/com.qorbooks.app/files/pos.db"
+DEBUG(main): sqlx connection string = sqlite:////data/data/com.qorbooks.app/files/pos.db
 DEBUG(main): applying 6 migration(s)
 DEBUG(main): migrations applied successfully
 ✓ App launched successfully!
@@ -111,10 +111,10 @@ After rebuild, your app will:
 
 | Platform | Database Path |
 |----------|---------------|
-| **Windows** | `C:\Users\{User}\AppData\Roaming\premiumpos\Premium POS\data\pos.db` |
-| **macOS** | `~/Library/Application Support/com.premiumpos.Premium POS/pos.db` |
-| **Linux** | `~/.local/share/premiumpos/Premium POS/pos.db` |
-| **Android** | `/data/data/com.premiumpos.app/files/pos.db` |
+| **Windows** | `C:\Users\{User}\AppData\Roaming\qorbooks\QorBooks\data\pos.db` |
+| **macOS** | `~/Library/Application Support/com.qorbooks.QorBooks/pos.db` |
+| **Linux** | `~/.local/share/qorbooks/QorBooks/pos.db` |
+| **Android** | `/data/data/com.qorbooks.app/files/pos.db` |
 
 ---
 

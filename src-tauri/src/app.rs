@@ -268,7 +268,7 @@ async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
         let new_hash =
             hash(desired_pass, DEFAULT_COST).map_err(|e| format!("hash error: {}", e))?;
 
-        sqlx::query("UPDATE users SET password_hash = ?1, email = 'admin@ztadpos.com' WHERE username = 'admin'")
+        sqlx::query("UPDATE users SET password_hash = ?1, email = 'admin@qorbooks.com' WHERE username = 'admin'")
             .bind(&new_hash)
             .execute(pool)
             .await
@@ -283,7 +283,7 @@ async fn ensure_admin(pool: &SqlitePool) -> Result<(), String> {
 
         sqlx::query(
             "INSERT OR IGNORE INTO users (username, email, password_hash, first_name, last_name, role, is_active, profile_image_url, created_at, updated_at)
-             VALUES ('admin', 'admin@ztadpos.com', ?1, 'Admin', 'User', 'Admin', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+             VALUES ('admin', 'admin@qorbooks.com', ?1, 'Admin', 'User', 'Admin', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
         )
         .bind(&pass_hash)
         .execute(pool)

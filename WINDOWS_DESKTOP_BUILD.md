@@ -20,9 +20,9 @@ pnpm tauri:build
 ```
 
 **What you get:**
-1. ✅ **Executable:** `src-tauri/target/release/premium-pos.exe`
-2. ✅ **MSI Installer:** `src-tauri/target/release/bundle/msi/Premium POS_0.1.0_x64_en-US.msi`
-3. ✅ **NSIS Installer:** `src-tauri/target/release/bundle/nsis/Premium POS_0.1.0_x64-setup.exe`
+1. ✅ **Executable:** `src-tauri/target/release/qorbooks.exe`
+2. ✅ **MSI Installer:** `src-tauri/target/release/bundle/msi/QorBooks_0.1.0_x64_en-US.msi`
+3. ✅ **NSIS Installer:** `src-tauri/target/release/bundle/nsis/QorBooks_0.1.0_x64-setup.exe`
 
 **Build time:** ~5-8 minutes
 
@@ -34,19 +34,19 @@ After successful build:
 
 ```
 src-tauri/target/release/
-├── premium-pos.exe           ← Main executable (portable)
+├── qorbooks.exe           ← Main executable (portable)
 └── bundle/
     ├── msi/
-    │   └── Premium POS_0.1.0_x64_en-US.msi    ← Windows installer
+    │   └── QorBooks_0.1.0_x64_en-US.msi    ← Windows installer
     └── nsis/
-        └── Premium POS_0.1.0_x64-setup.exe    ← Alternative installer
+        └── QorBooks_0.1.0_x64-setup.exe    ← Alternative installer
 ```
 
 ---
 
 ## 🎯 **What Each File Does:**
 
-### **1. premium-pos.exe (Portable)**
+### **1. qorbooks.exe (Portable)**
 - **Size:** ~15-20 MB
 - **Use:** Standalone executable
 - **Distribution:** Copy directly to users
@@ -76,7 +76,7 @@ pnpm tauri:dev
 pnpm tauri:build
 
 # Run the built executable directly
-./src-tauri/target/release/premium-pos.exe
+./src-tauri/target/release/qorbooks.exe
 ```
 
 ---
@@ -86,7 +86,7 @@ pnpm tauri:build
 ### **Test the Executable:**
 ```bash
 # Run from command line
-./src-tauri/target/release/premium-pos.exe
+./src-tauri/target/release/qorbooks.exe
 ```
 
 ### **Test the Installer:**
@@ -203,9 +203,9 @@ Use the **portable .exe**:
 ## 🔧 **Build Configuration:**
 
 Your `tauri.conf.json` is configured for:
-- **Product Name:** Premium POS
+- **Product Name:** QorBooks
 - **Version:** 0.1.0
-- **Identifier:** com.premiumpos.app
+- **Identifier:** com.qorbooks.app
 - **Category:** Business
 - **Targets:** All (MSI, NSIS, portable)
 

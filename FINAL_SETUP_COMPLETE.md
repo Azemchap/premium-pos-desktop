@@ -201,7 +201,7 @@ cargo tauri android build --aab
 
 ## 🎊 Success!
 
-Your Premium POS app is now:
+Your QorBooks app is now:
 - ✅ **100% Mobile-Optimized**
 - ✅ **Production-Ready**
 - ✅ **Cross-Platform** (Desktop + Mobile)

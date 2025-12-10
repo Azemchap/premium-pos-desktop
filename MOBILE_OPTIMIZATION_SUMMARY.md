@@ -350,7 +350,7 @@ cargo tauri android build --apk
 
 ## 🎉 Success!
 
-Your Premium POS app is now:
+Your QorBooks app is now:
 - ✅ **100% Mobile-Optimized**
 - ✅ **Ready for Android/iOS**
 - ✅ **Touch-Friendly**

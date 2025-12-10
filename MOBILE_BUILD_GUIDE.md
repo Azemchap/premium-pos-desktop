@@ -1,4 +1,4 @@
-# 📱 Building Premium POS for Android & iOS
+# 📱 Building QorBooks for Android & iOS
 
 ## 🎯 Overview
 Your app is built with Tauri v2 which supports mobile platforms. Here's how to build for Android and iOS.
@@ -85,7 +85,7 @@ rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-andro
 Edit `src-tauri/tauri.conf.json`:
 ```json
 {
-  "identifier": "com.premiumpos.app",
+  "identifier": "com.qorbooks.app",
   "bundle": {
     "android": {
       "minSdkVersion": 24
@@ -179,7 +179,7 @@ Your app is designed for desktop. For mobile, you'll need to adjust:
 
 ### 5. Database Storage
 SQLite works on mobile! But file location changes:
-- Android: `/data/data/com.premiumpos.app/databases/`
+- Android: `/data/data/com.qorbooks.app/databases/`
 - iOS: App's Documents directory
 
 ---

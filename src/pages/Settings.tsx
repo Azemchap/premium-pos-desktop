@@ -21,6 +21,7 @@ import {
 import { useCurrency } from "@/hooks/useCurrency";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuthStore } from "@/store/authStore";
+import { useStoreConfigStore } from "@/store/storeConfigStore";
 import { playSound, LANGUAGE_LABELS } from "@/store/settingsStore";
 import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -68,10 +69,8 @@ interface UpdateStoreConfigRequest {
 }
 
 export default function Settings() {
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [storeConfig, setStoreConfig] = useState<StoreConfig | null>(null);
   const [storeForm, setStoreForm] = useState<UpdateStoreConfigRequest>({
     name: "",
     address: "",
@@ -89,45 +88,47 @@ export default function Settings() {
   const { theme, toggleTheme } = useAuthStore();
   const { changeCurrency, availableCurrencies } = useCurrency();
   const { preferences, updatePreference, resetToDefaults } = useSettings();
+  const { storeConfig, loading, refreshStoreConfig, setStoreConfig } = useStoreConfigStore();
 
-  const loadStoreConfig = async () => {
-    try {
-      setLoading(true);
-      const result = await invoke<StoreConfig>("get_store_config");
-      setStoreConfig(result);
+  useEffect(() => {
+    // Initialize form data from store config when it loads
+    if (storeConfig) {
       setStoreForm({
-        name: result.name,
-        address: result.address || "",
-        city: result.city || "",
-        state: result.state || "",
-        zip_code: result.zip_code || "",
-        phone: result.phone || "",
-        email: result.email || "",
-        tax_rate: result.tax_rate,
-        currency: result.currency,
-        logo_url: result.logo_url,
+        name: storeConfig.name,
+        address: storeConfig.address || "",
+        city: storeConfig.city || "",
+        state: storeConfig.state || "",
+        zip_code: storeConfig.zip_code || "",
+        phone: storeConfig.phone || "",
+        email: storeConfig.email || "",
+        tax_rate: storeConfig.tax_rate,
+        currency: storeConfig.currency,
+        logo_url: storeConfig.logo_url,
       });
-    } catch (error) {
-      console.error("Failed to load store config:", error);
-      toast.error("Failed to load store configuration");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [storeConfig]);
+
+  useEffect(() => {
+    // Load store config on mount if not already loaded
+    if (!storeConfig && !loading) {
+      refreshStoreConfig();
+    }
+  }, [storeConfig, loading, refreshStoreConfig]);
 
   const saveStoreConfig = async () => {
-    if (!storeForm.name.trim()) {
-      toast.error("Store name is required");
-      playSound('error', preferences);
-      return;
-    }
+  if (!storeForm.name.trim()) {
+    toast.error("Store name is required");
+    playSound('error', preferences);
+    return;
+  }
 
-    try {
-      setSaving(true);
-      await invoke("update_store_config", { request: storeForm });
-      toast.success("✅ Store configuration saved successfully");
+  try {
+    setSaving(true);
+    await invoke("update_store_config", { request: storeForm });
+    toast.success("✅ Store configuration saved successfully");
       playSound('success', preferences);
-      loadStoreConfig();
+      await refreshStoreConfig(); // Add this line
+      // loadStoreConfig();
     } catch (error) {
       console.error("Failed to save store config:", error);
       toast.error("❌ Failed to save store configuration");
@@ -143,7 +144,8 @@ export default function Settings() {
       try {
         setSaving(true);
         await invoke("update_store_config", { request: storeForm });
-        await loadStoreConfig();
+        await refreshStoreConfig(); // Add this line  
+        // await loadStoreConfig();
       } catch (error) {
         console.error("Failed to save store config:", error);
         toast.error("❌ Failed to save store configuration");
@@ -210,7 +212,8 @@ export default function Settings() {
       playSound('success', preferences);
 
       // Reload config to get updated data
-      loadStoreConfig();
+      await refreshStoreConfig(); // Add this line  
+      // loadStoreConfig();
     } catch (error) {
       console.error("Failed to upload logo:", error);
       toast.error("❌ Failed to upload logo");
@@ -231,7 +234,8 @@ export default function Settings() {
       setStoreForm({ ...storeForm, logo_url: undefined });
       toast.success("✅ Logo removed successfully");
       playSound('success', preferences);
-      loadStoreConfig();
+      await refreshStoreConfig(); // Add this line
+      // loadStoreConfig();
     } catch (error) {
       console.error("Failed to remove logo:", error);
       toast.error("❌ Failed to remove logo");
@@ -242,7 +246,8 @@ export default function Settings() {
   };
 
   useEffect(() => {
-    loadStoreConfig();
+    refreshStoreConfig(); // Add this line
+    // loadStoreConfig();
   }, []);
 
   return (

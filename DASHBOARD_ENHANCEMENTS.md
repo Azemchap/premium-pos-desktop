@@ -17,7 +17,7 @@ Completely redesigned and optimized the dashboard to be world-class, fetching re
 ### 1. **Real Data Integration**
 
 **Before:**
-- Hardcoded "Premium POS" everywhere
+- Hardcoded "QorBooks" everywhere
 - No store information shown
 - No connection to settings
 
@@ -193,7 +193,7 @@ Your inventory is well-stocked
 - ✅ Store icon & name
 - ✅ Store email
 - ✅ Tax rate (formatted as %)
-- ✅ "Powered by Premium POS"
+- ✅ "Powered by QorBooks"
 - ✅ Version badge
 - ✅ Gradient background
 

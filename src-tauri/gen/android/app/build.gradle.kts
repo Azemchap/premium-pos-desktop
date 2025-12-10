@@ -28,7 +28,7 @@ android {
         create("release") {
             storeFile = file("C:/Users/Azem/release.jks")
             storePassword = System.getenv("RELEASE_STORE_PASSWORD") ?: ""
-            keyAlias = "premiumpos"
+            keyAlias = "qorbooks"
             keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: ""
         }
     }

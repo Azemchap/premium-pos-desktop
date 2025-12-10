@@ -77,7 +77,7 @@ For production builds, you should use your own signing key:
 
 ### **Generate Signing Key:**
 ```bash
-keytool -genkey -v -keystore premium-pos.keystore -alias premium-pos -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkey -v -keystore qorbooks.keystore -alias qorbooks -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 ### **Configure in tauri.conf.json:**
@@ -87,9 +87,9 @@ keytool -genkey -v -keystore premium-pos.keystore -alias premium-pos -keyalg RSA
     "android": {
       "minSdkVersion": 24,
       "versionCode": 1,
-      "keystorePath": "../premium-pos.keystore",
+      "keystorePath": "../qorbooks.keystore",
       "keystorePassword": "your-password",
-      "keyAlias": "premium-pos",
+      "keyAlias": "qorbooks",
       "keyPassword": "your-password"
     }
   }
@@ -227,7 +227,7 @@ From your build logs:
 
 **🎊 CONGRATULATIONS ON YOUR SUCCESSFUL ANDROID APP! 📱✨**
 
-Your Premium POS app is now cross-platform:
+Your QorBooks app is now cross-platform:
 - ✅ Windows Desktop
 - ✅ Android Mobile
 - (iOS coming next if needed!)

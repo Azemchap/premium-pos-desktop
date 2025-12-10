@@ -6,10 +6,10 @@
 Gradle couldn't resolve the relative path to the keystore.
 
 ### **Solution:**
-Copied `premium-pos.keystore` directly into the Android project directory.
+Copied `qorbooks.keystore` directly into the Android project directory.
 
-**Before:** `../../../../premium-pos.keystore` (complex relative path)
-**After:** `premium-pos.keystore` (simple, in same directory)
+**Before:** `../../../../qorbooks.keystore` (complex relative path)
+**After:** `qorbooks.keystore` (simple, in same directory)
 
 ---
 
@@ -78,7 +78,7 @@ pnpm tauri:build
 
 **Output:**
 ```
-src-tauri/target/release/premium-pos.exe
+src-tauri/target/release/qorbooks.exe
 src-tauri/target/release/bundle/msi/*.msi
 src-tauri/target/release/bundle/nsis/*.exe
 ```
@@ -110,7 +110,7 @@ src-tauri/target/release/bundle/nsis/*.exe
 ✓ Libraries symlinked
 ✓ Gradle build started
 ✓ APK packaged
-✓ APK signed with premium-pos keystore
+✓ APK signed with qorbooks keystore
 ✅ BUILD SUCCESSFUL!
 
 APK: src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
@@ -121,8 +121,8 @@ APK: src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal
 ## 🔒 **SECURITY:**
 
 Files excluded from Git:
-- `premium-pos.keystore` (root)
-- `src-tauri/gen/android/premium-pos.keystore` (copy)
+- `qorbooks.keystore` (root)
+- `src-tauri/gen/android/qorbooks.keystore` (copy)
 - `src-tauri/gen/android/signing.properties`
 - `.env.signing`
 
@@ -154,14 +154,14 @@ pnpm android:build
 ## 🆘 **If Build Still Fails:**
 
 ### **Check:**
-1. Keystore exists at `src-tauri/gen/android/premium-pos.keystore`
+1. Keystore exists at `src-tauri/gen/android/qorbooks.keystore`
 2. signing.properties has correct password
 3. Java version compatible (JDK 17+)
 
 ### **Quick Debug:**
 ```bash
 # Verify keystore
-ls -la src-tauri/gen/android/premium-pos.keystore
+ls -la src-tauri/gen/android/qorbooks.keystore
 
 # Verify signing config
 cat src-tauri/gen/android/signing.properties

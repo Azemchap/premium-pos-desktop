@@ -1,8 +1,8 @@
-# User Guide - Premium POS System
+# User Guide - QorBooks System
 
 ## 🎯 Getting Started
 
-Welcome to Premium POS! This guide will help you get up and running quickly.
+Welcome to QorBooks! This guide will help you get up and running quickly.
 
 ## 📱 First Login
 
@@ -395,8 +395,8 @@ After logging in, you'll see the Dashboard with:
 - Toast notifications
 
 ### Support
-- Email: support@premiumpos.com
-- Documentation: docs.premiumpos.com
+- Email: support@qorbooks.com
+- Documentation: docs.qorbooks.com
 - Phone: 1-800-POS-HELP
 
 ### Training
@@ -441,8 +441,8 @@ After logging in, you'll see the Dashboard with:
 
 ---
 
-**Questions?** Contact support@premiumpos.com
+**Questions?** Contact support@qorbooks.com
 
-**Training?** Book a session at training.premiumpos.com
+**Training?** Book a session at training.qorbooks.com
 
-**Updates?** Check changelog.premiumpos.com
+**Updates?** Check changelog.qorbooks.com

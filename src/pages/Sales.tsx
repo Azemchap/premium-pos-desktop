@@ -1,4 +1,5 @@
 // src/pages/Sales.tsx - Enhanced with Validation, Toasts, and Mobile Responsiveness
+import PageHeader from "@/components/PageHeader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +13,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import PageHeader from "@/components/PageHeader";
 import {
   Dialog,
   DialogContent,
@@ -41,10 +41,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/hooks/useCurrency";
-import { printReceipt, SaleData } from "@/lib/receipt-printer";
-import { Sale, ProductWithStock } from "@/types";
+import { SaleData, printReceipt } from "@/lib/receipt-printer";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
+import { ProductWithStock, Sale } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Check,
@@ -123,7 +123,7 @@ export default function Sales() {
     getTotal,
   } = useCartStore();
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -160,7 +160,7 @@ export default function Sales() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const result = await invoke<Product[]>("get_products_with_stock");
+      const result = await invoke<ProductWithStock[]>("get_products_with_stock");
       setProducts(result.filter((p) => p.is_active && p.available_stock > 0));
       toast.success(`✅ Loaded ${result.length} products`);
     } catch (error) {
@@ -505,7 +505,7 @@ export default function Sales() {
 
   return (
     <div className="space-y-4 sm:space-y-6 sm:pb-6 sm:p-6">
-      <PageHeader icon={ShoppingCart} title="Point of Sale" subtitle="Process sales and manage transactions" />
+      <PageHeader icon={ShoppingCart} title="Sales" subtitle="Process sales and manage transactions" />
 
       {/* Sticky Mobile Checkout Bar */}
       {cart.length > 0 && (
@@ -647,7 +647,7 @@ export default function Sales() {
                         />
                       </PaginationItem>
                       {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                        let pageNum;
+                        let pageNum: number;
                         if (totalPages <= 5) {
                           pageNum = i + 1;
                         } else if (currentPage <= 3) {

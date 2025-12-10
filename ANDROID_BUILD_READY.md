@@ -119,7 +119,7 @@ VITE v5.4.19  ready in 1251 ms
 
 ### **2. Rust Compilation:**
 ```
-Compiling premium-pos v0.1.0
+Compiling qorbooks v0.1.0
 Finished `dev` profile
 ```
 

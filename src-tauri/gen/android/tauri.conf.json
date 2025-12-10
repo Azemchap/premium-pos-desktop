@@ -1,8 +1,8 @@
 {
     "$schema": "../../node_modules/@tauri-apps/cli/schema.json",
-    "productName": "ZTAD POS",
+    "productName": "QorBooks",
     "version": "1.0.0",
-    "identifier": "com.ztad.pos",
+    "identifier": "com.qorbooks.app",
     "build": {
         "beforeDevCommand": "pnpm dev",
         "beforeBuildCommand": "pnpm build",
@@ -14,7 +14,7 @@
             {
                 "fullscreen": false,
                 "resizable": true,
-                "title": "ZTAD POS",
+                "title": "QorBooks",
                 "width": 800,
                 "height": 600,
                 "center": true,

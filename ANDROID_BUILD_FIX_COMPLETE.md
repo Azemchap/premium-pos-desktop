@@ -4,7 +4,7 @@
 
 ### **Problem:**
 ```
-error: no library targets found in package `premium-pos`
+error: no library targets found in package `qorbooks`
 ```
 
 Tauri Android/iOS requires the Rust project to be configured as a **library**, not just a binary.

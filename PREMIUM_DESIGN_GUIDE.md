@@ -1,7 +1,7 @@
 # 🎨 Premium Design System Guide
 
 ## Overview
-This document outlines the comprehensive design system used throughout the Premium POS Desktop application. All pages and components follow these consistent patterns to deliver a world-class, professional user experience.
+This document outlines the comprehensive design system used throughout the QorBooks Desktop application. All pages and components follow these consistent patterns to deliver a world-class, professional user experience.
 
 ## Design Philosophy
 
@@ -446,4 +446,4 @@ For questions or suggestions about the design system, consult this guide or revi
 
 **Last Updated:** October 2024  
 **Version:** 1.0.0  
-**Author:** Premium POS Team
+**Author:** QorBooks Team

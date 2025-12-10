@@ -125,7 +125,7 @@ pub async fn remove_store_logo(pool: State<'_, SqlitePool>) -> Result<(), String
     
     // Delete the file if it exists
     if let Some(path) = logo_url {
-        if let Err(e) = fs::remove_file(&path) {
+        if let Err(_e) = fs::remove_file(&path) {
             // Don't fail the operation if file deletion fails
         }
     }

@@ -27,6 +27,7 @@ pub struct ProductWithStock {
     pub current_stock: i32,
     pub minimum_stock: i32,
     pub available_stock: i32,
+    pub reserved_stock: i32,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -379,7 +380,8 @@ pub async fn get_products_with_stock(pool: State<'_, SqlitePool>) -> Result<Vec<
         "SELECT p.*, 
                 COALESCE(i.current_stock, 0) as current_stock,
                 COALESCE(i.minimum_stock, 0) as minimum_stock,
-                COALESCE(i.available_stock, 0) as available_stock
+                COALESCE(i.available_stock, 0) as available_stock,
+                COALESCE(i.reserved_stock, 0) as reserved_stock
          FROM products p
          LEFT JOIN inventory i ON p.id = i.product_id
          WHERE p.is_active = 1
@@ -414,6 +416,7 @@ pub async fn get_products_with_stock(pool: State<'_, SqlitePool>) -> Result<Vec<
             current_stock: row.try_get("current_stock").map_err(|e| e.to_string())?,
             minimum_stock: row.try_get("minimum_stock").map_err(|e| e.to_string())?,
             available_stock: row.try_get("available_stock").map_err(|e| e.to_string())?,
+            reserved_stock: row.try_get("reserved_stock").map_err(|e| e.to_string())?,
             created_at: row.try_get("created_at").map_err(|e| e.to_string())?,
             updated_at: row.try_get("updated_at").map_err(|e| e.to_string())?,
         };

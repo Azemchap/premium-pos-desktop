@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Store as StoreIcon } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { Skeleton } from "./ui/skeleton";
+import { useStoreConfigStore } from "@/store/storeConfigStore";
 
 interface StoreConfig {
   id: number;
@@ -28,27 +28,22 @@ export default function StoreLogo({
   showSubtitle = true,
   className = "" 
 }: StoreLogoProps) {
-  const [storeConfig, setStoreConfig] = useState<StoreConfig | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { storeConfig, loading, refreshStoreConfig } = useStoreConfigStore();
 
   useEffect(() => {
-    const loadStoreConfig = async () => {
-      try {
-        const config = await invoke<StoreConfig>("get_store_config");
-        setStoreConfig(config);
-      } catch (error) {
-        console.error("Failed to load store config:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Load store config on mount if not already loaded
+    if (!storeConfig && !loading) {
+      refreshStoreConfig();
+    }
+  }, [storeConfig, loading, refreshStoreConfig]);
 
-    loadStoreConfig();
-
-    // Refresh store config every 30 seconds to keep data fresh
-    const interval = setInterval(loadStoreConfig, 30000);
+  // Refresh store config every 30 seconds to keep data fresh
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshStoreConfig();
+    }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshStoreConfig]);
 
   if (loading) {
     return (
@@ -141,7 +136,7 @@ export default function StoreLogo({
         <div className="flex flex-col">
           <span className="font-bold text-sm leading-none">{storeName}</span>
           {showSubtitle && (
-            <span className="text-xs text-muted-foreground">POS System</span>
+            <span className="text-xs text-muted-foreground">Business Management</span>
           )}
         </div>
       </div>

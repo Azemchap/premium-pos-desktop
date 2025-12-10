@@ -37,6 +37,8 @@ export interface ChangePasswordRequest {
 // ==================== PRODUCT TYPES ====================
 
 export interface Product {
+  available_stock: number;
+  minimum_stock: any;
   id: number;
   sku: string;
   barcode?: string;

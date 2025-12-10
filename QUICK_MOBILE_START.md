@@ -61,8 +61,8 @@ cargo tauri android init
 ```
 
 Answer the prompts:
-- App name: `Premium POS`
-- App ID: `com.premiumpos.app` (already in config)
+- App name: `QorBooks`
+- App ID: `com.qorbooks.app` (already in config)
 
 ### 6️⃣ Build Your First APK! 🎉
 

@@ -237,7 +237,7 @@ cargo tauri ios build
 
 ## 🎉 Success!
 
-Your Premium POS app is now:
+Your QorBooks app is now:
 - ✅ **100% Mobile-Optimized**
 - ✅ **Touch-Friendly**
 - ✅ **Keyboard-Optimized**

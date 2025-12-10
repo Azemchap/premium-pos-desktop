@@ -764,7 +764,7 @@ export default function Products() {
                         />
                       </PaginationItem>
                       {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                        let pageNum;
+                        let pageNum: number;
                         if (totalPages <= 5) {
                           pageNum = i + 1;
                         } else if (currentPage <= 3) {

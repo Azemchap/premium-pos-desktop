@@ -6,7 +6,7 @@ You ran `pnpm android:build` but the build output shows:
 ```
 Compiling webview2-com v0.38.0  ← Windows-specific
 Target: x64                      ← Windows target
-Built at: ...release\premium-pos.exe  ← Windows .exe file
+Built at: ...release\qorbooks.exe  ← Windows .exe file
 failed to bundle project: Couldn't find a .ico icon  ← Windows icon
 ```
 
@@ -19,7 +19,7 @@ failed to bundle project: Couldn't find a .ico icon  ← Windows icon
 ### **Step 1: Verify You're in the Right Directory**
 ```bash
 pwd
-# Should show: .../premium-pos-desktop
+# Should show: .../qorbooks-desktop
 ```
 
 ### **Step 2: Check Android Project Exists**
@@ -63,10 +63,10 @@ When building for Android, you should see:
 ```
 Info Detected connected device: ...
 Info Using 10.2.0.2 to access the development server
-Compiling premium-pos for target aarch64-linux-android
-Compiling premium-pos for target armv7-linux-androideabi
-Compiling premium-pos for target i686-linux-android
-Compiling premium-pos for target x86_64-linux-android
+Compiling qorbooks for target aarch64-linux-android
+Compiling qorbooks for target armv7-linux-androideabi
+Compiling qorbooks for target i686-linux-android
+Compiling qorbooks for target x86_64-linux-android
 Building APK...
 ✓ APK created successfully!
 ```
@@ -115,7 +115,7 @@ pnpm android:build
 # Build Windows desktop app instead
 pnpm tauri:build
 
-# Output: src-tauri/target/release/premium-pos.exe
+# Output: src-tauri/target/release/qorbooks.exe
 ```
 
 ---
