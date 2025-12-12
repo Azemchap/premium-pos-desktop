@@ -36,6 +36,55 @@ pub async fn get_organization(pool: State<'_, SqlitePool>) -> Result<Organizatio
 }
 
 #[tauri::command]
+pub async fn create_organization(
+    pool: State<'_, SqlitePool>,
+    request: CreateOrganizationRequest,
+) -> Result<Organization, String> {
+    let country = request.country.unwrap_or_else(|| "US".to_string());
+    let subscription_plan = request.subscription_plan.unwrap_or_else(|| "Free".to_string());
+    let subscription_status = request.subscription_status.unwrap_or_else(|| "Trial".to_string());
+
+    let result = sqlx::query(
+        "INSERT INTO organizations (
+            name, slug, industry, business_type, logo_url, website, phone, email,
+            address, city, state, zip_code, country, tax_id, subscription_plan,
+            subscription_status, settings, custom_fields, legal_name, description
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(&request.name)
+    .bind(&request.slug)
+    .bind(&request.industry)
+    .bind(&request.business_type)
+    .bind(&request.logo_url)
+    .bind(&request.website)
+    .bind(&request.phone)
+    .bind(&request.email)
+    .bind(&request.address)
+    .bind(&request.city)
+    .bind(&request.state)
+    .bind(&request.zip_code)
+    .bind(&country)
+    .bind(&request.tax_id)
+    .bind(&subscription_plan)
+    .bind(&subscription_status)
+    .bind(&request.settings)
+    .bind(&request.custom_fields)
+    .bind(&request.legal_name)
+    .bind(&request.description)
+    .execute(pool.inner())
+    .await
+    .map_err(|e| format!("Failed to create organization: {}", e))?;
+
+    let org_id = result.last_insert_rowid();
+
+    sqlx::query_as::<_, Organization>("SELECT * FROM organizations WHERE id = ?")
+        .bind(org_id)
+        .fetch_one(pool.inner())
+        .await
+        .map_err(|e| format!("Failed to fetch created organization: {}", e))
+}
+
+#[tauri::command]
 pub async fn update_organization(
     pool: State<'_, SqlitePool>,
     request: UpdateOrganizationRequest,
