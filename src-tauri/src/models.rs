@@ -857,7 +857,9 @@ pub struct Location {
     pub country: String,
     pub phone: Option<String>,
     pub email: Option<String>,
-    pub is_primary: bool,
+    pub tax_rate: f64,
+    pub currency: String,
+    pub logo_url: Option<String>,
     pub is_active: bool,
     pub created_at: String,
     pub updated_at: String,
@@ -873,7 +875,9 @@ pub struct CreateLocationRequest {
     pub country: Option<String>,
     pub phone: Option<String>,
     pub email: Option<String>,
-    pub is_primary: Option<bool>,
+    pub tax_rate: Option<f64>,
+    pub currency: Option<String>,
+    pub logo_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -886,7 +890,9 @@ pub struct UpdateLocationRequest {
     pub country: Option<String>,
     pub phone: Option<String>,
     pub email: Option<String>,
-    pub is_primary: Option<bool>,
+    pub tax_rate: Option<f64>,
+    pub currency: Option<String>,
+    pub logo_url: Option<String>,
     pub is_active: Option<bool>,
 }
 
