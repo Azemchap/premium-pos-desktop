@@ -60,6 +60,8 @@ pub async fn update_organization(
             tax_id = COALESCE(?, tax_id),
             settings = COALESCE(?, settings),
             custom_fields = COALESCE(?, custom_fields),
+            legal_name = COALESCE(?, legal_name),
+            description = COALESCE(?, description),
             updated_at = CURRENT_TIMESTAMP
          WHERE id = ?",
     )
@@ -78,6 +80,8 @@ pub async fn update_organization(
     .bind(&request.tax_id)
     .bind(&request.settings)
     .bind(&request.custom_fields)
+    .bind(&request.legal_name)
+    .bind(&request.description)
     .bind(org.id)
     .execute(pool.inner())
     .await

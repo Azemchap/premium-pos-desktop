@@ -715,6 +715,12 @@ pub struct Employee {
     pub is_active: bool,
     pub created_at: String,
     pub updated_at: String,
+    // User details from join
+    pub username: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub phone: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -806,6 +812,8 @@ pub struct Organization {
     pub is_active: bool,
     pub created_at: String,
     pub updated_at: String,
+    pub legal_name: Option<String>,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -825,6 +833,8 @@ pub struct UpdateOrganizationRequest {
     pub tax_id: Option<String>,
     pub settings: Option<String>,
     pub custom_fields: Option<String>,
+    pub legal_name: Option<String>,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]

@@ -1188,5 +1188,18 @@ pub fn get_migrations() -> Vec<Migration> {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 18,
+            description: "add_phone_to_users_and_fields_to_organizations",
+            sql: r#"
+                -- Add phone column to users table
+                ALTER TABLE users ADD COLUMN phone TEXT;
+
+                -- Add legal_name and description columns to organizations table
+                ALTER TABLE organizations ADD COLUMN legal_name TEXT;
+                ALTER TABLE organizations ADD COLUMN description TEXT;
+            "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }
