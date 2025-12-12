@@ -826,6 +826,30 @@ pub struct Organization {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct CreateOrganizationRequest {
+    pub name: String,
+    pub slug: String,
+    pub industry: Option<String>,
+    pub business_type: Option<String>,
+    pub logo_url: Option<String>,
+    pub website: Option<String>,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<String>,
+    pub zip_code: Option<String>,
+    pub country: Option<String>,
+    pub tax_id: Option<String>,
+    pub subscription_plan: Option<String>,
+    pub subscription_status: Option<String>,
+    pub settings: Option<String>,
+    pub custom_fields: Option<String>,
+    pub legal_name: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateOrganizationRequest {
     pub name: Option<String>,
     pub industry: Option<String>,

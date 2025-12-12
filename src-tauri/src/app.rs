@@ -189,6 +189,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::time_tracking::update_time_entry,
             commands::time_tracking::delete_time_entry,
             commands::organization::get_organization,
+            commands::organization::create_organization,
             commands::organization::update_organization,
             commands::organization::get_locations,
             commands::organization::create_location,

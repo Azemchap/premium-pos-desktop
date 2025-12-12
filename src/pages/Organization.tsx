@@ -124,7 +124,7 @@ export default function Organization() {
     city: "",
     state: "",
     zip_code: "",
-    country: "USA",
+    country: "US",
     phone: "",
     email: "",
     website: "",
@@ -157,7 +157,7 @@ export default function Organization() {
           city: result.city || "",
           state: result.state || "",
           zip_code: result.zip_code || "",
-          country: result.country || "USA",
+          country: result.country || "US",
           phone: result.phone || "",
           email: result.email || "",
           website: result.website || "",
@@ -187,13 +187,21 @@ export default function Organization() {
       organizationSchema.parse(orgFormData);
       if (organization) {
         await invoke("update_organization", {
-          organizationId: organization.id,
           request: orgFormData,
         });
         toast.success("✅ Organization updated successfully!");
       } else {
+        // Generate slug from organization name
+        const slug = orgFormData.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
+
         await invoke("create_organization", {
-          request: orgFormData,
+          request: {
+            ...orgFormData,
+            slug: slug || 'my-business',
+          },
         });
         toast.success("✅ Organization created successfully!");
       }
