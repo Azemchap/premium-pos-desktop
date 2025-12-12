@@ -107,19 +107,25 @@ pub async fn create_location(
     pool: State<'_, SqlitePool>,
     request: CreateLocationRequest,
 ) -> Result<Location, String> {
+    let tax_rate = request.tax_rate.unwrap_or(0.0);
+    let currency = request.currency.unwrap_or_else(|| "USD".to_string());
+    let country = request.country.unwrap_or_else(|| "US".to_string());
+
     let result = sqlx::query(
-        "INSERT INTO locations (name, address, city, state, zip_code, country, phone, email, is_primary)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO locations (name, address, city, state, zip_code, country, phone, email, tax_rate, currency, logo_url)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&request.name)
     .bind(&request.address)
     .bind(&request.city)
     .bind(&request.state)
     .bind(&request.zip_code)
-    .bind(&request.country)
+    .bind(&country)
     .bind(&request.phone)
     .bind(&request.email)
-    .bind(&request.is_primary)
+    .bind(tax_rate)
+    .bind(&currency)
+    .bind(&request.logo_url)
     .execute(pool.inner())
     .await
     .map_err(|e| format!("Failed to create location: {}", e))?;
@@ -149,7 +155,9 @@ pub async fn update_location(
             country = COALESCE(?, country),
             phone = COALESCE(?, phone),
             email = COALESCE(?, email),
-            is_primary = COALESCE(?, is_primary),
+            tax_rate = COALESCE(?, tax_rate),
+            currency = COALESCE(?, currency),
+            logo_url = COALESCE(?, logo_url),
             is_active = COALESCE(?, is_active),
             updated_at = CURRENT_TIMESTAMP
          WHERE id = ?",
@@ -162,7 +170,9 @@ pub async fn update_location(
     .bind(&request.country)
     .bind(&request.phone)
     .bind(&request.email)
-    .bind(&request.is_primary)
+    .bind(&request.tax_rate)
+    .bind(&request.currency)
+    .bind(&request.logo_url)
     .bind(&request.is_active)
     .bind(location_id)
     .execute(pool.inner())
