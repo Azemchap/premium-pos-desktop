@@ -1192,12 +1192,10 @@ pub fn get_migrations() -> Vec<Migration> {
             version: 18,
             description: "add_phone_to_users_and_fields_to_organizations",
             sql: r#"
-                -- Add phone column to users table
-                ALTER TABLE users ADD COLUMN phone TEXT;
-
-                -- Add legal_name and description columns to organizations table
-                ALTER TABLE organizations ADD COLUMN legal_name TEXT;
-                ALTER TABLE organizations ADD COLUMN description TEXT;
+                -- Migration 18 was already partially applied
+                -- Making this a no-op to avoid duplicate column errors
+                -- The actual column additions have been moved to migration 20
+                SELECT 1;
             "#,
             kind: MigrationKind::Up,
         },
@@ -1249,6 +1247,111 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Recreate indexes
                 CREATE INDEX IF NOT EXISTS idx_employees_user ON employees(user_id);
                 CREATE INDEX IF NOT EXISTS idx_employees_active ON employees(is_active);
+            "#,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 20,
+            description: "add_missing_columns_safely",
+            sql: r#"
+                -- Safely add columns that might be missing from migration 18
+                -- We check each column before adding
+
+                -- Add phone to users if it doesn't exist
+                CREATE TABLE IF NOT EXISTS _temp_check_users_phone AS
+                SELECT COUNT(*) as has_column FROM pragma_table_info('users') WHERE name = 'phone';
+
+                -- If phone column doesn't exist, we need to add it via table recreation
+                CREATE TABLE IF NOT EXISTS users_with_phone (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT NOT NULL,
+                    role TEXT NOT NULL CHECK (role IN ('Admin', 'Manager', 'Cashier', 'StockKeeper', 'Warehouse')),
+                    is_active BOOLEAN DEFAULT true,
+                    profile_image_url TEXT,
+                    last_login DATETIME,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    phone TEXT
+                );
+
+                -- Copy data only if users_with_phone is empty and phone column is missing
+                INSERT INTO users_with_phone
+                SELECT id, username, email, password_hash, first_name, last_name, role, is_active,
+                       profile_image_url, last_login, created_at, updated_at, NULL as phone
+                FROM users
+                WHERE (SELECT has_column FROM _temp_check_users_phone) = 0
+                AND NOT EXISTS (SELECT 1 FROM users_with_phone LIMIT 1);
+
+                -- Swap tables if we copied data
+                DROP TABLE IF EXISTS users_old_migration20;
+                CREATE TABLE users_old_migration20 AS SELECT * FROM users
+                WHERE EXISTS (SELECT 1 FROM users_with_phone LIMIT 1);
+
+                DELETE FROM users WHERE EXISTS (SELECT 1 FROM users_with_phone LIMIT 1);
+                INSERT INTO users SELECT * FROM users_with_phone WHERE EXISTS (SELECT 1 FROM users_with_phone WHERE id IS NOT NULL LIMIT 1);
+
+                DROP TABLE IF EXISTS users_with_phone;
+                DROP TABLE IF EXISTS users_old_migration20;
+                DROP TABLE _temp_check_users_phone;
+
+                -- Add legal_name to organizations if it doesn't exist
+                CREATE TABLE IF NOT EXISTS _temp_check_org_legal AS
+                SELECT COUNT(*) as has_column FROM pragma_table_info('organizations') WHERE name = 'legal_name';
+
+                CREATE TABLE IF NOT EXISTS orgs_with_legal (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    slug TEXT UNIQUE NOT NULL,
+                    industry TEXT,
+                    business_type TEXT,
+                    logo_url TEXT,
+                    website TEXT,
+                    phone TEXT,
+                    email TEXT,
+                    address TEXT,
+                    city TEXT,
+                    state TEXT,
+                    zip_code TEXT,
+                    country TEXT DEFAULT 'US',
+                    tax_id TEXT,
+                    subscription_plan TEXT CHECK (subscription_plan IN ('Free', 'Starter', 'Professional', 'Enterprise')) DEFAULT 'Free',
+                    subscription_status TEXT CHECK (subscription_status IN ('Trial', 'Active', 'Suspended', 'Cancelled')) DEFAULT 'Trial',
+                    trial_ends_at DATE,
+                    subscription_ends_at DATE,
+                    settings TEXT,
+                    custom_fields TEXT,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    legal_name TEXT,
+                    description TEXT
+                );
+
+                -- Copy data only if orgs_with_legal is empty and columns are missing
+                INSERT INTO orgs_with_legal
+                SELECT id, name, slug, industry, business_type, logo_url, website, phone, email,
+                       address, city, state, zip_code, country, tax_id, subscription_plan, subscription_status,
+                       trial_ends_at, subscription_ends_at, settings, custom_fields, is_active, created_at, updated_at,
+                       NULL as legal_name, NULL as description
+                FROM organizations
+                WHERE (SELECT has_column FROM _temp_check_org_legal) = 0
+                AND NOT EXISTS (SELECT 1 FROM orgs_with_legal LIMIT 1);
+
+                -- Swap tables if we copied data
+                DROP TABLE IF EXISTS orgs_old_migration20;
+                CREATE TABLE orgs_old_migration20 AS SELECT * FROM organizations
+                WHERE EXISTS (SELECT 1 FROM orgs_with_legal LIMIT 1);
+
+                DELETE FROM organizations WHERE EXISTS (SELECT 1 FROM orgs_with_legal LIMIT 1);
+                INSERT INTO organizations SELECT * FROM orgs_with_legal WHERE EXISTS (SELECT 1 FROM orgs_with_legal WHERE id IS NOT NULL LIMIT 1);
+
+                DROP TABLE IF EXISTS orgs_with_legal;
+                DROP TABLE IF EXISTS orgs_old_migration20;
+                DROP TABLE _temp_check_org_legal;
             "#,
             kind: MigrationKind::Up,
         },
