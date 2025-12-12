@@ -1,6 +1,7 @@
 
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SyncStatusIndicator, { useSyncStatus } from "@/components/SyncStatusIndicator";
+import GlobalSearch from "@/components/GlobalSearch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -571,16 +572,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <Separator orientation="vertical" className="h-6 lg:hidden" />
 
-          {/* Search - Stripe style */}
+          {/* Global Search - Cmd+K */}
           <div className="flex-1 flex items-center">
-            <div className="relative max-w-md w-full hidden sm:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="w-full h-9 pl-9 pr-4 text-sm bg-muted/50 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-colors"
-              />
-            </div>
+            <GlobalSearch />
           </div>
 
           {/* Right side actions */}
