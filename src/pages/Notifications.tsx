@@ -168,7 +168,7 @@ export default function Notifications() {
 
   const bulkMarkAsRead = async () => {
     if (selectedIds.length === 0) return;
-    
+
     try {
       setBulkActionLoading(true);
       await Promise.all(
@@ -187,7 +187,7 @@ export default function Notifications() {
 
   const bulkArchive = async () => {
     if (selectedIds.length === 0) return;
-    
+
     try {
       setBulkActionLoading(true);
       await Promise.all(
@@ -206,7 +206,7 @@ export default function Notifications() {
 
   const bulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    
+
     if (!confirm(`Are you sure you want to delete ${selectedIds.length} notification(s)? This action cannot be undone.`)) {
       return;
     }
@@ -332,9 +332,7 @@ export default function Notifications() {
       case "low_stock":
         return <Package className="w-5 h-5" />;
       case "payment":
-        return <DollarSign className="w-5 h-5" />;
       case "invoice":
-        return <DollarSign className="w-5 h-5" />;
       case "debt":
         return <DollarSign className="w-5 h-5" />;
       case "email":
@@ -383,8 +381,8 @@ export default function Notifications() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             className="flex-1 sm:flex-none"
             onClick={checkLowStock}
@@ -393,7 +391,7 @@ export default function Notifications() {
             <span className="text-xs sm:text-sm">Check Stock</span>
           </Button>
           {stats && stats.unread > 0 && (
-            <Button 
+            <Button
               size="sm"
               className="flex-1 sm:flex-none"
               onClick={markAllAsRead}
@@ -533,7 +531,7 @@ export default function Notifications() {
                   </Badge>
                 )}
               </Button>
-              
+
               {filteredNotifications.length > 0 && (
                 <span className="text-sm text-muted-foreground">
                   {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
@@ -713,9 +711,8 @@ export default function Notifications() {
                   {notifs.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 sm:p-6 hover:bg-muted/50 transition-colors ${
-                        !notification.is_read ? "bg-blue-50/50 dark:bg-blue-950/20" : ""
-                      }`}
+                      className={`p-4 sm:p-6 hover:bg-muted/50 transition-colors ${!notification.is_read ? "bg-blue-50/50 dark:bg-blue-950/20" : ""
+                        }`}
                     >
                       <div className="flex gap-3 sm:gap-4">
                         {/* Checkbox */}
@@ -729,15 +726,14 @@ export default function Notifications() {
                         {/* Icon */}
                         <div className="flex-shrink-0">
                           <div
-                            className={`p-2 sm:p-3 rounded-xl ${
-                              notification.severity === "error"
+                            className={`p-2 sm:p-3 rounded-xl ${notification.severity === "error"
                                 ? "bg-red-100 dark:bg-red-900/30"
                                 : notification.severity === "warning"
-                                ? "bg-yellow-100 dark:bg-yellow-900/30"
-                                : notification.severity === "success"
-                                ? "bg-green-100 dark:bg-green-900/30"
-                                : "bg-blue-100 dark:bg-blue-900/30"
-                            }`}
+                                  ? "bg-yellow-100 dark:bg-yellow-900/30"
+                                  : notification.severity === "success"
+                                    ? "bg-green-100 dark:bg-green-900/30"
+                                    : "bg-blue-100 dark:bg-blue-900/30"
+                              }`}
                           >
                             <div className={getSeverityColor(notification.severity)}>
                               {getNotificationIcon(notification.notification_type)}
@@ -811,7 +807,7 @@ export default function Notifications() {
                             size="sm"
                             onClick={() => setDeleteId(notification.id)}
                             title="Delete"
-                            className="h-8 w-8 p-0 hover:text-destructive"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -826,18 +822,22 @@ export default function Notifications() {
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Notification?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This notification will be permanently deleted. This action cannot be undone.
+              This action cannot be undone. This will permanently delete the notification.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteNotification}>Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={deleteNotification}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
