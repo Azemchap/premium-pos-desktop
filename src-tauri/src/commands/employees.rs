@@ -10,7 +10,7 @@ pub async fn get_employees(
 ) -> Result<Vec<Employee>, String> {
     let query = if let Some(active) = is_active {
         format!(
-            "SELECT e.*, u.username, u.first_name, u.last_name, u.email, u.phone
+            "SELECT e.*, u.username, u.first_name, u.last_name, u.email
              FROM employees e
              JOIN users u ON e.user_id = u.id
              WHERE e.is_active = {}
@@ -18,7 +18,7 @@ pub async fn get_employees(
             if active { 1 } else { 0 }
         )
     } else {
-        "SELECT e.*, u.username, u.first_name, u.last_name, u.email, u.phone
+        "SELECT e.*, u.username, u.first_name, u.last_name, u.email
          FROM employees e
          JOIN users u ON e.user_id = u.id
          ORDER BY e.created_at DESC"
@@ -39,7 +39,7 @@ pub async fn get_employee(
     employee_id: i64,
 ) -> Result<Employee, String> {
     let employee = sqlx::query_as::<_, Employee>(
-        "SELECT e.*, u.username, u.first_name, u.last_name, u.email, u.phone
+        "SELECT e.*, u.username, u.first_name, u.last_name, u.email
          FROM employees e
          JOIN users u ON e.user_id = u.id
          WHERE e.id = ?",
@@ -140,10 +140,7 @@ pub async fn update_employee(
 }
 
 #[tauri::command]
-pub async fn delete_employee(
-    pool: State<'_, SqlitePool>,
-    employee_id: i64,
-) -> Result<(), String> {
+pub async fn delete_employee(pool: State<'_, SqlitePool>, employee_id: i64) -> Result<(), String> {
     sqlx::query("DELETE FROM employees WHERE id = ?")
         .bind(employee_id)
         .execute(pool.inner())

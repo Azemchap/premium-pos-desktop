@@ -213,6 +213,12 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::sync::check_sync_status,
             commands::sync::sync_single_record,
             commands::sync::delete_local_record,
+            commands::integrations::get_integrations,
+            commands::integrations::get_integration,
+            commands::integrations::create_integration,
+            commands::integrations::update_integration,
+            commands::integrations::delete_integration,
+            commands::integrations::test_integration,
         ])
         .run(tauri::generate_context!())?;
     Ok(())
@@ -389,13 +395,13 @@ async fn initialize_database(
         .await
         .map_err(|e| format!("Failed to ensure admin user: {}", e))?;
 
-    // Seed database with initial data
-    println!("DEBUG(main): Starting database seeding...");
-    if let Err(e) = seeder::seed_database(&pool).await {
-        eprintln!("⚠️  Warning: Failed to seed database: {}", e);
-    } else {
-        println!("✅ DEBUG(main): Database seeded successfully");
-    }
+    // Seed database with initial data (DISABLED)
+    // println!("DEBUG(main): Starting database seeding...");
+    // if let Err(e) = seeder::seed_database(&pool).await {
+    //     eprintln!("⚠️  Warning: Failed to seed database: {}", e);
+    // } else {
+    //     println!("✅ DEBUG(main): Database seeded successfully");
+    // }
 
     println!("✅ DEBUG(main): Database initialization complete");
     Ok(pool)

@@ -720,7 +720,6 @@ pub struct Employee {
     pub first_name: String,
     pub last_name: String,
     pub email: String,
-    pub phone: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -1029,4 +1028,43 @@ pub struct UpdateAppointmentRequest {
     pub price: Option<f64>,
     pub notes: Option<String>,
     pub reminder_sent: Option<bool>,
+}
+
+// ==================== INTEGRATION MODELS ====================
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Integration {
+    pub id: i64,
+    pub name: String,
+    pub provider: String,
+    pub api_key: String,
+    pub api_secret: Option<String>,
+    pub webhook_url: Option<String>,
+    pub config: Option<String>,
+    pub is_enabled: bool,
+    pub last_sync: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateIntegrationRequest {
+    pub name: String,
+    pub provider: String,
+    pub api_key: String,
+    pub api_secret: Option<String>,
+    pub webhook_url: Option<String>,
+    pub config: Option<String>,
+    pub is_enabled: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateIntegrationRequest {
+    pub name: Option<String>,
+    pub provider: Option<String>,
+    pub api_key: Option<String>,
+    pub api_secret: Option<String>,
+    pub webhook_url: Option<String>,
+    pub config: Option<String>,
+    pub is_enabled: Option<bool>,
 }

@@ -1218,5 +1218,29 @@ pub fn get_migrations() -> Vec<Migration> {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 23,
+            description: "create_integrations_table",
+            sql: r#"
+                -- Integrations table for third-party service connections
+                CREATE TABLE IF NOT EXISTS integrations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    api_key TEXT NOT NULL,
+                    api_secret TEXT,
+                    webhook_url TEXT,
+                    config TEXT,
+                    is_enabled BOOLEAN DEFAULT true,
+                    last_sync DATETIME,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_integrations_provider ON integrations(provider);
+                CREATE INDEX IF NOT EXISTS idx_integrations_enabled ON integrations(is_enabled);
+            "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

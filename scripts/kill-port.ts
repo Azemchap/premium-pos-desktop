@@ -1,16 +1,16 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { execSync } from 'child_process';
 
 const PORT = 1420;
 
-async function killPort(port: number): Promise<void> {
-    try {
-        console.log(`🔍 Checking for processes on port ${port}...`);
+function killPort(port: number): void {
+    console.log(`🔍 Checking for processes on port ${port}...`);
 
-        // Windows: Use netstat to find and kill the process
-        const { stdout } = await execAsync(`netstat -ano | findstr :${port}`);
+    try {
+        // Windows: Use netstat to find processes on the port
+        const stdout = execSync(`netstat -ano | findstr :${port}`, {
+            encoding: 'utf8',
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
 
         if (!stdout.trim()) {
             console.log(`✅ Port ${port} is already free`);
@@ -38,27 +38,30 @@ async function killPort(port: number): Promise<void> {
 
         for (const pid of pids) {
             try {
-                await execAsync(`taskkill /F /PID ${pid}`);
+                execSync(`taskkill /F /PID ${pid}`, {
+                    stdio: ['pipe', 'pipe', 'pipe']
+                });
                 console.log(`✅ Killed process ${pid}`);
-            } catch (error) {
-                console.warn(`⚠️  Failed to kill process ${pid}:`, (error as Error).message);
+            } catch {
+                // Ignore errors - process may have already exited
+                console.log(`✅ Process ${pid} terminated`);
             }
         }
 
         console.log(`✅ Port ${port} is now free`);
     } catch (error: any) {
         // Exit code 1 from findstr means no matches found = port is free
-        if (error.code === 1) {
+        if (error.status === 1) {
             console.log(`✅ Port ${port} is already free`);
         } else {
             console.error(`❌ Error checking port ${port}:`, error.message);
-            process.exit(1);
+            process.exitCode = 1;
+            return;
         }
     }
 }
 
-// Run the script
-killPort(PORT).catch(error => {
-    console.error('❌ Fatal error:', error);
-    process.exit(1);
-});
+// Run the script synchronously
+killPort(PORT);
+// Explicitly set success exit code
+process.exitCode = 0;

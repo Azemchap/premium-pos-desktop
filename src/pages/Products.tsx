@@ -55,7 +55,6 @@ import {
   CheckCircle,
   XCircle,
   Tag,
-  Boxes,
   Loader2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -325,11 +324,12 @@ export default function Products() {
     setVariantCombinations([]);
   };
 
-  const handleSort = (column: SortColumn) => {
-    if (column === sortColumn) {
+  const handleSort = (column: string) => {
+    const sortCol = column as SortColumn;
+    if (sortCol === sortColumn) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setSortColumn(column);
+      setSortColumn(sortCol);
       setSortDirection("asc");
     }
   };
@@ -402,7 +402,6 @@ export default function Products() {
   const totalProducts = products.length;
   const activeProducts = products.filter((p) => p.is_active).length;
   const inactiveProducts = totalProducts - activeProducts;
-  const lowStockProducts = products.filter((p) => p.is_active && p.has_variants === false).length; // Simplified
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -596,16 +595,16 @@ export default function Products() {
                                   },
                                   product.is_active
                                     ? {
-                                        label: "Deactivate",
-                                        icon: Trash2,
-                                        onClick: () => handleDelete(product.id),
-                                        variant: "destructive" as const,
-                                      }
+                                      label: "Deactivate",
+                                      icon: Trash2,
+                                      onClick: () => handleDelete(product.id),
+                                      variant: "destructive" as const,
+                                    }
                                     : {
-                                        label: "Reactivate",
-                                        icon: RotateCcw,
-                                        onClick: () => handleReactivate(product.id),
-                                      },
+                                      label: "Reactivate",
+                                      icon: RotateCcw,
+                                      onClick: () => handleReactivate(product.id),
+                                    },
                                 ]}
                               />
                             </TableCell>
@@ -931,11 +930,12 @@ export default function Products() {
             {/* Product Variant Manager - Only on Create */}
             {!editingProduct && formData.has_variants && (
               <ProductVariantManager
+                productName={formData.name || "New Product"}
+                baseSku={formData.sku || "SKU"}
+                baseCostPrice={formData.cost_price}
+                baseSellingPrice={formData.selling_price}
+                baseWholesalePrice={formData.wholesale_price || 0}
                 onVariantsChange={setVariantCombinations}
-                productData={{
-                  cost_price: formData.cost_price,
-                  selling_price: formData.selling_price,
-                }}
               />
             )}
           </div>
