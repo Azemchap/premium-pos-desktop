@@ -69,6 +69,8 @@ interface NotificationStats {
   unread: number;
   low_stock: number;
   system: number;
+  invoice: number;
+  debt: number;
 }
 
 export default function Notifications() {
@@ -85,9 +87,19 @@ export default function Notifications() {
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  const loadNotifications = async () => {
+  const loadNotifications = async (autoRefresh = false) => {
     try {
       setLoading(true);
+
+      // Auto-refresh notifications on initial mount
+      if (autoRefresh) {
+        try {
+          await invoke("refresh_notifications");
+        } catch (error) {
+          console.error("Failed to refresh notifications:", error);
+        }
+      }
+
       const [notifs, statsData] = await Promise.all([
         invoke<Notification[]>("get_notifications", {
           userId: user?.id,
@@ -246,6 +258,10 @@ export default function Notifications() {
   };
 
   useEffect(() => {
+    loadNotifications(true);
+  }, []);
+
+  useEffect(() => {
     loadNotifications();
   }, [filterType, filterRead]);
 
@@ -316,7 +332,10 @@ export default function Notifications() {
       case "low_stock":
         return <Package className="w-5 h-5" />;
       case "payment":
+        return <DollarSign className="w-5 h-5" />;
       case "invoice":
+        return <DollarSign className="w-5 h-5" />;
+      case "debt":
         return <DollarSign className="w-5 h-5" />;
       case "email":
         return <Mail className="w-5 h-5" />;
@@ -388,7 +407,7 @@ export default function Notifications() {
 
       {/* Stats Cards - Enhanced with Gradients */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
           <Card className="overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300">
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6">
               <div className="flex items-center justify-between">
@@ -426,6 +445,34 @@ export default function Notifications() {
                 </div>
                 <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                   <Package className="w-7 h-7 text-white" />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-6">
+              <div className="flex items-center justify-between">
+                <div className="text-white">
+                  <p className="text-xs opacity-90 font-medium">Invoices</p>
+                  <p className="text-lg font-bold mt-2">{stats.invoice}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <DollarSign className="w-7 h-7 text-white" />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="bg-gradient-to-br from-green-500 to-teal-600 p-6">
+              <div className="flex items-center justify-between">
+                <div className="text-white">
+                  <p className="text-xs opacity-90 font-medium">Debts</p>
+                  <p className="text-lg font-bold mt-2">{stats.debt}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <DollarSign className="w-7 h-7 text-white" />
                 </div>
               </div>
             </div>
@@ -506,9 +553,10 @@ export default function Notifications() {
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="low_stock">Low Stock</SelectItem>
+                      <SelectItem value="invoice">Pending Invoices</SelectItem>
+                      <SelectItem value="debt">Outstanding Debts</SelectItem>
                       <SelectItem value="system">System</SelectItem>
                       <SelectItem value="payment">Payment</SelectItem>
-                      <SelectItem value="invoice">Invoice</SelectItem>
                       <SelectItem value="email">Email</SelectItem>
                     </SelectContent>
                   </Select>

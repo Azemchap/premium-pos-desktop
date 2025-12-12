@@ -66,6 +66,7 @@ pub async fn create_sale(
         .map_err(|e| format!("Failed to start transaction: {}", e))?;
 
     // Create sale record
+    let payment_status = request.payment_status.as_deref().unwrap_or("Completed");
     let sale_result = sqlx::query(
         "INSERT INTO sales (sale_number, subtotal, tax_amount, discount_amount, total_amount,
                            payment_method, payment_status, cashier_id, customer_name, customer_phone,
@@ -78,7 +79,7 @@ pub async fn create_sale(
     .bind(request.discount_amount)
     .bind(request.total_amount)
     .bind(&request.payment_method)
-    .bind("completed")
+    .bind(payment_status)
     .bind(cashier_id)
     .bind(&request.customer_name)
     .bind(&request.customer_phone)

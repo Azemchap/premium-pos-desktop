@@ -1139,5 +1139,44 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_organization_users_user ON organization_users(user_id);
             "#,
         kind: MigrationKind::Up,
+    },
+    Migration {
+        version: 16,
+        description: "add_payment_status_check_constraint_to_sales",
+        sql: r#"
+                -- Create new sales table with payment_status CHECK constraint
+                CREATE TABLE IF NOT EXISTS sales_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sale_number TEXT UNIQUE NOT NULL,
+                    subtotal REAL NOT NULL,
+                    tax_amount REAL DEFAULT 0.0,
+                    discount_amount REAL DEFAULT 0.0,
+                    total_amount REAL NOT NULL,
+                    payment_method TEXT NOT NULL,
+                    payment_status TEXT CHECK (payment_status IN ('Pending', 'Partial', 'Paid', 'Completed')) DEFAULT 'Completed',
+                    cashier_id INTEGER NOT NULL,
+                    customer_name TEXT,
+                    customer_phone TEXT,
+                    customer_email TEXT,
+                    notes TEXT,
+                    is_voided BOOLEAN DEFAULT false,
+                    voided_by INTEGER,
+                    voided_at DATETIME,
+                    void_reason TEXT,
+                    shift_id INTEGER,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+
+                -- Copy data from old table to new table (if old table exists and has data)
+                INSERT OR IGNORE INTO sales_new
+                SELECT * FROM sales WHERE EXISTS (SELECT 1 FROM sales LIMIT 1);
+
+                -- Drop old table
+                DROP TABLE IF EXISTS sales;
+
+                -- Rename new table to sales
+                ALTER TABLE sales_new RENAME TO sales;
+            "#,
+        kind: MigrationKind::Up,
     }]
 }

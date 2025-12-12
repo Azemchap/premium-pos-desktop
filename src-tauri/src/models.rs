@@ -422,6 +422,7 @@ pub struct CreateSaleRequest {
     pub discount_amount: f64,
     pub total_amount: f64,
     pub payment_method: String,
+    pub payment_status: Option<String>,
     pub customer_name: Option<String>,
     pub customer_phone: Option<String>,
     pub customer_email: Option<String>,
