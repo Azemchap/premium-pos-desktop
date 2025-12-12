@@ -48,6 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import PageHeader from "@/components/PageHeader";
 import {
   Plus,
   Search,
@@ -62,6 +63,7 @@ import {
   Mail,
   // Phone,
   Calendar,
+  Users as UsersIcon,
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
@@ -318,18 +320,17 @@ export default function Users() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">User Management</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Manage user accounts, roles, and permissions
-          </p>
-        </div>
-        <Button onClick={openCreateDialog} size="sm" className="w-full sm:w-auto">
-          <UserPlus className="w-4 h-4 mr-2" />
-          Add User
-        </Button>
-      </div>
+      <PageHeader
+        title="User Management"
+        subtitle="Manage user accounts, roles, and permissions"
+        icon={UsersIcon}
+        actions={
+          <Button onClick={openCreateDialog} size="sm" className="w-full sm:w-auto">
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add User
+          </Button>
+        }
+      />
 
       {/* Stats - Compact & Responsive */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -487,19 +488,18 @@ export default function Users() {
                         </div>
                       </TableCell>
                       <TableCell className="py-2 px-2 sm:px-4">
-                        <Badge 
+                        <Badge
                           variant="outline"
-                          className={`text-[10px] sm:text-xs px-1.5 py-0 h-5 ${
-                            user.role === "Admin" ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400" :
+                          className={`text-[10px] sm:text-xs px-1.5 py-0 h-5 ${user.role === "Admin" ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400" :
                             user.role === "Manager" ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400" :
-                            "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400"
-                          }`}
+                              "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400"
+                            }`}
                         >
                           {user.role}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-2 px-2 sm:px-4">
-                        <Badge 
+                        <Badge
                           variant="outline"
                           className={`text-[10px] sm:text-xs px-1.5 py-0 h-5 ${user.is_active ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400"}`}
                         >

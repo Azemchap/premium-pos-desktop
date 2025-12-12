@@ -168,6 +168,22 @@ pub async fn mark_notification_read(
 }
 
 #[command]
+pub async fn mark_notification_unread(
+    pool: State<'_, SqlitePool>,
+    notification_id: i64,
+) -> Result<bool, String> {
+    let pool_ref = pool.inner();
+
+    sqlx::query("UPDATE notifications SET is_read = 0 WHERE id = ?")
+        .bind(notification_id)
+        .execute(pool_ref)
+        .await
+        .map_err(|e| format!("Failed to mark notification as unread: {}", e))?;
+
+    Ok(true)
+}
+
+#[command]
 pub async fn mark_all_notifications_read(
     pool: State<'_, SqlitePool>,
     user_id: Option<i64>,
@@ -227,209 +243,89 @@ pub async fn create_notification(
 
 // Helper functions for internal use
 async fn check_low_stock_internal(pool: &SqlitePool) -> Result<i32, String> {
-    // Get products with low stock
-    let low_stock_products = sqlx::query(
-        "SELECT p.id, p.name, i.current_stock, i.minimum_stock
+    let result = sqlx::query(
+        "INSERT INTO notifications (notification_type, title, message, severity, reference_id, reference_type)
+         SELECT 
+            'low_stock', 
+            'Low Stock Alert', 
+            p.name || ' is running low. Current: ' || i.current_stock || ', Minimum: ' || i.minimum_stock,
+            'warning',
+            p.id,
+            'product'
          FROM products p
          JOIN inventory i ON p.id = i.product_id
          WHERE i.current_stock <= i.minimum_stock
-         AND p.is_active = 1",
+         AND p.is_active = 1
+         AND NOT EXISTS (
+            SELECT 1 FROM notifications n
+            WHERE n.notification_type = 'low_stock' 
+            AND n.reference_id = p.id 
+            AND n.reference_type = 'product'
+            AND n.is_read = 0
+         )"
     )
-    .fetch_all(pool)
+    .execute(pool)
     .await
     .map_err(|e| format!("Database error: {}", e))?;
 
-    let mut created_count = 0;
-
-    for row in low_stock_products {
-        let product_id: i64 = row.try_get("id").map_err(|e| e.to_string())?;
-        let product_name: String = row.try_get("name").map_err(|e| e.to_string())?;
-        let current_stock: i32 = row.try_get("current_stock").map_err(|e| e.to_string())?;
-        let minimum_stock: i32 = row.try_get("minimum_stock").map_err(|e| e.to_string())?;
-
-        // Check if notification already exists for this product
-        let existing = sqlx::query(
-            "SELECT id FROM notifications 
-             WHERE notification_type = 'low_stock' 
-             AND reference_id = ? 
-             AND reference_type = 'product'
-             AND is_read = 0",
-        )
-        .bind(product_id)
-        .fetch_optional(pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
-
-        if existing.is_none() {
-            // Create new low stock notification
-            let title = "Low Stock Alert".to_string();
-            let message = format!(
-                "{} is running low. Current: {}, Minimum: {}",
-                product_name, current_stock, minimum_stock
-            );
-
-            sqlx::query(
-                "INSERT INTO notifications (notification_type, title, message, severity, reference_id, reference_type)
-                 VALUES ('low_stock', ?, ?, 'warning', ?, 'product')"
-            )
-            .bind(&title)
-            .bind(&message)
-            .bind(product_id)
-            .execute(pool)
-            .await
-            .map_err(|e| format!("Failed to create notification: {}", e))?;
-
-            created_count += 1;
-        }
-    }
-
-    Ok(created_count)
+    Ok(result.rows_affected() as i32)
 }
 
 async fn check_pending_invoices_internal(pool: &SqlitePool) -> Result<i32, String> {
-    // Get purchase orders with unpaid or partial payment status
-    let pending_invoices = sqlx::query(
-        "SELECT po.id, po.po_number, po.total_amount, po.payment_status, s.company_name
+    let result = sqlx::query(
+        "INSERT INTO notifications (notification_type, title, message, severity, reference_id, reference_type)
+         SELECT 
+            'invoice',
+            'Pending Invoice',
+            'Purchase Order ' || po.po_number || ' from ' || COALESCE(s.company_name, 'Unknown Supplier') || ' is ' || LOWER(po.payment_status) || '. Amount: $' || printf('%.2f', po.total_amount),
+            CASE WHEN po.payment_status = 'Unpaid' THEN 'error' ELSE 'warning' END,
+            po.id,
+            'purchase_order'
          FROM purchase_orders po
          LEFT JOIN suppliers s ON po.supplier_id = s.id
          WHERE po.payment_status IN ('Unpaid', 'Partial')
-         AND po.status != 'Cancelled'",
+         AND po.status != 'Cancelled'
+         AND NOT EXISTS (
+            SELECT 1 FROM notifications n
+            WHERE n.notification_type = 'invoice' 
+            AND n.reference_id = po.id 
+            AND n.reference_type = 'purchase_order'
+            AND n.is_read = 0
+         )"
     )
-    .fetch_all(pool)
+    .execute(pool)
     .await
     .map_err(|e| format!("Database error: {}", e))?;
 
-    let mut created_count = 0;
-
-    for row in pending_invoices {
-        let po_id: i64 = row.try_get("id").map_err(|e| e.to_string())?;
-        let po_number: String = row.try_get("po_number").map_err(|e| e.to_string())?;
-        let total_amount: f64 = row.try_get("total_amount").map_err(|e| e.to_string())?;
-        let payment_status: String = row.try_get("payment_status").map_err(|e| e.to_string())?;
-        let supplier_name: Option<String> = row.try_get("company_name").ok();
-
-        // Check if notification already exists for this purchase order
-        let existing = sqlx::query(
-            "SELECT id FROM notifications
-             WHERE notification_type = 'invoice'
-             AND reference_id = ?
-             AND reference_type = 'purchase_order'
-             AND is_read = 0",
-        )
-        .bind(po_id)
-        .fetch_optional(pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
-
-        if existing.is_none() {
-            // Create new invoice notification
-            let title = "Pending Invoice".to_string();
-            let supplier_info = supplier_name.unwrap_or_else(|| "Unknown Supplier".to_string());
-            let message = format!(
-                "Purchase Order {} from {} is {}. Amount: ${:.2}",
-                po_number,
-                supplier_info,
-                payment_status.to_lowercase(),
-                total_amount
-            );
-
-            let severity = if payment_status == "Unpaid" {
-                "error"
-            } else {
-                "warning"
-            };
-
-            sqlx::query(
-                "INSERT INTO notifications (notification_type, title, message, severity, reference_id, reference_type)
-                 VALUES ('invoice', ?, ?, ?, ?, 'purchase_order')"
-            )
-            .bind(&title)
-            .bind(&message)
-            .bind(severity)
-            .bind(po_id)
-            .execute(pool)
-            .await
-            .map_err(|e| format!("Failed to create notification: {}", e))?;
-
-            created_count += 1;
-        }
-    }
-
-    Ok(created_count)
+    Ok(result.rows_affected() as i32)
 }
 
 async fn check_outstanding_debts_internal(pool: &SqlitePool) -> Result<i32, String> {
-    // Get sales with pending, unpaid, or partial payment status
-    let outstanding_debts = sqlx::query(
-        "SELECT id, sale_number, total_amount, payment_status, customer_name, customer_phone, created_at
-         FROM sales
-         WHERE payment_status IN ('Pending', 'Partial')
-         AND is_voided = 0"
+    let result = sqlx::query(
+        "INSERT INTO notifications (notification_type, title, message, severity, reference_id, reference_type)
+         SELECT 
+            'debt',
+            'Outstanding Debt',
+            'Sale ' || s.sale_number || ' from ' || COALESCE(s.customer_name, s.customer_phone, 'Walk-in Customer') || ' has ' || LOWER(s.payment_status) || ' payment. Amount: $' || printf('%.2f', s.total_amount),
+            CASE WHEN s.payment_status = 'Pending' THEN 'error' ELSE 'warning' END,
+            s.id,
+            'sale'
+         FROM sales s
+         WHERE s.payment_status IN ('Pending', 'Partial')
+         AND s.is_voided = 0
+         AND NOT EXISTS (
+            SELECT 1 FROM notifications n
+            WHERE n.notification_type = 'debt' 
+            AND n.reference_id = s.id 
+            AND n.reference_type = 'sale'
+            AND n.is_read = 0
+         )"
     )
-    .fetch_all(pool)
+    .execute(pool)
     .await
     .map_err(|e| format!("Database error: {}", e))?;
 
-    let mut created_count = 0;
-
-    for row in outstanding_debts {
-        let sale_id: i64 = row.try_get("id").map_err(|e| e.to_string())?;
-        let sale_number: String = row.try_get("sale_number").map_err(|e| e.to_string())?;
-        let total_amount: f64 = row.try_get("total_amount").map_err(|e| e.to_string())?;
-        let payment_status: String = row.try_get("payment_status").map_err(|e| e.to_string())?;
-        let customer_name: Option<String> = row.try_get("customer_name").ok();
-        let customer_phone: Option<String> = row.try_get("customer_phone").ok();
-
-        // Check if notification already exists for this sale
-        let existing = sqlx::query(
-            "SELECT id FROM notifications
-             WHERE notification_type = 'debt'
-             AND reference_id = ?
-             AND reference_type = 'sale'
-             AND is_read = 0",
-        )
-        .bind(sale_id)
-        .fetch_optional(pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
-
-        if existing.is_none() {
-            // Create new debt notification
-            let title = "Outstanding Debt".to_string();
-            let customer_info = customer_name
-                .or(customer_phone)
-                .unwrap_or_else(|| "Walk-in Customer".to_string());
-            let message = format!(
-                "Sale {} from {} has {} payment. Amount: ${:.2}",
-                sale_number,
-                customer_info,
-                payment_status.to_lowercase(),
-                total_amount
-            );
-
-            let severity = if payment_status == "Pending" {
-                "error"
-            } else {
-                "warning"
-            };
-
-            sqlx::query(
-                "INSERT INTO notifications (notification_type, title, message, severity, reference_id, reference_type)
-                 VALUES ('debt', ?, ?, ?, ?, 'sale')"
-            )
-            .bind(&title)
-            .bind(&message)
-            .bind(severity)
-            .bind(sale_id)
-            .execute(pool)
-            .await
-            .map_err(|e| format!("Failed to create notification: {}", e))?;
-
-            created_count += 1;
-        }
-    }
-
-    Ok(created_count)
+    Ok(result.rows_affected() as i32)
 }
 
 #[command]

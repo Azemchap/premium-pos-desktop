@@ -45,6 +45,7 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 // Zod validation schema
 const integrationSchema = z.object({
@@ -135,6 +136,7 @@ export default function Integrations() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [integrationToDelete, setIntegrationToDelete] = useState<{ id: number, name: string } | null>(null);
 
   const loadIntegrations = async () => {
     try {
@@ -216,16 +218,22 @@ export default function Integrations() {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteIntegration = async (integrationId: number, name: string) => {
-    if (!confirm(`Are you sure you want to delete the "${name}" integration?`)) return;
+  const handleDeleteIntegration = (integrationId: number, name: string) => {
+    setIntegrationToDelete({ id: integrationId, name });
+  };
+
+  const executeDeleteIntegration = async () => {
+    if (!integrationToDelete) return;
 
     try {
-      await invoke("delete_integration", { integrationId });
-      toast.success(`Integration "${name}" deleted successfully!`);
+      await invoke("delete_integration", { integrationId: integrationToDelete.id });
+      toast.success(`Integration "${integrationToDelete.name}" deleted successfully!`);
       loadIntegrations();
     } catch (error) {
       console.error("Failed to delete integration:", error);
       toast.error(`Failed to delete integration: ${error}`);
+    } finally {
+      setIntegrationToDelete(null);
     }
   };
 
@@ -455,21 +463,19 @@ export default function Integrations() {
               {integrations.map((integration) => (
                 <Card
                   key={integration.id}
-                  className={`border-2 transition-all duration-200 ${
-                    integration.is_enabled
+                  className={`border-2 transition-all duration-200 ${integration.is_enabled
                       ? "border-green-200 dark:border-green-800"
                       : "border-gray-200 dark:border-gray-800 opacity-60"
-                  }`}
+                    }`}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div
-                          className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            integration.is_enabled
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center ${integration.is_enabled
                               ? "bg-gradient-to-br from-green-500 to-green-600"
                               : "bg-gradient-to-br from-gray-400 to-gray-500"
-                          }`}
+                            }`}
                         >
                           <Link2 className="w-6 h-6 text-white" />
                         </div>
@@ -690,6 +696,16 @@ export default function Integrations() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      <ConfirmDialog
+        open={!!integrationToDelete}
+        onOpenChange={(open) => !open && setIntegrationToDelete(null)}
+        title="Delete Integration"
+        description={`Are you sure you want to delete the "${integrationToDelete?.name}" integration?`}
+        onConfirm={executeDeleteIntegration}
+        confirmText="Delete"
+        variant="destructive"
+      />
+    </div >
   );
 }

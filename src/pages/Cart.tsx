@@ -1,4 +1,5 @@
 // src/pages/Cart.tsx - Dedicated Cart Page for Completing Sales
+import PageHeader from "@/components/PageHeader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -261,43 +262,26 @@ export default function Cart() {
 
   return (
     <div className="space-y-6 ">
-      {/* Premium Header with Gradient */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 p-4 md:p-6">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-start gap-6">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-primary/10 ring-2 ring-primary/20">
-                  <ShoppingBag className="w-4 h-4 text-primary" />
-                </div>
 
-                {/* Sticky Mobile Checkout Bar */}
-                {items.length > 0 && (
-                  <div className="fixed bottom-0 inset-x-0 sm:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t px-3 py-2 flex items-center justify-between gap-3 z-40">
-                    <div className="flex flex-col leading-tight">
-                      <span className="text-[10px] text-muted-foreground">Total</span>
-                      <span className="text-base font-bold">{format(cartTotal)}</span>
-                    </div>
-                    <Button onClick={() => setIsCustomerDialogOpen(true)} className="h-6 text-sm font-semibold flex-1" size="sm" disabled={items.length === 0}>
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Checkout
-                    </Button>
-                  </div>
-                )}
-                <div>
-                  <h2 className="text-xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                    Shopping Cart
-                  </h2>
-                  <p className="text-muted-foreground text-sm md:text-base line-clamp-1">
-                    Review your items and complete purchase
-                  </p>
-                </div>
-              </div>
-            </div>
+      <PageHeader
+        title="Shopping Cart"
+        subtitle="Review your items and complete purchase"
+        icon={ShoppingBag}
+      />
+
+      {/* Sticky Mobile Checkout Bar */}
+      {items.length > 0 && (
+        <div className="fixed bottom-0 inset-x-0 sm:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t px-3 py-2 flex items-center justify-between gap-3 z-40">
+          <div className="flex flex-col leading-tight">
+            <span className="text-[10px] text-muted-foreground">Total</span>
+            <span className="text-base font-bold">{format(cartTotal)}</span>
           </div>
+          <Button onClick={() => setIsCustomerDialogOpen(true)} className="h-6 text-sm font-semibold flex-1" size="sm" disabled={items.length === 0}>
+            <CheckCircle2 className="w-4 h-4 mr-2" />
+            Checkout
+          </Button>
         </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Premium Cart Items Section */}

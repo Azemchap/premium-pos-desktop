@@ -53,6 +53,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 // Zod validation schema
 const timeEntrySchema = z.object({
@@ -102,6 +103,7 @@ export default function TimeTracking() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
+  const [entryToDelete, setEntryToDelete] = useState<number | null>(null);
 
   const loadTimeEntries = async () => {
     try {
@@ -153,19 +155,7 @@ export default function TimeTracking() {
     }
   };
 
-  const handleClockIn = async (employeeId: number) => {
-    try {
-      await invoke("clock_in", {
-        employeeId,
-        clockIn: new Date().toISOString(),
-      });
-      toast.success("✅ Clocked in successfully!");
-      loadTimeEntries();
-    } catch (error) {
-      console.error("Failed to clock in:", error);
-      toast.error(`❌ Failed to clock in: ${error}`);
-    }
-  };
+
 
   const handleClockOut = async () => {
     if (!activeEntry) return;
@@ -227,16 +217,22 @@ export default function TimeTracking() {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteTimeEntry = async (entryId: number) => {
-    if (!confirm("Are you sure you want to delete this time entry?")) return;
+  const handleDeleteTimeEntry = (entryId: number) => {
+    setEntryToDelete(entryId);
+  };
+
+  const executeDeleteTimeEntry = async () => {
+    if (!entryToDelete) return;
 
     try {
-      await invoke("delete_time_entry", { entryId });
+      await invoke("delete_time_entry", { entryId: entryToDelete });
       toast.success("Time entry deleted successfully!");
       loadTimeEntries();
     } catch (error) {
       console.error("Failed to delete time entry:", error);
       toast.error(`Failed to delete time entry: ${error}`);
+    } finally {
+      setEntryToDelete(null);
     }
   };
 
@@ -676,6 +672,16 @@ export default function TimeTracking() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      <ConfirmDialog
+        open={!!entryToDelete}
+        onOpenChange={(open) => !open && setEntryToDelete(null)}
+        title="Delete Time Entry"
+        description="Are you sure you want to delete this time entry?"
+        onConfirm={executeDeleteTimeEntry}
+        confirmText="Delete"
+        variant="destructive"
+      />
+    </div >
   );
 }

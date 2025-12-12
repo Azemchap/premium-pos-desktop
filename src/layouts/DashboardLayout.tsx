@@ -1,3 +1,4 @@
+
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SyncStatusIndicator, { useSyncStatus } from "@/components/SyncStatusIndicator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +27,8 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+import { parseUTCDate } from "@/lib/date-utils";
+import { formatDistance } from "date-fns";
 import {
   Bell,
   Building2,
@@ -60,7 +63,14 @@ import {
   Truck,
   User,
   UserCog,
-  Users
+  Users,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Info,
+  Mail,
+  CheckCheck,
+  BellOff
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -96,6 +106,16 @@ interface StoreConfig {
   logo_url?: string;
   created_at: string;
   updated_at: string;
+}
+
+interface Notification {
+  id: number;
+  notification_type: string;
+  title: string;
+  message: string;
+  severity: string;
+  is_read: boolean;
+  created_at: string;
 }
 
 // Store settings items (shown in store selector dropdown) - only essentials
@@ -172,6 +192,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [openGroup, setOpenGroup] = useState<string>("products");
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [storeConfig, setStoreConfig] = useState<StoreConfig | null>(null);
   const [isManualSyncing, setIsManualSyncing] = useState(false);
   const { user, logout, theme, setTheme } = useAuthStore();
@@ -202,23 +224,58 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     loadStoreConfig();
   }, []);
 
-  useEffect(() => {
-    const loadNotifications = async () => {
-      try {
-        const notifications = await invoke<any[]>("get_notifications", {
-          isRead: false,
-          limit: 100
-        });
-        setNotificationCount(notifications.length);
-      } catch (error) {
-        console.error("Failed to load notifications:", error);
-      }
-    };
+  const loadNotifications = async () => {
+    try {
+      // Fetch recent notifications (both read and unread to show in dropdown)
+      // We'll limit to 10 for the dropdown
+      const notifs = await invoke<Notification[]>("get_notifications", {
+        limit: 10
+      });
+      setNotifications(notifs);
 
+      // Count unread
+      const unreadCount = notifs.filter(n => !n.is_read).length;
+      // If we limited to 10, the true unread count might be higher, so let's trust the stats or a separate call if needed.
+      // For now, let's just use the count from these 10 or fetch stats.
+      // Actually, let's fetch stats for the accurate badge count.
+      const stats = await invoke<{ unread: number }>("get_notification_stats");
+      setNotificationCount(stats.unread);
+    } catch (error) {
+      console.error("Failed to load notifications:", error);
+    }
+  };
+
+  useEffect(() => {
     loadNotifications();
     const interval = setInterval(loadNotifications, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  const markAsRead = async (id: number, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    try {
+      await invoke("mark_notification_read", { notificationId: id });
+      // Optimistic update
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setNotificationCount(prev => Math.max(0, prev - 1));
+      toast.success("Marked as read");
+    } catch (error) {
+      console.error("Failed to mark as read:", error);
+    }
+  };
+
+  const markAsUnread = async (id: number, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    try {
+      await invoke("mark_notification_unread", { notificationId: id });
+      // Optimistic update
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: false } : n));
+      setNotificationCount(prev => prev + 1);
+      toast.success("Marked as unread");
+    } catch (error) {
+      console.error("Failed to mark as unread:", error);
+    }
+  };
 
   const hasPermission = (allowedRoles?: string[]) => {
     if (!allowedRoles || allowedRoles.length === 0) return true;
@@ -253,12 +310,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const result = await syncFromSupabase(true, { strategy: 'newer_wins' });
 
       if (result.error) {
-        toast.error(`Sync failed: ${result.error}`);
+        toast.error(`Sync failed: ${result.error} `);
       } else {
         const recordsText = result.recordsCount === 0
           ? 'No new updates'
           : `${result.recordsCount} record${result.recordsCount === 1 ? '' : 's'} synced`;
-        toast.success(`✅ ${recordsText}`);
+        toast.success(`✅ ${recordsText} `);
       }
     } catch (error) {
       toast.error('Sync failed. Please try again.');
@@ -269,7 +326,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const getInitials = (firstName: string, lastName: string) =>
-    `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    `${firstName.charAt(0)}${lastName.charAt(0)} `.toUpperCase();
 
   const isActive = (href: string) => {
     if (href === "/") return location.pathname === "/" || location.pathname === "/dashboard";
@@ -458,6 +515,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case "low_stock": return <Package className="w-4 h-4" />;
+      case "payment":
+      case "invoice":
+      case "debt": return <DollarSign className="w-4 h-4" />;
+      case "email": return <Mail className="w-4 h-4" />;
+      case "system": return <Info className="w-4 h-4" />;
+      default: return <Bell className="w-4 h-4" />;
+    }
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "error": return "text-red-600 bg-red-100 dark:bg-red-900/30";
+      case "warning": return "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30";
+      case "success": return "text-green-600 bg-green-100 dark:bg-green-900/30";
+      default: return "text-blue-600 bg-blue-100 dark:bg-blue-900/30";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       {/* Mobile sidebar */}
@@ -507,20 +585,98 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Right side actions */}
           <div className="flex items-center gap-2">
-            {/* Notifications */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative h-9 w-9"
-              onClick={() => navigate("/notifications")}
-            >
-              <Bell className="w-4 h-4" />
-              {notificationCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 text-[10px] bg-primary">
-                  {notificationCount > 99 ? '99+' : notificationCount}
-                </Badge>
-              )}
-            </Button>
+            {/* Notifications Popover */}
+            <Popover open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative h-9 w-9"
+                >
+                  <Bell className="w-4 h-4" />
+                  {notificationCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 text-[10px] bg-primary">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end" sideOffset={8}>
+                <div className="flex items-center justify-between px-4 py-3 border-b">
+                  <h4 className="font-semibold text-sm">Notifications</h4>
+                  <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-muted-foreground hover:text-primary" onClick={() => { setIsNotificationsOpen(false); navigate("/notifications"); }}>
+                    View all
+                  </Button>
+                </div>
+                <ScrollArea className="h-[300px]">
+                  {notifications.length > 0 ? (
+                    <div className="divide-y">
+                      {notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={cn(
+                            "flex gap-3 p-3 hover:bg-muted/50 transition-colors cursor-pointer group relative",
+                            !notification.is_read && "bg-blue-50/50 dark:bg-blue-950/10"
+                          )}
+                          onClick={() => {
+                            if (!notification.is_read) markAsRead(notification.id);
+                            // Optional: Navigate to relevant page based on type
+                          }}
+                        >
+                          <div className={cn("p-2 rounded-full h-fit shrink-0", getSeverityColor(notification.severity))}>
+                            {getNotificationIcon(notification.notification_type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={cn("text-sm font-medium leading-none mb-1", !notification.is_read && "font-semibold")}>
+                              {notification.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
+                              {notification.message}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {formatDistance(parseUTCDate(notification.created_at), new Date(), { addSuffix: true })}
+                            </p>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-2">
+                            {notification.is_read ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                title="Mark as unread"
+                                onClick={(e) => markAsUnread(notification.id, e)}
+                              >
+                                <BellOff className="w-3 h-3" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                title="Mark as read"
+                                onClick={(e) => markAsRead(notification.id, e)}
+                              >
+                                <CheckCheck className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
+                          {!notification.is_read && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500 group-hover:opacity-0 transition-opacity" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-[200px] text-center p-4">
+                      <Bell className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                      <p className="text-sm text-muted-foreground">No notifications</p>
+                    </div>
+                  )}
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
 
             {/* Cart */}
             <Button
@@ -561,7 +717,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Button variant="ghost" className="h-9 gap-2 px-2">
                   <Avatar className="w-7 h-7">
                     {user?.profile_image_url && (
-                      <AvatarImage src={user.profile_image_url} alt={`${user.first_name} ${user.last_name}`} />
+                      <AvatarImage src={user.profile_image_url} alt={`${user.first_name} ${user.last_name} `} />
                     )}
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
                       {user ? getInitials(user.first_name, user.last_name) : "U"}

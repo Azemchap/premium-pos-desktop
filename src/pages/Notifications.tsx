@@ -1,14 +1,6 @@
 // src/pages/Notifications.tsx - Enhanced Notification Center
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import PageHeader from "@/components/PageHeader";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +41,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface Notification {
   id: number;
@@ -84,6 +77,7 @@ export default function Notifications() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -206,11 +200,10 @@ export default function Notifications() {
 
   const bulkDelete = async () => {
     if (selectedIds.length === 0) return;
+    setShowBulkDeleteConfirm(true);
+  };
 
-    if (!confirm(`Are you sure you want to delete ${selectedIds.length} notification(s)? This action cannot be undone.`)) {
-      return;
-    }
-
+  const executeBulkDelete = async () => {
     try {
       setBulkActionLoading(true);
       await Promise.all(
@@ -372,36 +365,34 @@ export default function Notifications() {
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-bold">Notifications</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Stay updated with alerts and system messages
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 sm:flex-none"
-            onClick={checkLowStock}
-          >
-            <Package className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            <span className="text-xs sm:text-sm">Check Stock</span>
-          </Button>
-          {stats && stats.unread > 0 && (
+      <PageHeader
+        title="Notifications"
+        subtitle="Stay updated with alerts and system messages"
+        icon={Bell}
+        actions={
+          <div className="flex items-center gap-2">
             <Button
+              variant="outline"
               size="sm"
               className="flex-1 sm:flex-none"
-              onClick={markAllAsRead}
+              onClick={checkLowStock}
             >
-              <CheckCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="text-xs sm:text-sm">Mark All</span>
+              <Package className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="text-xs sm:text-sm">Check Stock</span>
             </Button>
-          )}
-        </div>
-      </div>
+            {stats && stats.unread > 0 && (
+              <Button
+                size="sm"
+                className="flex-1 sm:flex-none"
+                onClick={markAllAsRead}
+              >
+                <CheckCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="text-xs sm:text-sm">Mark All</span>
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {/* Stats Cards - Enhanced with Gradients */}
       {stats && (
@@ -711,7 +702,7 @@ export default function Notifications() {
                   {notifs.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 sm:p-6 hover:bg-muted/50 transition-colors ${!notification.is_read ? "bg-blue-50/50 dark:bg-blue-950/20" : ""
+                      className={`p-4 sm:p-6 hover:bg-muted transition-colors ${!notification.is_read ? "bg-muted/50 dark:bg-blue-950/20" : ""
                         }`}
                     >
                       <div className="flex gap-3 sm:gap-4">
@@ -727,12 +718,12 @@ export default function Notifications() {
                         <div className="flex-shrink-0">
                           <div
                             className={`p-2 sm:p-3 rounded-xl ${notification.severity === "error"
-                                ? "bg-red-100 dark:bg-red-900/30"
-                                : notification.severity === "warning"
-                                  ? "bg-yellow-100 dark:bg-yellow-900/30"
-                                  : notification.severity === "success"
-                                    ? "bg-green-100 dark:bg-green-900/30"
-                                    : "bg-blue-100 dark:bg-blue-900/30"
+                              ? "bg-red-100 dark:bg-red-900/30"
+                              : notification.severity === "warning"
+                                ? "bg-yellow-100 dark:bg-yellow-900/30"
+                                : notification.severity === "success"
+                                  ? "bg-green-100 dark:bg-green-900/30"
+                                  : "bg-blue-100 dark:bg-blue-900/30"
                               }`}
                           >
                             <div className={getSeverityColor(notification.severity)}>
@@ -742,10 +733,13 @@ export default function Notifications() {
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 min-w-0">
+                        <div
+                          className="flex-1 min-w-0 cursor-pointer"
+                          onClick={!notification.is_read ? () => markAsRead(notification.id) : undefined}
+                        >
                           <div className="flex flex-wrap items-start gap-2 mb-2">
-                            <h4 className="font-semibold text-sm sm:text-base">
-                              {notification.title}
+                            <h4 className="font-semibold text-sm sm:text-base line-clamp-1">
+                              {notification.message}
                             </h4>
                             {!notification.is_read && (
                               <Badge variant="destructive" className="text-xs">
@@ -759,7 +753,7 @@ export default function Notifications() {
                           </p>
                           <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                             <Badge variant="outline" className="capitalize text-xs">
-                              {notification.notification_type.replace("_", " ")}
+                              {notification.title}
                             </Badge>
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
@@ -822,25 +816,25 @@ export default function Notifications() {
         </div>
       )}
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the notification.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={deleteNotification}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Are you sure?"
+        description="This action cannot be undone. This will permanently delete the notification."
+        onConfirm={deleteNotification}
+        confirmText="Delete"
+        variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+        title={`Delete ${selectedIds.length} notifications?`}
+        description="This action cannot be undone. These notifications will be permanently deleted."
+        onConfirm={executeBulkDelete}
+        confirmText="Delete All"
+        variant="destructive"
+      />
     </div>
   );
 }

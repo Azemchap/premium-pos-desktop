@@ -40,14 +40,13 @@ import {
   Plus,
   Search,
   Tag,
-  TrendingUp,
   XCircle,
   Calendar,
-  Gift,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 // Zod validation schema
 const promotionSchema = z.object({
@@ -107,6 +106,8 @@ export default function Promotions() {
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [promotionToDelete, setPromotionToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [promotionToReactivate, setPromotionToReactivate] = useState<{ id: number, name: string } | null>(null);
 
   const loadPromotions = async () => {
     try {
@@ -190,29 +191,41 @@ export default function Promotions() {
     setIsDialogOpen(true);
   };
 
-  const handleDeletePromotion = async (promotionId: number, promotionName: string) => {
-    if (!confirm(`Are you sure you want to deactivate "${promotionName}"?`)) return;
+  const handleDeletePromotion = (promotionId: number, promotionName: string) => {
+    setPromotionToDelete({ id: promotionId, name: promotionName });
+  };
+
+  const executeDeletePromotion = async () => {
+    if (!promotionToDelete) return;
 
     try {
-      await invoke("delete_promotion", { promotionId });
-      toast.success(`Promotion "${promotionName}" deactivated successfully!`);
+      await invoke("delete_promotion", { promotionId: promotionToDelete.id });
+      toast.success(`Promotion "${promotionToDelete.name}" deactivated successfully!`);
       loadPromotions();
     } catch (error) {
       console.error("Failed to delete promotion:", error);
       toast.error(`Failed to deactivate promotion: ${error}`);
+    } finally {
+      setPromotionToDelete(null);
     }
   };
 
-  const handleReactivatePromotion = async (promotionId: number, promotionName: string) => {
-    if (!confirm(`Are you sure you want to reactivate "${promotionName}"?`)) return;
+  const handleReactivatePromotion = (promotionId: number, promotionName: string) => {
+    setPromotionToReactivate({ id: promotionId, name: promotionName });
+  };
+
+  const executeReactivatePromotion = async () => {
+    if (!promotionToReactivate) return;
 
     try {
-      await invoke("reactivate_promotion", { promotionId });
-      toast.success(`✅ Promotion "${promotionName}" reactivated successfully!`);
+      await invoke("reactivate_promotion", { promotionId: promotionToReactivate.id });
+      toast.success(`✅ Promotion "${promotionToReactivate.name}" reactivated successfully!`);
       loadPromotions();
     } catch (error) {
       console.error("Failed to reactivate promotion:", error);
       toast.error(`❌ Failed to reactivate promotion: ${error}`);
+    } finally {
+      setPromotionToReactivate(null);
     }
   };
 
@@ -761,6 +774,25 @@ export default function Promotions() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      <ConfirmDialog
+        open={!!promotionToDelete}
+        onOpenChange={(open) => !open && setPromotionToDelete(null)}
+        title="Deactivate Promotion"
+        description={`Are you sure you want to deactivate "${promotionToDelete?.name}"?`}
+        onConfirm={executeDeletePromotion}
+        confirmText="Deactivate"
+        variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={!!promotionToReactivate}
+        onOpenChange={(open) => !open && setPromotionToReactivate(null)}
+        title="Reactivate Promotion"
+        description={`Are you sure you want to reactivate "${promotionToReactivate?.name}"?`}
+        onConfirm={executeReactivatePromotion}
+        confirmText="Reactivate"
+      />
+    </div >
   );
 }

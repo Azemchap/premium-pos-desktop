@@ -1,4 +1,5 @@
 // src/pages/Profile.tsx - User Profile Management
+import PageHeader from "@/components/PageHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -90,7 +91,7 @@ export default function Profile() {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          
+
           // Resize if too large (max 800x800)
           const maxSize = 800;
           if (width > height && width > maxSize) {
@@ -100,13 +101,13 @@ export default function Profile() {
             width = (width * maxSize) / height;
             height = maxSize;
           }
-          
+
           canvas.width = width;
           canvas.height = height;
-          
+
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          
+
           // Convert to base64 with compression (quality: 0.8)
           const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
           resolve(compressedBase64);
@@ -266,12 +267,11 @@ export default function Profile() {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Profile</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your account settings and preferences
-        </p>
-      </div>
+      <PageHeader
+        title="Profile"
+        subtitle="Manage your account settings and preferences"
+        icon={User}
+      />
 
       {/* Profile Header Card */}
       <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
@@ -459,8 +459,8 @@ export default function Profile() {
                     You have unsaved image changes
                   </p>
                 )}
-                <Button 
-                  onClick={handleUpdateProfile} 
+                <Button
+                  onClick={handleUpdateProfile}
                   disabled={savingProfile}
                   className="w-full sm:w-auto"
                 >
@@ -539,8 +539,8 @@ export default function Profile() {
               </div>
 
               <div className="flex justify-end pt-4 border-t">
-                <Button 
-                  onClick={handleChangePassword} 
+                <Button
+                  onClick={handleChangePassword}
                   disabled={changingPassword}
                   className="w-full sm:w-auto"
                 >

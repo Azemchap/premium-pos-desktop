@@ -1,4 +1,5 @@
 // src/pages/Customers.tsx - Customer Management with full CRUD
+import PageHeader from "@/components/PageHeader";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Customer, CreateCustomerRequest, UpdateCustomerRequest } from "@/types";
@@ -297,19 +298,18 @@ export default function Customers() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold">Customers</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage customer information and relationships
-          </p>
-        </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Customer
-        </Button>
-      </div>
+
+      <PageHeader
+        title="Customers"
+        subtitle="Manage customer information and relationships"
+        icon={Users}
+        actions={
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Customer
+          </Button>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

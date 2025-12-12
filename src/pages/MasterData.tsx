@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { invoke } from "@tauri-apps/api/core";
 import { Edit, Layers, MoreHorizontal, Package, Palette, Plus, Ruler, Tag, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -127,40 +128,47 @@ type EntityType = "category" | "brand" | "unit" | "variant_type" | "variant_valu
 
 export default function MasterData() {
   const [activeTab, setActiveTab] = useState<EntityType>("category");
-  
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryForm, setCategoryForm] = useState({ name: "", description: "" });
-  
+
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isBrandDialogOpen, setIsBrandDialogOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [brandForm, setBrandForm] = useState({ name: "", description: "" });
-  
+
   const [units, setUnits] = useState<Unit[]>([]);
   const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [unitForm, setUnitForm] = useState({ name: "", abbreviation: "", description: "" });
-  
+
   const [variantTypes, setVariantTypes] = useState<VariantType[]>([]);
   const [isVariantTypeDialogOpen, setIsVariantTypeDialogOpen] = useState(false);
   const [editingVariantType, setEditingVariantType] = useState<VariantType | null>(null);
   const [variantTypeForm, setVariantTypeForm] = useState({ name: "", description: "", display_order: 0 });
-  
+
   const [variantValues, setVariantValues] = useState<VariantValue[]>([]);
   const [isVariantValueDialogOpen, setIsVariantValueDialogOpen] = useState(false);
   const [editingVariantValue, setEditingVariantValue] = useState<VariantValue | null>(null);
-  const [variantValueForm, setVariantValueForm] = useState({ 
-    variant_type_id: 0, 
-    value: "", 
-    code: "", 
-    display_order: 0, 
-    hex_color: "" 
+  const [variantValueForm, setVariantValueForm] = useState({
+    variant_type_id: 0,
+    value: "",
+    code: "",
+    display_order: 0,
+    hex_color: ""
   });
-  
+
   const [_loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Delete states
+  const [categoryToDelete, setCategoryToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [brandToDelete, setBrandToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [unitToDelete, setUnitToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [variantTypeToDelete, setVariantTypeToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [variantValueToDelete, setVariantValueToDelete] = useState<{ id: number, name: string } | null>(null);
 
   // ========== CATEGORIES ==========
   const loadCategories = async () => {
@@ -216,14 +224,20 @@ export default function MasterData() {
     }
   };
 
-  const deleteCategory = async (id: number, name: string) => {
-    if (!confirm(`Delete "${name}"?`)) return;
+  const deleteCategory = (id: number, name: string) => {
+    setCategoryToDelete({ id, name });
+  };
+
+  const executeDeleteCategory = async () => {
+    if (!categoryToDelete) return;
     try {
-      await invoke("delete_category", { id });
-      toast.success(`Category "${name}" deleted`);
+      await invoke("delete_category", { id: categoryToDelete.id });
+      toast.success(`Category "${categoryToDelete.name}" deleted`);
       loadCategories();
     } catch (error) {
       toast.error(`Failed to delete: ${error}`);
+    } finally {
+      setCategoryToDelete(null);
     }
   };
 
@@ -281,14 +295,20 @@ export default function MasterData() {
     }
   };
 
-  const deleteBrand = async (id: number, name: string) => {
-    if (!confirm(`Delete "${name}"?`)) return;
+  const deleteBrand = (id: number, name: string) => {
+    setBrandToDelete({ id, name });
+  };
+
+  const executeDeleteBrand = async () => {
+    if (!brandToDelete) return;
     try {
-      await invoke("delete_brand", { id });
-      toast.success(`Brand "${name}" deleted`);
+      await invoke("delete_brand", { id: brandToDelete.id });
+      toast.success(`Brand "${brandToDelete.name}" deleted`);
       loadBrands();
     } catch (error) {
       toast.error(`Failed to delete: ${error}`);
+    } finally {
+      setBrandToDelete(null);
     }
   };
 
@@ -346,14 +366,20 @@ export default function MasterData() {
     }
   };
 
-  const deleteUnit = async (id: number, name: string) => {
-    if (!confirm(`Delete "${name}"?`)) return;
+  const deleteUnit = (id: number, name: string) => {
+    setUnitToDelete({ id, name });
+  };
+
+  const executeDeleteUnit = async () => {
+    if (!unitToDelete) return;
     try {
-      await invoke("delete_unit", { id });
-      toast.success(`Unit "${name}" deleted`);
+      await invoke("delete_unit", { id: unitToDelete.id });
+      toast.success(`Unit "${unitToDelete.name}" deleted`);
       loadUnits();
     } catch (error) {
       toast.error(`Failed to delete: ${error}`);
+    } finally {
+      setUnitToDelete(null);
     }
   };
 
@@ -412,15 +438,21 @@ export default function MasterData() {
     }
   };
 
-  const deleteVariantType = async (id: number, name: string) => {
-    if (!confirm(`Delete "${name}"? This will delete all associated values.`)) return;
+  const deleteVariantType = (id: number, name: string) => {
+    setVariantTypeToDelete({ id, name });
+  };
+
+  const executeDeleteVariantType = async () => {
+    if (!variantTypeToDelete) return;
     try {
-      await invoke("delete_variant_type", { id });
-      toast.success(`Variant Type "${name}" deleted`);
+      await invoke("delete_variant_type", { id: variantTypeToDelete.id });
+      toast.success(`Variant Type "${variantTypeToDelete.name}" deleted`);
       loadVariantTypes();
       loadVariantValues();
     } catch (error) {
       toast.error(`Failed to delete: ${error}`);
+    } finally {
+      setVariantTypeToDelete(null);
     }
   };
 
@@ -450,12 +482,12 @@ export default function MasterData() {
       });
     } else {
       setEditingVariantValue(null);
-      setVariantValueForm({ 
-        variant_type_id: variantTypes.length > 0 ? variantTypes[0].id : 0, 
-        value: "", 
-        code: "", 
-        display_order: 0, 
-        hex_color: "" 
+      setVariantValueForm({
+        variant_type_id: variantTypes.length > 0 ? variantTypes[0].id : 0,
+        value: "",
+        code: "",
+        display_order: 0,
+        hex_color: ""
       });
     }
     setValidationErrors({});
@@ -490,14 +522,20 @@ export default function MasterData() {
     }
   };
 
-  const deleteVariantValue = async (id: number, value: string) => {
-    if (!confirm(`Delete "${value}"?`)) return;
+  const deleteVariantValue = (id: number, value: string) => {
+    setVariantValueToDelete({ id, name: value });
+  };
+
+  const executeDeleteVariantValue = async () => {
+    if (!variantValueToDelete) return;
     try {
-      await invoke("delete_variant_value", { id });
-      toast.success(`Variant Value "${value}" deleted`);
+      await invoke("delete_variant_value", { id: variantValueToDelete.id });
+      toast.success(`Variant Value "${variantValueToDelete.name}" deleted`);
       loadVariantValues();
     } catch (error) {
       toast.error(`Failed to delete: ${error}`);
+    } finally {
+      setVariantValueToDelete(null);
     }
   };
 
@@ -623,21 +661,21 @@ export default function MasterData() {
             </CardHeader>
             <CardContent className="p-0">
               <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EntityType)} className="w-full">
-                <div className="border-b px-3 pt-3">
-                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 h-auto bg-transparent p-0 gap-1">
-                    <TabsTrigger value="category" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <div className="border-b px-3">
+                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 h-full bg-transparent p-0 gap-1">
+                    <TabsTrigger value="category" className="text-xs p-2 sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       Categories
                     </TabsTrigger>
-                    <TabsTrigger value="brand" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <TabsTrigger value="brand" className="text-xs p-2 sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       Brands
                     </TabsTrigger>
-                    <TabsTrigger value="unit" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <TabsTrigger value="unit" className="text-xs p-2 sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       Units
                     </TabsTrigger>
-                    <TabsTrigger value="variant_type" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <TabsTrigger value="variant_type" className="text-xs p-2 sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       Types
                     </TabsTrigger>
-                    <TabsTrigger value="variant_value" className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <TabsTrigger value="variant_value" className="text-xs p-2 sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       Values
                     </TabsTrigger>
                   </TabsList>
@@ -1418,6 +1456,57 @@ export default function MasterData() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog
+        open={!!categoryToDelete}
+        onOpenChange={(open) => !open && setCategoryToDelete(null)}
+        title="Delete Category"
+        description={`Are you sure you want to delete "${categoryToDelete?.name}"?`}
+        onConfirm={executeDeleteCategory}
+        confirmText="Delete"
+        variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={!!brandToDelete}
+        onOpenChange={(open) => !open && setBrandToDelete(null)}
+        title="Delete Brand"
+        description={`Are you sure you want to delete "${brandToDelete?.name}"?`}
+        onConfirm={executeDeleteBrand}
+        confirmText="Delete"
+        variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={!!unitToDelete}
+        onOpenChange={(open) => !open && setUnitToDelete(null)}
+        title="Delete Unit"
+        description={`Are you sure you want to delete "${unitToDelete?.name}"?`}
+        onConfirm={executeDeleteUnit}
+        confirmText="Delete"
+        variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={!!variantTypeToDelete}
+        onOpenChange={(open) => !open && setVariantTypeToDelete(null)}
+        title="Delete Variant Type"
+        description={`Are you sure you want to delete "${variantTypeToDelete?.name}"? This will delete all associated values.`}
+        onConfirm={executeDeleteVariantType}
+        confirmText="Delete"
+        variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={!!variantValueToDelete}
+        onOpenChange={(open) => !open && setVariantValueToDelete(null)}
+        title="Delete Variant Value"
+        description={`Are you sure you want to delete "${variantValueToDelete?.name}"?`}
+        onConfirm={executeDeleteVariantValue}
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

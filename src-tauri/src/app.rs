@@ -130,6 +130,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::notifications::get_notifications,
             commands::notifications::get_notification_stats,
             commands::notifications::mark_notification_read,
+            commands::notifications::mark_notification_unread,
             commands::notifications::mark_all_notifications_read,
             commands::notifications::create_notification,
             commands::notifications::check_low_stock_alerts,

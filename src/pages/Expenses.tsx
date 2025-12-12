@@ -1,4 +1,5 @@
 // src/pages/Expenses.tsx - Expense Management
+import PageHeader from "@/components/PageHeader";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Expense, CreateExpenseRequest, UpdateExpenseRequest } from "@/types";
@@ -169,16 +170,17 @@ export default function Expenses() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold">Expenses</h1>
-          <p className="text-sm text-muted-foreground">Track and manage business expenses</p>
-        </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Expense
-        </Button>
-      </div>
+      <PageHeader
+        title="Expenses"
+        subtitle="Track and manage business expenses"
+        icon={Receipt}
+        actions={
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Expense
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-3 gap-4">
         <Card className="overflow-hidden border-none shadow-md">
@@ -312,7 +314,7 @@ export default function Expenses() {
       )}
 
       {/* Create/Edit Dialog */}
-      <Dialog open={isCreateDialogOpen || isEditDialogOpen} onOpenChange={(open) => { if (!open) { setIsCreateDialogOpen(false); setIsEditDialogOpen(false); resetForm(); }}}>
+      <Dialog open={isCreateDialogOpen || isEditDialogOpen} onOpenChange={(open) => { if (!open) { setIsCreateDialogOpen(false); setIsEditDialogOpen(false); resetForm(); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg">{isEditDialogOpen ? "Edit Expense" : "Add New Expense"}</DialogTitle>

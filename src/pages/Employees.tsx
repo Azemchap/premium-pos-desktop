@@ -55,6 +55,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 // Zod validation schema
 const employeeSchema = z.object({
@@ -120,6 +121,8 @@ export default function Employees() {
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [employeeToDeactivate, setEmployeeToDeactivate] = useState<{ id: number, name: string } | null>(null);
+  const [employeeToReactivate, setEmployeeToReactivate] = useState<{ id: number, name: string } | null>(null);
 
   const loadEmployees = async () => {
     try {
@@ -205,29 +208,41 @@ export default function Employees() {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteEmployee = async (employeeId: number, employeeName: string) => {
-    if (!confirm(`Are you sure you want to deactivate "${employeeName}"?`)) return;
+  const handleDeleteEmployee = (employeeId: number, employeeName: string) => {
+    setEmployeeToDeactivate({ id: employeeId, name: employeeName });
+  };
+
+  const executeDeactivateEmployee = async () => {
+    if (!employeeToDeactivate) return;
 
     try {
-      await invoke("delete_employee", { employeeId });
-      toast.success(`Employee "${employeeName}" deactivated successfully!`);
+      await invoke("delete_employee", { employeeId: employeeToDeactivate.id });
+      toast.success(`Employee "${employeeToDeactivate.name}" deactivated successfully!`);
       loadEmployees();
     } catch (error) {
       console.error("Failed to delete employee:", error);
       toast.error(`Failed to deactivate employee: ${error}`);
+    } finally {
+      setEmployeeToDeactivate(null);
     }
   };
 
-  const handleReactivateEmployee = async (employeeId: number, employeeName: string) => {
-    if (!confirm(`Are you sure you want to reactivate "${employeeName}"?`)) return;
+  const handleReactivateEmployee = (employeeId: number, employeeName: string) => {
+    setEmployeeToReactivate({ id: employeeId, name: employeeName });
+  };
+
+  const executeReactivateEmployee = async () => {
+    if (!employeeToReactivate) return;
 
     try {
-      await invoke("reactivate_employee", { employeeId });
-      toast.success(`✅ Employee "${employeeName}" reactivated successfully!`);
+      await invoke("reactivate_employee", { employeeId: employeeToReactivate.id });
+      toast.success(`✅ Employee "${employeeToReactivate.name}" reactivated successfully!`);
       loadEmployees();
     } catch (error) {
       console.error("Failed to reactivate employee:", error);
       toast.error(`❌ Failed to reactivate employee: ${error}`);
+    } finally {
+      setEmployeeToReactivate(null);
     }
   };
 
@@ -832,6 +847,25 @@ export default function Employees() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      <ConfirmDialog
+        open={!!employeeToDeactivate}
+        onOpenChange={(open) => !open && setEmployeeToDeactivate(null)}
+        title="Deactivate Employee"
+        description={`Are you sure you want to deactivate "${employeeToDeactivate?.name}"?`}
+        onConfirm={executeDeactivateEmployee}
+        confirmText="Deactivate"
+        variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={!!employeeToReactivate}
+        onOpenChange={(open) => !open && setEmployeeToReactivate(null)}
+        title="Reactivate Employee"
+        description={`Are you sure you want to reactivate "${employeeToReactivate?.name}"?`}
+        onConfirm={executeReactivateEmployee}
+        confirmText="Reactivate"
+      />
+    </div >
   );
 }

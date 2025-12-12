@@ -1,4 +1,5 @@
 // src/pages/PurchaseOrders.tsx - Purchase Order Management
+import PageHeader from "@/components/PageHeader";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { PurchaseOrder, CreatePurchaseOrderRequest, UpdatePurchaseOrderRequest, Supplier, ProductWithStock, PurchaseOrderStatus, PaymentStatus } from "@/types";
@@ -299,16 +300,17 @@ export default function PurchaseOrders() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold">Purchase Orders</h1>
-          <p className="text-sm text-muted-foreground">Manage supplier purchase orders</p>
-        </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New PO
-        </Button>
-      </div>
+      <PageHeader
+        title="Purchase Orders"
+        subtitle="Manage supplier purchase orders"
+        icon={FileText}
+        actions={
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            New PO
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-4 gap-4">
         <Card className="overflow-hidden border-none shadow-md">
@@ -460,7 +462,7 @@ export default function PurchaseOrders() {
       )}
 
       {/* Create Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { if (!open) { setIsCreateDialogOpen(false); resetForm(); }}}>
+      <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { if (!open) { setIsCreateDialogOpen(false); resetForm(); } }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg">Create Purchase Order</DialogTitle>
@@ -578,7 +580,7 @@ export default function PurchaseOrders() {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { if (!open) { setIsEditDialogOpen(false); resetForm(); }}}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { if (!open) { setIsEditDialogOpen(false); resetForm(); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg">Edit Purchase Order</DialogTitle>

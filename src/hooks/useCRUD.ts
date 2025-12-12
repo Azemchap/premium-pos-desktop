@@ -30,12 +30,22 @@ export interface UseCRUDReturn<T> {
   deleteItem: (id: number, name?: string) => Promise<void>;
   reactivateItem?: (id: number, name?: string) => Promise<void>;
 
+  // Delete/Reactivate Execution (for ConfirmDialog)
+  executeDelete: () => Promise<void>;
+  executeReactivate: () => Promise<void>;
+
   // UI State
   isDialogOpen: boolean;
   setIsDialogOpen: (open: boolean) => void;
   editingItem: T | null;
   setEditingItem: (item: T | null) => void;
   isSubmitting: boolean;
+
+  // Confirmation State
+  itemToDelete: { id: number; name: string } | null;
+  setItemToDelete: (item: { id: number; name: string } | null) => void;
+  itemToReactivate: { id: number; name: string } | null;
+  setItemToReactivate: (item: { id: number; name: string } | null) => void;
 
   // Helpers
   openCreateDialog: () => void;
@@ -63,6 +73,10 @@ export function useCRUD<T extends Record<string, any>>(
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<T | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Confirmation states
+  const [itemToDelete, setItemToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [itemToReactivate, setItemToReactivate] = useState<{ id: number; name: string } | null>(null);
 
   // Load items from backend
   const loadItems = useCallback(async () => {
@@ -124,47 +138,63 @@ export function useCRUD<T extends Record<string, any>>(
     [updateCommand, resourceName, loadItems]
   );
 
-  // Delete (deactivate) item
+  // Request Delete (sets state for dialog)
   const deleteItem = useCallback(
     async (id: number, name?: string): Promise<void> => {
       const displayName = name || `${resourceName} #${id}`;
-      if (!confirm(`Are you sure you want to deactivate "${displayName}"?`)) return;
-
-      try {
-        await invoke(deleteCommand, {
-          [`${resourceName}Id`]: id,
-        });
-        toast.success(`${resourceName} "${displayName}" deactivated successfully!`);
-        await loadItems();
-      } catch (err) {
-        console.error(`Failed to delete ${resourceName}:`, err);
-        toast.error(`Failed to deactivate ${resourceName}: ${err}`);
-      }
+      setItemToDelete({ id, name: displayName });
+      return Promise.resolve();
     },
-    [deleteCommand, resourceName, loadItems]
+    [resourceName]
   );
 
-  // Reactivate item
+  // Execute Delete (called by ConfirmDialog)
+  const executeDelete = useCallback(async () => {
+    if (!itemToDelete) return;
+
+    try {
+      await invoke(deleteCommand, {
+        [`${resourceName}Id`]: itemToDelete.id,
+      });
+      toast.success(`${resourceName} "${itemToDelete.name}" deactivated successfully!`);
+      await loadItems();
+    } catch (err) {
+      console.error(`Failed to delete ${resourceName}:`, err);
+      toast.error(`Failed to deactivate ${resourceName}: ${err}`);
+    } finally {
+      setItemToDelete(null);
+    }
+  }, [itemToDelete, deleteCommand, resourceName, loadItems]);
+
+  // Request Reactivate (sets state for dialog)
   const reactivateItem = reactivateCommand
     ? useCallback(
-        async (id: number, name?: string): Promise<void> => {
-          const displayName = name || `${resourceName} #${id}`;
-          if (!confirm(`Are you sure you want to reactivate "${displayName}"?`)) return;
-
-          try {
-            await invoke(reactivateCommand, {
-              [`${resourceName}Id`]: id,
-            });
-            toast.success(`✅ ${resourceName} "${displayName}" reactivated successfully!`);
-            await loadItems();
-          } catch (err) {
-            console.error(`Failed to reactivate ${resourceName}:`, err);
-            toast.error(`❌ Failed to reactivate ${resourceName}: ${err}`);
-          }
-        },
-        [reactivateCommand, resourceName, loadItems]
-      )
+      async (id: number, name?: string): Promise<void> => {
+        const displayName = name || `${resourceName} #${id}`;
+        setItemToReactivate({ id, name: displayName });
+        return Promise.resolve();
+      },
+      [resourceName]
+    )
     : undefined;
+
+  // Execute Reactivate (called by ConfirmDialog)
+  const executeReactivate = useCallback(async () => {
+    if (!itemToReactivate || !reactivateCommand) return;
+
+    try {
+      await invoke(reactivateCommand, {
+        [`${resourceName}Id`]: itemToReactivate.id,
+      });
+      toast.success(`✅ ${resourceName} "${itemToReactivate.name}" reactivated successfully!`);
+      await loadItems();
+    } catch (err) {
+      console.error(`Failed to reactivate ${resourceName}:`, err);
+      toast.error(`❌ Failed to reactivate ${resourceName}: ${err}`);
+    } finally {
+      setItemToReactivate(null);
+    }
+  }, [itemToReactivate, reactivateCommand, resourceName, loadItems]);
 
   // Dialog helpers
   const openCreateDialog = useCallback(() => {
@@ -202,12 +232,22 @@ export function useCRUD<T extends Record<string, any>>(
     deleteItem,
     reactivateItem,
 
+    // Execution
+    executeDelete,
+    executeReactivate,
+
     // UI State
     isDialogOpen,
     setIsDialogOpen,
     editingItem,
     setEditingItem,
     isSubmitting,
+
+    // Confirmation State
+    itemToDelete,
+    setItemToDelete,
+    itemToReactivate,
+    setItemToReactivate,
 
     // Helpers
     openCreateDialog,

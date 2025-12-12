@@ -61,6 +61,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required").max(255, "Name is too long"),
@@ -134,6 +135,8 @@ export default function Products() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<SortColumn>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [productToDelete, setProductToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [productToReactivate, setProductToReactivate] = useState<{ id: number, name: string } | null>(null);
 
   const loadMasterData = async () => {
     try {
@@ -260,25 +263,37 @@ export default function Products() {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteProduct = async (productId: number, productName: string) => {
-    if (!confirm(`Deactivate "${productName}"?`)) return;
+  const handleDeleteProduct = (productId: number, productName: string) => {
+    setProductToDelete({ id: productId, name: productName });
+  };
+
+  const executeDeleteProduct = async () => {
+    if (!productToDelete) return;
     try {
-      await invoke("delete_product", { productId });
-      toast.success(`Product "${productName}" deactivated`);
+      await invoke("delete_product", { productId: productToDelete.id });
+      toast.success(`Product "${productToDelete.name}" deactivated`);
       loadProducts();
     } catch (error) {
       toast.error(`Failed to deactivate: ${error}`);
+    } finally {
+      setProductToDelete(null);
     }
   };
 
-  const handleReactivateProduct = async (productId: number, productName: string) => {
-    if (!confirm(`Reactivate "${productName}"?`)) return;
+  const handleReactivateProduct = (productId: number, productName: string) => {
+    setProductToReactivate({ id: productId, name: productName });
+  };
+
+  const executeReactivateProduct = async () => {
+    if (!productToReactivate) return;
     try {
-      await invoke("reactivate_product", { productId });
-      toast.success(`Product "${productName}" reactivated`);
+      await invoke("reactivate_product", { productId: productToReactivate.id });
+      toast.success(`Product "${productToReactivate.name}" reactivated`);
       loadProducts();
     } catch (error) {
       toast.error(`Failed to reactivate: ${error}`);
+    } finally {
+      setProductToReactivate(null);
     }
   };
 
@@ -936,6 +951,25 @@ export default function Products() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!productToDelete}
+        onOpenChange={(open) => !open && setProductToDelete(null)}
+        title="Deactivate Product"
+        description={`Are you sure you want to deactivate "${productToDelete?.name}"?`}
+        onConfirm={executeDeleteProduct}
+        confirmText="Deactivate"
+        variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={!!productToReactivate}
+        onOpenChange={(open) => !open && setProductToReactivate(null)}
+        title="Reactivate Product"
+        description={`Are you sure you want to reactivate "${productToReactivate?.name}"?`}
+        onConfirm={executeReactivateProduct}
+        confirmText="Reactivate"
+      />
     </div>
   );
 }

@@ -3,9 +3,9 @@ use tauri_plugin_sql::{Migration, MigrationKind};
 pub fn get_migrations() -> Vec<Migration> {
     vec![
         Migration {
-        version: 1,
-        description: "create_initial_tables",
-        sql: r#"
+            version: 1,
+            description: "create_initial_tables",
+            sql: r#"
                 -- QorBooks/Location configuration (single row)
                 CREATE TABLE IF NOT EXISTS locations (
                     id INTEGER PRIMARY KEY,
@@ -248,12 +248,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 ('Default Sale Receipt', 'sale', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nSALE #{{sale_number}}\nDate: {{sale_date}}\nCashier: {{cashier_name}}\n\n{{items}}\n\nSubtotal: {{subtotal}}\nTax: {{tax_amount}}\nTotal: {{total_amount}}\n\nThank you for your business!', 1, 80, 12),
                 ('Default Return Receipt', 'return', 'thermal', '{{store_name}}\n{{store_address}}\n{{store_phone}}\n\nRETURN #{{return_number}}\nDate: {{return_date}}\nProcessed by: {{user_name}}\n\n{{items}}\n\nTotal Refund: {{total_amount}}\n\nThank you!', 1, 80, 12);
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 2,
-        description: "create_master_data_tables",
-        sql: r#"
+            version: 2,
+            description: "create_master_data_tables",
+            sql: r#"
                 -- Categories master table
                 CREATE TABLE IF NOT EXISTS categories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -321,12 +321,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 ('Hour', 'hr', 'Time-based services'),
                 ('Service', 'svc', 'Service units');
         "#,
-        kind: MigrationKind::Up,
+            kind: MigrationKind::Up,
         },
         Migration {
-        version: 3,
-        description: "create_notifications_table",
-        sql: r#"
+            version: 3,
+            description: "create_notifications_table",
+            sql: r#"
                 -- Notifications table for alerts and notifications
                 CREATE TABLE IF NOT EXISTS notifications (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -346,12 +346,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
                 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 4,
-        description: "add_address_fields_to_locations",
-        sql: r#"
+            version: 4,
+            description: "add_address_fields_to_locations",
+            sql: r#"
                 -- Clean up any existing locations_old table from previous failed migration
                 DROP TABLE IF EXISTS locations_old;
                 
@@ -400,41 +400,41 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Drop old table
                 DROP TABLE locations_old;
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 5,
-        description: "add_profile_image_to_users",
-        sql: r#"
+            version: 5,
+            description: "add_profile_image_to_users",
+            sql: r#"
                 -- This migration adds profile_image_url to users table for existing databases
                 -- For new databases, v1 already includes this column
                 SELECT 1;
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 6,
-        description: "remove_timezone_from_locations",
-        sql: r#"
+            version: 6,
+            description: "remove_timezone_from_locations",
+            sql: r#"
                 -- Migration v6 is no longer needed since we removed timezone from v1 and v4
                 -- This is a no-op for compatibility with existing databases
                 SELECT 1;
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 7,
-        description: "add_logo_url_to_locations",
-        sql: r#"
+            version: 7,
+            description: "add_logo_url_to_locations",
+            sql: r#"
                 -- Add logo_url field to locations table
                 ALTER TABLE locations ADD COLUMN logo_url TEXT;
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 8,
-        description: "create_product_variants_system",
-        sql: r#"
+            version: 8,
+            description: "create_product_variants_system",
+            sql: r#"
                 -- Variant Types (templates for variant dimensions like "Size", "Color", etc.)
                 CREATE TABLE IF NOT EXISTS variant_types (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -568,12 +568,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 INSERT OR IGNORE INTO variant_values (variant_type_id, value, code, hex_color, display_order)
                 SELECT 2, 'Gray', 'GRY', '#808080', 7 WHERE EXISTS (SELECT 1 FROM variant_types WHERE id = 2);
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 9,
-        description: "create_crm_and_customer_management",
-        sql: r#"
+            version: 9,
+            description: "create_crm_and_customer_management",
+            sql: r#"
                 -- Enhanced Customers table for CRM
                 CREATE TABLE IF NOT EXISTS customers (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -669,12 +669,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_customer_interactions_type ON customer_interactions(interaction_type);
                 CREATE INDEX IF NOT EXISTS idx_loyalty_transactions_customer ON loyalty_transactions(customer_id);
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 10,
-        description: "create_employee_and_timetracking",
-        sql: r#"
+            version: 10,
+            description: "create_employee_and_timetracking",
+            sql: r#"
                 -- Enhanced Employees table (extends users)
                 CREATE TABLE IF NOT EXISTS employees (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -767,12 +767,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_payroll_employee ON payroll(employee_id);
                 CREATE INDEX IF NOT EXISTS idx_payroll_period ON payroll(pay_period_start, pay_period_end);
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 11,
-        description: "create_supplier_and_purchase_orders",
-        sql: r#"
+            version: 11,
+            description: "create_supplier_and_purchase_orders",
+            sql: r#"
                 -- Suppliers
                 CREATE TABLE IF NOT EXISTS suppliers (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -857,12 +857,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_purchase_order_items_po ON purchase_order_items(purchase_order_id);
                 CREATE INDEX IF NOT EXISTS idx_supplier_payments_supplier ON supplier_payments(supplier_id);
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 12,
-        description: "create_expenses_and_financial_tracking",
-        sql: r#"
+            version: 12,
+            description: "create_expenses_and_financial_tracking",
+            sql: r#"
                 -- Expense Categories
                 CREATE TABLE IF NOT EXISTS expense_categories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -937,12 +937,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category_id);
                 CREATE INDEX IF NOT EXISTS idx_budgets_period ON budgets(start_date, end_date);
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 13,
-        description: "create_appointments_and_services",
-        sql: r#"
+            version: 13,
+            description: "create_appointments_and_services",
+            sql: r#"
                 -- Services (for service-based businesses)
                 CREATE TABLE IF NOT EXISTS services (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -987,12 +987,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(appointment_date);
                 CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 14,
-        description: "create_marketing_and_promotions",
-        sql: r#"
+            version: 14,
+            description: "create_marketing_and_promotions",
+            sql: r#"
                 -- Marketing Campaigns
                 CREATE TABLE IF NOT EXISTS campaigns (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1067,12 +1067,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_promotion_usage_promotion ON promotion_usage(promotion_id);
                 CREATE INDEX IF NOT EXISTS idx_promotion_usage_customer ON promotion_usage(customer_id);
             "#,
-        kind: MigrationKind::Up,
-    },
+            kind: MigrationKind::Up,
+        },
         Migration {
-        version: 15,
-        description: "create_multitenant_organizations",
-        sql: r#"
+            version: 15,
+            description: "create_multitenant_organizations",
+            sql: r#"
                 -- Organizations (multi-tenant support)
                 CREATE TABLE IF NOT EXISTS organizations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1138,12 +1138,12 @@ pub fn get_migrations() -> Vec<Migration> {
                 CREATE INDEX IF NOT EXISTS idx_organization_users_org ON organization_users(organization_id);
                 CREATE INDEX IF NOT EXISTS idx_organization_users_user ON organization_users(user_id);
             "#,
-        kind: MigrationKind::Up,
-    },
-    Migration {
-        version: 16,
-        description: "add_payment_status_check_constraint_to_sales",
-        sql: r#"
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 16,
+            description: "add_payment_status_check_constraint_to_sales",
+            sql: r#"
                 -- Create new sales table with payment_status CHECK constraint
                 CREATE TABLE IF NOT EXISTS sales_new (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1177,6 +1177,16 @@ pub fn get_migrations() -> Vec<Migration> {
                 -- Rename new table to sales
                 ALTER TABLE sales_new RENAME TO sales;
             "#,
-        kind: MigrationKind::Up,
-    }]
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 17,
+            description: "add_is_active_to_locations",
+            sql: r#"
+                -- Add is_active column to locations table
+                ALTER TABLE locations ADD COLUMN is_active BOOLEAN DEFAULT true;
+            "#,
+            kind: MigrationKind::Up,
+        },
+    ]
 }

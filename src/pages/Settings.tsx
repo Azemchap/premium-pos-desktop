@@ -1,5 +1,6 @@
 // src/pages/Settings.tsx
 import { Button } from "@/components/ui/button";
+import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -116,16 +117,16 @@ export default function Settings() {
   }, [storeConfig, loading, refreshStoreConfig]);
 
   const saveStoreConfig = async () => {
-  if (!storeForm.name.trim()) {
-    toast.error("Store name is required");
-    playSound('error', preferences);
-    return;
-  }
+    if (!storeForm.name.trim()) {
+      toast.error("Store name is required");
+      playSound('error', preferences);
+      return;
+    }
 
-  try {
-    setSaving(true);
-    await invoke("update_store_config", { request: storeForm });
-    toast.success("✅ Store configuration saved successfully");
+    try {
+      setSaving(true);
+      await invoke("update_store_config", { request: storeForm });
+      toast.success("✅ Store configuration saved successfully");
       playSound('success', preferences);
       await refreshStoreConfig(); // Add this line
       // loadStoreConfig();
@@ -252,50 +253,49 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Configure your store and system preferences
-          </p>
-        </div>
-        <div className="flex gap-2 sm:gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 sm:flex-none text-xs sm:text-sm"
-            onClick={() => {
-              resetToDefaults();
-              toast.success("🔄 All preferences reset to defaults");
-              playSound('success', preferences);
-            }}
-          >
-            <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Reset All</span>
-            <span className="sm:hidden">Reset</span>
-          </Button>
-          <Button
-            size="sm"
-            className="flex-1 sm:flex-none text-xs sm:text-sm"
-            onClick={saveAllSettings}
-            disabled={saving || loading}
-          >
-            {saving ? (
-              <>
-                <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2 animate-spin" />
-                <span className="hidden sm:inline">Saving...</span>
-                <span className="sm:hidden">...</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Save Settings</span>
-                <span className="sm:hidden">Save</span>
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Settings"
+        subtitle="Configure your store and system preferences"
+        icon={SettingsIcon}
+        actions={
+          <div className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 sm:flex-none text-xs sm:text-sm"
+              onClick={() => {
+                resetToDefaults();
+                toast.success("🔄 All preferences reset to defaults");
+                playSound('success', preferences);
+              }}
+            >
+              <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Reset All</span>
+              <span className="sm:hidden">Reset</span>
+            </Button>
+            <Button
+              size="sm"
+              className="flex-1 sm:flex-none text-xs sm:text-sm"
+              onClick={saveAllSettings}
+              disabled={saving || loading}
+            >
+              {saving ? (
+                <>
+                  <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2 animate-spin" />
+                  <span className="hidden sm:inline">Saving...</span>
+                  <span className="sm:hidden">...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Save Settings</span>
+                  <span className="sm:hidden">Save</span>
+                </>
+              )}
+            </Button>
+          </div>
+        }
+      />
 
       <Tabs defaultValue="store" className="space-y-6 md:space-y-6">
         <TabsList className="grid w-full grid-cols-5 h-full">
