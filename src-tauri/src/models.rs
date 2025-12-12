@@ -775,6 +775,15 @@ pub struct TimeEntry {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct CreateTimeEntryRequest {
+    pub employee_id: i64,
+    pub clock_in: String,
+    pub clock_out: Option<String>,
+    pub break_minutes: Option<i32>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateTimeEntryRequest {
     pub clock_in: Option<String>,
     pub clock_out: Option<String>,

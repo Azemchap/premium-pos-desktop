@@ -183,6 +183,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::employees::delete_employee,
             commands::time_tracking::get_time_entries,
             commands::time_tracking::get_time_entry,
+            commands::time_tracking::create_time_entry,
             commands::time_tracking::clock_in,
             commands::time_tracking::clock_out,
             commands::time_tracking::update_time_entry,

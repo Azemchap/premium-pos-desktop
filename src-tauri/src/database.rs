@@ -1201,5 +1201,56 @@ pub fn get_migrations() -> Vec<Migration> {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 19,
+            description: "fix_employment_type_constraint",
+            sql: r#"
+                -- Recreate employees table with corrected employment_type constraint
+                -- The frontend sends 'Full-Time', 'Part-Time' with capital T, not lowercase
+                CREATE TABLE IF NOT EXISTS employees_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER UNIQUE NOT NULL,
+                    employee_number TEXT UNIQUE NOT NULL,
+                    department TEXT,
+                    position TEXT,
+                    hire_date DATE,
+                    employment_type TEXT CHECK (employment_type IN ('Full-Time', 'Part-Time', 'Contract', 'Intern')) DEFAULT 'Full-Time',
+                    salary_type TEXT CHECK (salary_type IN ('Hourly', 'Salary', 'Commission')) DEFAULT 'Hourly',
+                    hourly_rate REAL DEFAULT 0.0,
+                    salary REAL DEFAULT 0.0,
+                    commission_rate REAL DEFAULT 0.0,
+                    emergency_contact_name TEXT,
+                    emergency_contact_phone TEXT,
+                    notes TEXT,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                -- Copy existing data, converting old values to new format
+                INSERT INTO employees_new
+                SELECT
+                    id, user_id, employee_number, department, position, hire_date,
+                    CASE employment_type
+                        WHEN 'Full-time' THEN 'Full-Time'
+                        WHEN 'Part-time' THEN 'Part-Time'
+                        ELSE employment_type
+                    END as employment_type,
+                    salary_type, hourly_rate, salary, commission_rate,
+                    emergency_contact_name, emergency_contact_phone, notes,
+                    is_active, created_at, updated_at
+                FROM employees;
+
+                -- Drop old table and rename new one
+                DROP TABLE employees;
+                ALTER TABLE employees_new RENAME TO employees;
+
+                -- Recreate indexes
+                CREATE INDEX IF NOT EXISTS idx_employees_user ON employees(user_id);
+                CREATE INDEX IF NOT EXISTS idx_employees_active ON employees(is_active);
+            "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

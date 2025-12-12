@@ -51,6 +51,80 @@ pub async fn get_time_entry(
 }
 
 #[tauri::command]
+pub async fn create_time_entry(
+    pool: State<'_, SqlitePool>,
+    request: CreateTimeEntryRequest,
+) -> Result<TimeEntry, String> {
+    // Get employee's hourly rate
+    let employee: Option<(f64,)> = sqlx::query_as(
+        "SELECT e.hourly_rate FROM employees e WHERE e.id = ?"
+    )
+    .bind(request.employee_id)
+    .fetch_optional(pool.inner())
+    .await
+    .map_err(|e| format!("Failed to fetch employee: {}", e))?;
+
+    let hourly_rate = employee
+        .map(|(rate,)| rate)
+        .unwrap_or(0.0);
+
+    let break_min = request.break_minutes.unwrap_or(0);
+
+    // If clock_out is provided, calculate hours and pay
+    if let Some(clock_out) = &request.clock_out {
+        // Calculate total hours and pay
+        let result = sqlx::query(
+            "INSERT INTO time_entries (employee_id, clock_in, clock_out, break_minutes, hourly_rate, status, notes)
+             VALUES (?, ?, ?, ?, ?, 'Completed', ?)"
+        )
+        .bind(request.employee_id)
+        .bind(&request.clock_in)
+        .bind(clock_out)
+        .bind(break_min)
+        .bind(hourly_rate)
+        .bind(&request.notes)
+        .execute(pool.inner())
+        .await
+        .map_err(|e| format!("Failed to create time entry: {}", e))?;
+
+        let entry_id = result.last_insert_rowid();
+
+        // Calculate total hours and pay
+        sqlx::query(
+            "UPDATE time_entries SET
+                total_hours = ROUND((JULIANDAY(clock_out) - JULIANDAY(clock_in)) * 24 - ? / 60.0, 2),
+                total_pay = ROUND((JULIANDAY(clock_out) - JULIANDAY(clock_in)) * 24 - ? / 60.0, 2) * hourly_rate
+             WHERE id = ?"
+        )
+        .bind(break_min as f64)
+        .bind(break_min as f64)
+        .bind(entry_id)
+        .execute(pool.inner())
+        .await
+        .map_err(|e| format!("Failed to calculate time entry: {}", e))?;
+
+        get_time_entry(pool, entry_id).await
+    } else {
+        // Create active entry without clock_out
+        let result = sqlx::query(
+            "INSERT INTO time_entries (employee_id, clock_in, break_minutes, hourly_rate, status, notes)
+             VALUES (?, ?, ?, ?, 'Active', ?)"
+        )
+        .bind(request.employee_id)
+        .bind(&request.clock_in)
+        .bind(break_min)
+        .bind(hourly_rate)
+        .bind(&request.notes)
+        .execute(pool.inner())
+        .await
+        .map_err(|e| format!("Failed to create time entry: {}", e))?;
+
+        let entry_id = result.last_insert_rowid();
+        get_time_entry(pool, entry_id).await
+    }
+}
+
+#[tauri::command]
 pub async fn clock_in(
     pool: State<'_, SqlitePool>,
     employee_id: i64,
