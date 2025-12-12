@@ -1,13 +1,11 @@
-// src/pages/Suppliers.tsx - Optimized Mobile-First with Pagination
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Supplier, CreateSupplierRequest, UpdateSupplierRequest } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -33,34 +31,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   Building2,
-  Search,
   Plus,
   Edit,
   Trash2,
   Star,
-  Filter,
-  X,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
+  Mail,
+  Phone,
+  Globe,
+  MapPin,
 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-
-const ITEMS_PER_PAGE = 10;
+import StatCard from "@/components/StatCard";
+import FilterBar from "@/components/FilterBar";
+import TableActions from "@/components/TableActions";
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [currentPage, setCurrentPage] = useState(1);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -93,7 +97,6 @@ export default function Suppliers() {
         isActive: statusFilter === "all" ? undefined : statusFilter === "active",
       });
       setSuppliers(data);
-      filterSuppliers(data, searchQuery);
     } catch (error) {
       console.error("Failed to load suppliers:", error);
       toast.error("Failed to load suppliers");
@@ -106,43 +109,37 @@ export default function Suppliers() {
     loadSuppliers();
   }, [statusFilter]);
 
-  const filterSuppliers = (data: Supplier[], query: string) => {
-    if (!query.trim()) {
-      setFilteredSuppliers(data);
-      return;
-    }
+  // Compute filtered suppliers
+  const filteredSuppliers = useMemo(() => {
+    if (!searchQuery.trim()) return suppliers;
 
-    const lowercaseQuery = query.toLowerCase();
-    const filtered = data.filter(
+    const query = searchQuery.toLowerCase();
+    return suppliers.filter(
       (supplier) =>
-        supplier.company_name.toLowerCase().includes(lowercaseQuery) ||
-        supplier.contact_name?.toLowerCase().includes(lowercaseQuery) ||
-        supplier.email?.toLowerCase().includes(lowercaseQuery) ||
+        supplier.company_name.toLowerCase().includes(query) ||
+        supplier.contact_name?.toLowerCase().includes(query) ||
+        supplier.email?.toLowerCase().includes(query) ||
         supplier.phone?.includes(query) ||
-        supplier.supplier_number.toLowerCase().includes(lowercaseQuery)
+        supplier.supplier_number.toLowerCase().includes(query)
     );
-    setFilteredSuppliers(filtered);
-  };
+  }, [suppliers, searchQuery]);
 
-  useEffect(() => {
-    filterSuppliers(suppliers, searchQuery);
-    setCurrentPage(1);
-  }, [searchQuery, suppliers]);
+  // Compute stats
+  const stats = useMemo(() => {
+    const activeSuppliers = suppliers.filter((s) => s.is_active);
+    const suppliersWithRatings = suppliers.filter((s) => s.rating);
+    const avgRating =
+      suppliersWithRatings.length > 0
+        ? (suppliersWithRatings.reduce((sum, s) => sum + (s.rating || 0), 0) /
+            suppliersWithRatings.length).toFixed(1)
+        : "0.0";
 
-  const stats = {
-    total: suppliers.length,
-    active: suppliers.filter((s) => s.is_active).length,
-    avgRating: suppliers.length > 0
-      ? (suppliers.reduce((sum, s) => sum + (s.rating || 0), 0) / suppliers.filter(s => s.rating).length).toFixed(1)
-      : "0.0",
-  };
-
-  // Pagination
-  const totalPages = Math.ceil(filteredSuppliers.length / ITEMS_PER_PAGE);
-  const paginatedSuppliers = filteredSuppliers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+    return {
+      total: suppliers.length,
+      active: activeSuppliers.length,
+      avgRating,
+    };
+  }, [suppliers]);
 
   const handleCreate = async () => {
     if (!formData.company_name) {
@@ -268,13 +265,17 @@ export default function Suppliers() {
   };
 
   const renderRating = (rating?: number) => {
-    if (!rating) return <span className="text-xs text-muted-foreground">No rating</span>;
+    if (!rating) {
+      return <span className="text-xs text-muted-foreground">No rating</span>;
+    }
     return (
       <div className="flex items-center gap-0.5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             key={i}
-            className={`w-3 h-3 ${i < rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+            className={`w-3 h-3 ${
+              i < rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"
+            }`}
           />
         ))}
       </div>
@@ -282,230 +283,238 @@ export default function Suppliers() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-h-screen overflow-hidden">
-      {/* Header - Fixed */}
-      <div className="flex-none px-3 py-2 sm:px-6 sm:py-4 border-b bg-background/95">
+    <div className="flex flex-col h-screen overflow-hidden">
+      {/* Header */}
+      <div className="flex-none px-3 sm:px-6 py-3 sm:py-4 border-b bg-background/95">
         <PageHeader
           icon={Building2}
           title="Suppliers"
           subtitle="Manage supplier relationships and procurement"
           actions={
-            <Button onClick={() => setIsCreateDialogOpen(true)} className="h-11 touch-manipulation">
+            <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
               <Plus className="w-4 h-4 mr-2" />
-              Add Supplier
+              <span className="hidden sm:inline">Add Supplier</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           }
         />
       </div>
 
-      {/* Main Content - Scrollable */}
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="p-3 sm:p-6 space-y-4">
+      {/* Main Content */}
+      <ScrollArea className="flex-1">
+        <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Card className="overflow-hidden border-none shadow-sm">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-white flex-1 min-w-0">
-                    <p className="text-xs opacity-90 font-medium">Total Suppliers</p>
-                    <p className="text-3xl font-bold mt-1 truncate">{stats.total}</p>
-                  </div>
-                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
-                    <Building2 className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="overflow-hidden border-none shadow-sm">
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-white flex-1 min-w-0">
-                    <p className="text-xs opacity-90 font-medium">Active</p>
-                    <p className="text-3xl font-bold mt-1 truncate">{stats.active}</p>
-                  </div>
-                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
-                    <CheckCircle className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="overflow-hidden border-none shadow-sm">
-              <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-white flex-1 min-w-0">
-                    <p className="text-xs opacity-90 font-medium">Avg Rating</p>
-                    <p className="text-3xl font-bold mt-1 truncate">{stats.avgRating}</p>
-                  </div>
-                  <div className="p-2.5 bg-white/20 rounded-lg flex-shrink-0">
-                    <Star className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-              </div>
-            </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <StatCard
+              title="Total Suppliers"
+              value={stats.total}
+              icon={Building2}
+              gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+            />
+            <StatCard
+              title="Active"
+              value={stats.active}
+              icon={CheckCircle}
+              gradient="bg-gradient-to-br from-green-500 to-emerald-600"
+            />
+            <StatCard
+              title="Avg Rating"
+              value={stats.avgRating}
+              icon={Star}
+              gradient="bg-gradient-to-br from-yellow-500 to-orange-600"
+            />
           </div>
 
-          {/* Search and Filters */}
-          <Card className="border-2">
-            <CardContent className="p-3">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search suppliers..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-11 touch-manipulation"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground touch-manipulation"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[140px] h-11 touch-manipulation">
-                    <Filter className="w-4 h-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Filter Bar */}
+          <FilterBar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search suppliers..."
+            filters={[
+              {
+                placeholder: "Status",
+                value: statusFilter,
+                onChange: setStatusFilter,
+                options: [
+                  { label: "All Status", value: "all" },
+                  { label: "Active", value: "active" },
+                  { label: "Inactive", value: "inactive" },
+                ],
+              },
+            ]}
+          />
 
-          {/* Suppliers List */}
-          {loading ? (
-            <Card className="border-2">
-              <CardContent className="p-3">
-                <div className="space-y-2">
+          {/* Suppliers Table */}
+          <Card className="shadow-md">
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="p-4 space-y-3">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-24 w-full" />
+                    <Skeleton key={i} className="h-16 w-full" />
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          ) : filteredSuppliers.length === 0 ? (
-            <Card className="border-2">
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <Building2 className="w-8 h-8 text-muted-foreground/50" />
-                </div>
-                <h3 className="font-semibold mb-2">No suppliers found</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {searchQuery || statusFilter !== "all"
-                    ? "Try adjusting your search or filters"
-                    : "Get started by adding your first supplier"}
-                </p>
-                {!searchQuery && statusFilter === "all" && (
-                  <Button onClick={() => setIsCreateDialogOpen(true)} className="h-11 touch-manipulation">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Supplier
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <Card className="border-2">
-                <CardHeader className="border-b p-3">
-                  <CardTitle className="text-base">
-                    {filteredSuppliers.length} Supplier{filteredSuppliers.length !== 1 ? "s" : ""}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="divide-y">
-                    {paginatedSuppliers.map((supplier) => (
-                      <div key={supplier.id} className="p-3 hover:bg-muted/50 transition-colors">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0 space-y-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-semibold text-sm line-clamp-1">{supplier.company_name}</h4>
-                              <Badge variant={supplier.is_active ? "default" : "secondary"} className="text-[10px]">
-                                {supplier.is_active ? "Active" : "Inactive"}
-                              </Badge>
-                              {renderRating(supplier.rating)}
-                            </div>
-                            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                              <span className="font-mono">{supplier.supplier_number}</span>
-                              {supplier.contact_name && <span>{supplier.contact_name}</span>}
-                              <div className="flex flex-wrap gap-x-3 gap-y-1">
-                                {supplier.email && <span className="truncate">{supplier.email}</span>}
-                                {supplier.phone && <span>{supplier.phone}</span>}
-                              </div>
-                            </div>
-                            {supplier.payment_terms && (
-                              <div className="text-xs">
-                                <span className="text-muted-foreground">Terms: </span>
-                                <Badge variant="outline" className="text-[10px] font-medium">
-                                  {supplier.payment_terms}
-                                </Badge>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex gap-1 flex-shrink-0">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(supplier)}
-                              className="h-9 w-9 touch-manipulation"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openDeleteDialog(supplier)}
-                              className="h-9 w-9 hover:text-destructive touch-manipulation"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+              ) : filteredSuppliers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                    <Building2 className="w-8 h-8 text-muted-foreground/50" />
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
+                  <h3 className="font-semibold text-base mb-2">No suppliers found</h3>
+                  <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                    {searchQuery || statusFilter !== "all"
+                      ? "Try adjusting your search or filters"
+                      : "Get started by adding your first supplier"}
                   </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="h-11 w-11 touch-manipulation"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
+                  {!searchQuery && statusFilter === "all" && (
+                    <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Supplier
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="h-11 w-11 touch-manipulation"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="h-9 px-2 sm:px-4 text-xs">Company</TableHead>
+                        <TableHead className="h-9 px-2 sm:px-4 text-xs hidden md:table-cell">
+                          Contact
+                        </TableHead>
+                        <TableHead className="h-9 px-2 sm:px-4 text-xs hidden lg:table-cell">
+                          Location
+                        </TableHead>
+                        <TableHead className="h-9 px-2 sm:px-4 text-xs hidden xl:table-cell">
+                          Payment Terms
+                        </TableHead>
+                        <TableHead className="h-9 px-2 sm:px-4 text-xs">Rating</TableHead>
+                        <TableHead className="h-9 px-2 sm:px-4 text-xs">Status</TableHead>
+                        <TableHead className="h-9 px-2 sm:px-4 text-xs text-right">
+                          Actions
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredSuppliers.map((supplier) => (
+                        <TableRow key={supplier.id} className="hover:bg-muted/50">
+                          <TableCell className="px-2 sm:px-4 py-2">
+                            <div className="flex flex-col gap-1">
+                              <p className="font-medium text-xs sm:text-sm line-clamp-1">
+                                {supplier.company_name}
+                              </p>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground font-mono">
+                                {supplier.supplier_number}
+                              </p>
+                              {/* Mobile: Show contact inline */}
+                              <div className="flex flex-col gap-0.5 md:hidden text-[10px] text-muted-foreground">
+                                {supplier.contact_name && (
+                                  <span className="line-clamp-1">{supplier.contact_name}</span>
+                                )}
+                                {supplier.email && (
+                                  <div className="flex items-center gap-1">
+                                    <Mail className="w-3 h-3" />
+                                    <span className="line-clamp-1">{supplier.email}</span>
+                                  </div>
+                                )}
+                                {supplier.phone && (
+                                  <div className="flex items-center gap-1">
+                                    <Phone className="w-3 h-3" />
+                                    <span>{supplier.phone}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-2 sm:px-4 py-2 hidden md:table-cell">
+                            <div className="flex flex-col gap-1">
+                              {supplier.contact_name && (
+                                <p className="text-xs font-medium line-clamp-1">
+                                  {supplier.contact_name}
+                                </p>
+                              )}
+                              <div className="flex flex-col gap-0.5 text-[10px] text-muted-foreground">
+                                {supplier.email && (
+                                  <div className="flex items-center gap-1">
+                                    <Mail className="w-3 h-3" />
+                                    <span className="line-clamp-1">{supplier.email}</span>
+                                  </div>
+                                )}
+                                {supplier.phone && (
+                                  <div className="flex items-center gap-1">
+                                    <Phone className="w-3 h-3" />
+                                    <span>{supplier.phone}</span>
+                                  </div>
+                                )}
+                                {supplier.website && (
+                                  <div className="flex items-center gap-1">
+                                    <Globe className="w-3 h-3" />
+                                    <span className="line-clamp-1">{supplier.website}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-2 sm:px-4 py-2 hidden lg:table-cell">
+                            <div className="flex flex-col gap-0.5 text-[10px] text-muted-foreground">
+                              {supplier.city && supplier.state ? (
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  <span>
+                                    {supplier.city}, {supplier.state}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                              {supplier.country && (
+                                <span className="ml-4">{supplier.country}</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-2 sm:px-4 py-2 hidden xl:table-cell">
+                            {supplier.payment_terms ? (
+                              <Badge variant="outline" className="text-[10px] font-medium">
+                                {supplier.payment_terms}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="px-2 sm:px-4 py-2">
+                            {renderRating(supplier.rating)}
+                          </TableCell>
+                          <TableCell className="px-2 sm:px-4 py-2">
+                            <Badge
+                              variant={supplier.is_active ? "default" : "secondary"}
+                              className="text-[10px]"
+                            >
+                              {supplier.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="px-2 sm:px-4 py-2 text-right">
+                            <TableActions
+                              actions={[
+                                {
+                                  label: "Edit",
+                                  icon: Edit,
+                                  onClick: () => openEditDialog(supplier),
+                                },
+                                {
+                                  label: "Delete",
+                                  icon: Trash2,
+                                  onClick: () => openDeleteDialog(supplier),
+                                  variant: "destructive",
+                                },
+                              ]}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
-            </>
-          )}
+            </CardContent>
+          </Card>
         </div>
       </ScrollArea>
 
@@ -520,129 +529,152 @@ export default function Suppliers() {
           }
         }}
       >
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl p-0 gap-0 flex flex-col h-[90vh] max-h-[90vh]">
-          <DialogHeader className="px-4 py-3 border-b flex-none">
-            <DialogTitle className="text-base">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b flex-none">
+            <DialogTitle className="text-base sm:text-lg">
               {isEditDialogOpen ? "Edit Supplier" : "New Supplier"}
             </DialogTitle>
-            <DialogDescription className="text-xs">
+            <DialogDescription className="text-xs sm:text-sm">
               {isEditDialogOpen ? "Update supplier information" : "Enter supplier details"}
             </DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="flex-1 min-h-0">
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs font-medium">
+            <div className="px-4 sm:px-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Company Name */}
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-xs sm:text-sm font-medium">
                   Company Name <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   value={formData.company_name}
                   onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
                   placeholder="Acme Supplies Inc"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Contact Name</Label>
+
+              {/* Contact Name */}
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">Contact Name</Label>
                 <Input
                   value={formData.contact_name}
                   onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
                   placeholder="John Doe"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Email</Label>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">Email</Label>
                 <Input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="contact@supplier.com"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Phone</Label>
+
+              {/* Phone */}
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">Phone</Label>
                 <Input
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+1 (555) 123-4567"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Website</Label>
+
+              {/* Website */}
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">Website</Label>
                 <Input
                   value={formData.website}
                   onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                   placeholder="https://supplier.com"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs font-medium">Address</Label>
+
+              {/* Address */}
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-xs sm:text-sm font-medium">Address</Label>
                 <Input
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   placeholder="123 Main St"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">City</Label>
+
+              {/* City */}
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">City</Label>
                 <Input
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   placeholder="New York"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">State</Label>
+
+              {/* State */}
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">State</Label>
                 <Input
                   value={formData.state}
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                   placeholder="NY"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Zip Code</Label>
+
+              {/* Zip Code */}
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">Zip Code</Label>
                 <Input
                   value={formData.zip_code}
                   onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
                   placeholder="10001"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Tax ID</Label>
+
+              {/* Tax ID */}
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">Tax ID</Label>
                 <Input
                   value={formData.tax_id}
                   onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
                   placeholder="XX-XXXXXXX"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs font-medium">Payment Terms</Label>
+
+              {/* Payment Terms */}
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-xs sm:text-sm font-medium">Payment Terms</Label>
                 <Input
                   value={formData.payment_terms}
                   onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
                   placeholder="Net 30"
-                  className="h-11 touch-manipulation"
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Rating (1-5)</Label>
+
+              {/* Rating */}
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">Rating (1-5)</Label>
                 <Select
                   value={formData.rating?.toString() || ""}
                   onValueChange={(value) =>
                     setFormData({ ...formData, rating: value ? parseInt(value) : undefined })
                   }
                 >
-                  <SelectTrigger className="h-11 touch-manipulation">
+                  <SelectTrigger className="h-9">
                     <SelectValue placeholder="Select rating" />
                   </SelectTrigger>
                   <SelectContent>
@@ -655,20 +687,22 @@ export default function Suppliers() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs font-medium">Notes</Label>
+
+              {/* Notes */}
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-xs sm:text-sm font-medium">Notes</Label>
                 <Textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Additional notes..."
                   rows={3}
-                  className="resize-none"
+                  className="resize-none text-sm"
                 />
               </div>
             </div>
           </ScrollArea>
 
-          <DialogFooter className="flex-none border-t p-3 flex-row gap-2">
+          <DialogFooter className="flex-none border-t px-4 sm:px-6 py-3 sm:py-4 flex-row gap-2 sm:gap-3">
             <Button
               variant="outline"
               onClick={() => {
@@ -677,14 +711,14 @@ export default function Suppliers() {
                 resetForm();
               }}
               disabled={submitting}
-              className="flex-1 h-11 touch-manipulation"
+              className="flex-1 h-9"
             >
               Cancel
             </Button>
             <Button
               onClick={isEditDialogOpen ? handleUpdate : handleCreate}
               disabled={submitting || !formData.company_name}
-              className="flex-1 h-11 touch-manipulation"
+              className="flex-1 h-9"
             >
               {submitting ? "Saving..." : isEditDialogOpen ? "Update" : "Create"}
             </Button>
@@ -697,15 +731,15 @@ export default function Suppliers() {
         <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base">Delete Supplier?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs">
+            <AlertDialogDescription className="text-xs sm:text-sm">
               Delete {selectedSupplier?.company_name}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row gap-2">
-            <AlertDialogCancel disabled={submitting} className="flex-1 h-11 touch-manipulation">
+            <AlertDialogCancel disabled={submitting} className="flex-1 h-9">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={submitting} className="flex-1 h-11 touch-manipulation">
+            <AlertDialogAction onClick={handleDelete} disabled={submitting} className="flex-1 h-9">
               {submitting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
