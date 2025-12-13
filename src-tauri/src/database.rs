@@ -1201,11 +1201,9 @@ pub fn get_migrations() -> Vec<Migration> {
             version: 21,
             description: "add_org_columns_simple",
             sql: r#"
-                -- Simple ALTER TABLE approach for adding missing organization columns
-                -- SQLite will error if column exists, so we handle that gracefully
-
-                -- Try to add legal_name (will fail silently if exists)
-                ALTER TABLE organizations ADD COLUMN legal_name TEXT;
+                -- Migration 21: Columns already exist in the database
+                -- Making this a no-op to avoid duplicate column errors
+                SELECT 1;
             "#,
             kind: MigrationKind::Up,
         },
@@ -1213,8 +1211,9 @@ pub fn get_migrations() -> Vec<Migration> {
             version: 22,
             description: "add_org_description_column",
             sql: r#"
-                -- Add description column separately
-                ALTER TABLE organizations ADD COLUMN description TEXT;
+                -- Migration 22: Column already exists in the database
+                -- Making this a no-op to avoid duplicate column errors
+                SELECT 1;
             "#,
             kind: MigrationKind::Up,
         },

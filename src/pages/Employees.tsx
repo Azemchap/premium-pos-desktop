@@ -59,15 +59,16 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const employeeSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters").optional(),
+  password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().min(1, "Phone is required"),
   position: z.string().min(1, "Position is required"),
   department: z.string().optional(),
   hire_date: z.string().min(1, "Hire date is required"),
   salary: z.number().min(0, "Salary must be positive"),
-  employment_type: z.enum(["Full-Time", "Part-Time", "Contract", "Intern"]),
+  employment_type: z.enum(["Full-time", "Part-time", "Contract", "Intern"]),
   emergency_contact_name: z.string().optional(),
   emergency_contact_phone: z.string().optional(),
   notes: z.string().optional(),
@@ -115,15 +116,16 @@ export default function Employees() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<EmployeeFormData>({
+    username: "",
+    password: "",
     first_name: "",
     last_name: "",
     email: "",
-    phone: "",
     position: "",
     department: "",
     hire_date: "",
     salary: 0,
-    employment_type: "Full-Time",
+    employment_type: "Full-time",
     emergency_contact_name: "",
     emergency_contact_phone: "",
     notes: "",
@@ -159,14 +161,58 @@ export default function Employees() {
       employeeSchema.parse(formData);
 
       if (editingEmployee) {
+        // Update existing employee
         await invoke("update_employee", {
           employeeId: editingEmployee.id,
-          request: formData,
+          request: {
+            department: formData.department,
+            position: formData.position,
+            hire_date: formData.hire_date,
+            employment_type: formData.employment_type,
+            salary_type: "Salary",
+            hourly_rate: 0,
+            salary: formData.salary,
+            commission_rate: 0,
+            emergency_contact_name: formData.emergency_contact_name,
+            emergency_contact_phone: formData.emergency_contact_phone,
+            notes: formData.notes,
+          },
         });
         toast.success("✅ Employee updated successfully!");
       } else {
+        // Create new user first
+        if (!formData.password) {
+          toast.error("❌ Password is required for new employees");
+          return;
+        }
+
+        const user = await invoke<{ id: number }>("create_user", {
+          request: {
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            role: "Cashier", // Default role, can be changed later
+          },
+        });
+
+        // Then create employee record
         await invoke("create_employee", {
-          request: formData,
+          request: {
+            user_id: user.id,
+            department: formData.department,
+            position: formData.position,
+            hire_date: formData.hire_date,
+            employment_type: formData.employment_type,
+            salary_type: "Salary",
+            hourly_rate: 0,
+            salary: formData.salary,
+            commission_rate: 0,
+            emergency_contact_name: formData.emergency_contact_name,
+            emergency_contact_phone: formData.emergency_contact_phone,
+            notes: formData.notes,
+          },
         });
         toast.success("✅ Employee created successfully!");
       }
@@ -212,10 +258,11 @@ export default function Employees() {
   const openEditDialog = (employee: Employee) => {
     setEditingEmployee(employee);
     setFormData({
+      username: employee.username,
+      password: "", // Don't show existing password
       first_name: employee.first_name,
       last_name: employee.last_name,
       email: employee.email,
-      phone: employee.phone || "",
       position: employee.position || "",
       department: employee.department || "",
       hire_date: employee.hire_date || "",
@@ -230,15 +277,16 @@ export default function Employees() {
 
   const resetForm = () => {
     setFormData({
+      username: "",
+      password: "",
       first_name: "",
       last_name: "",
       email: "",
-      phone: "",
       position: "",
       department: "",
       hire_date: "",
       salary: 0,
-      employment_type: "Full-Time",
+      employment_type: "Full-time",
       emergency_contact_name: "",
       emergency_contact_phone: "",
       notes: "",
@@ -284,9 +332,9 @@ export default function Employees() {
 
   const getEmploymentTypeBadgeColor = (type: string) => {
     switch (type) {
-      case "Full-Time":
+      case "Full-time":
         return "bg-green-100 text-green-700 border-green-200";
-      case "Part-Time":
+      case "Part-time":
         return "bg-blue-100 text-blue-700 border-blue-200";
       case "Contract":
         return "bg-purple-100 text-purple-700 border-purple-200";
@@ -340,7 +388,7 @@ export default function Employees() {
         />
         <StatCard
           title="Full-Time"
-          value={employees.filter((e) => e.employment_type === "Full-Time").length}
+          value={employees.filter((e) => e.employment_type === "Full-time").length}
           icon={Briefcase}
           gradient="bg-gradient-to-br from-purple-500 to-indigo-600"
           colSpan="col-span-2 sm:col-span-1"
@@ -374,8 +422,8 @@ export default function Employees() {
             onChange: setFilterEmploymentType,
             options: [
               { label: "All Types", value: "all" },
-              { label: "Full-Time", value: "Full-Time" },
-              { label: "Part-Time", value: "Part-Time" },
+              { label: "Full-time", value: "Full-time" },
+              { label: "Part-time", value: "Part-time" },
               { label: "Contract", value: "Contract" },
               { label: "Intern", value: "Intern" },
             ],
@@ -528,9 +576,9 @@ export default function Employees() {
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
                     {debouncedSearchQuery ||
-                    filterDepartment !== "all" ||
-                    filterEmploymentType !== "all" ||
-                    filterStatus !== "all"
+                      filterDepartment !== "all" ||
+                      filterEmploymentType !== "all" ||
+                      filterStatus !== "all"
                       ? "Try adjusting your filters"
                       : "Add your first employee to get started"}
                   </p>
@@ -562,6 +610,39 @@ export default function Employees() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+            {!editingEmployee && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="username" className="text-xs sm:text-sm">
+                    Username *
+                  </Label>
+                  <Input
+                    id="username"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    className={`h-9 ${validationErrors.username ? "border-red-500" : ""}`}
+                  />
+                  {validationErrors.username && (
+                    <p className="text-xs text-red-500">{validationErrors.username}</p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-xs sm:text-sm">
+                    Password *
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className={`h-9 ${validationErrors.password ? "border-red-500" : ""}`}
+                  />
+                  {validationErrors.password && (
+                    <p className="text-xs text-red-500">{validationErrors.password}</p>
+                  )}
+                </div>
+              </>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="first_name" className="text-xs sm:text-sm">
                 First Name *
@@ -606,20 +687,6 @@ export default function Employees() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="phone" className="text-xs sm:text-sm">
-                Phone *
-              </Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className={`h-9 ${validationErrors.phone ? "border-red-500" : ""}`}
-              />
-              {validationErrors.phone && (
-                <p className="text-xs text-red-500">{validationErrors.phone}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
               <Label htmlFor="position" className="text-xs sm:text-sm">
                 Position *
               </Label>
@@ -658,8 +725,8 @@ export default function Employees() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Full-Time">Full-Time</SelectItem>
-                  <SelectItem value="Part-Time">Part-Time</SelectItem>
+                  <SelectItem value="Full-time">Full-time</SelectItem>
+                  <SelectItem value="Part-time">Part-time</SelectItem>
                   <SelectItem value="Contract">Contract</SelectItem>
                   <SelectItem value="Intern">Intern</SelectItem>
                 </SelectContent>

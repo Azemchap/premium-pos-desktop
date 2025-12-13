@@ -1,13 +1,14 @@
 import { TableHead } from "@/components/ui/table";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SortColumn } from "../pages/SalesRecords"; 
 
 interface SortableTableHeadProps {
   label: string;
-  column: string;
-  currentColumn: string;
+  column: SortColumn;
+  currentColumn: SortColumn;
   direction: "asc" | "desc";
-  onSort: (column: string) => void;
+  onSort: (column: SortColumn) => void;
   className?: string;
   align?: "left" | "right" | "center";
 }

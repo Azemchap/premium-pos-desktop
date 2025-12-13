@@ -130,7 +130,7 @@ interface Sale {
 }
 
 type DateRange = "today" | "week" | "month" | "quarter" | "year" | "custom";
-type SortColumn = "created_at" | "sale_number" | "total_amount" | "profit";
+export type SortColumn = "created_at" | "sale_number" | "total_amount" | "profit" | "name" | "sku" | "category" | "selling_price";
 type SortDirection = "asc" | "desc";
 
 const paymentMethodColors: Record<string, string> = {
@@ -703,7 +703,7 @@ export default function SalesRecords() {
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground font-medium">Date</Label>
-                  <p className="text-sm mt-1">{formatLocalDate(selectedSale.created_at, "long")}</p>
+                  <p className="text-sm mt-1">{formatLocalDate(selectedSale.created_at, "long-datetime")}</p>
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground font-medium">Customer</Label>
