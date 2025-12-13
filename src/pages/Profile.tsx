@@ -273,12 +273,11 @@ export default function Profile() {
         icon={User}
       />
 
-      {/* Profile Header Card */}
       <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
-        <CardContent className="p-4 sm:p-6 bg-gradient-to-r from-primary/5 to-primary/10">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-6">
+        <CardContent className="p-5 sm:p-6 bg-gradient-to-r from-primary/5 to-primary/10">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 md:gap-6">
             <div className="relative flex-shrink-0">
-              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 ring-4 ring-white dark:ring-gray-800 shadow-lg">
+              <Avatar className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 ring-4 ring-white dark:ring-gray-800 shadow-lg">
                 {uploadingAvatar ? (
                   <AvatarFallback className="bg-primary/10">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -293,13 +292,13 @@ export default function Profile() {
               </Avatar>
               <label
                 htmlFor="avatar-upload"
-                className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-all shadow-lg hover:scale-110"
+                className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-3 cursor-pointer hover:bg-primary/90 transition-all shadow-lg hover:scale-110"
                 title="Change profile picture"
               >
                 {uploadingAvatar ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  <Camera className="w-4 h-4" />
+                  <Camera className="w-5 h-5" />
                 )}
                 <input
                   id="avatar-upload"
@@ -319,13 +318,13 @@ export default function Profile() {
               )}
             </div>
             <div className="flex-1 text-center sm:text-left w-full">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
                 {user?.first_name} {user?.last_name}
               </h2>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1">{user?.email}</p>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
+              <p className="text-sm sm:text-base text-muted-foreground mt-2">{user?.email}</p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3">
                 <Badge variant="outline" className="text-xs sm:text-sm">
-                  <User className="w-3 h-3 mr-1" />
+                  <User className="w-4 h-4 mr-1" />
                   {user?.role}
                 </Badge>
                 {user?.is_active && (
@@ -334,7 +333,7 @@ export default function Profile() {
                   </Badge>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2 mt-3 justify-center sm:justify-start">
+              <div className="flex flex-wrap gap-3 mt-4 justify-center sm:justify-start">
                 {avatarPreview && (
                   <Button
                     variant="outline"
@@ -343,7 +342,7 @@ export default function Profile() {
                     disabled={uploadingAvatar}
                     className="text-xs sm:text-sm"
                   >
-                    <X className="w-3 h-3 mr-1" />
+                    <X className="w-4 h-4 mr-1" />
                     Remove Picture
                   </Button>
                 )}
@@ -355,7 +354,7 @@ export default function Profile() {
                     disabled={uploadingAvatar}
                     className="text-xs sm:text-sm"
                   >
-                    <Upload className="w-3 h-3 mr-1" />
+                    <Upload className="w-4 h-4 mr-1" />
                     {uploadingAvatar ? "Processing..." : "Change Picture"}
                   </Button>
                 </label>
@@ -365,32 +364,30 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Tabs for different sections */}
       <Card className="shadow-md">
-        <CardContent className="p-4 sm:p-6">
-          <Tabs defaultValue="profile" className="space-y-6 md:space-y-6">
+        <CardContent className="p-5 sm:p-6">
+          <Tabs defaultValue="profile" className="space-y-6 md:space-y-8">
             <TabsList className="grid w-full grid-cols-3 h-full">
               <TabsTrigger value="profile" className="text-xs sm:text-sm">
-                <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <User className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Profile</span>
                 <span className="sm:hidden">Info</span>
               </TabsTrigger>
               <TabsTrigger value="security" className="text-xs sm:text-sm">
-                <Key className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <Key className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Security</span>
                 <span className="sm:hidden">Pass</span>
               </TabsTrigger>
               <TabsTrigger value="account" className="text-xs sm:text-sm">
-                <Info className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <Info className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Account</span>
                 <span className="sm:hidden">Info</span>
               </TabsTrigger>
             </TabsList>
 
-            {/* Profile Tab */}
-            <TabsContent value="profile" className="space-y-2 md:space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="space-y-2 md:col-span-2">
+            <TabsContent value="profile" className="space-y-3 md:space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                <div className="space-y-3 md:col-span-2">
                   <Label htmlFor="username">Username *</Label>
                   <Input
                     id="username"
@@ -405,7 +402,7 @@ export default function Profile() {
                   )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label htmlFor="first_name">First Name *</Label>
                   <Input
                     id="first_name"
@@ -420,7 +417,7 @@ export default function Profile() {
                   )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label htmlFor="last_name">Last Name *</Label>
                   <Input
                     id="last_name"
@@ -435,7 +432,7 @@ export default function Profile() {
                   )}
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-3 md:col-span-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
@@ -452,10 +449,10 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 pt-4 border-t">
+              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-5 border-t">
                 {avatarChanged && (
                   <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-500 flex items-center">
-                    <Info className="w-4 h-4 mr-1" />
+                    <Info className="w-5 h-5 mr-1" />
                     You have unsaved image changes
                   </p>
                 )}
@@ -466,12 +463,12 @@ export default function Profile() {
                 >
                   {savingProfile ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                       Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className="w-5 h-5 mr-2" />
                       Save Changes
                     </>
                   )}
@@ -479,10 +476,9 @@ export default function Profile() {
               </div>
             </TabsContent>
 
-            {/* Security Tab */}
-            <TabsContent value="security" className="space-y-2 md:space-y-4">
-              <div className="space-y-2 md:space-y-4">
-                <div className="space-y-2">
+            <TabsContent value="security" className="space-y-3 md:space-y-5">
+              <div className="space-y-3 md:space-y-5">
+                <div className="space-y-3">
                   <Label htmlFor="currentPassword">Current Password *</Label>
                   <Input
                     id="currentPassword"
@@ -500,7 +496,7 @@ export default function Profile() {
                   )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label htmlFor="newPassword">New Password *</Label>
                   <Input
                     id="newPassword"
@@ -519,7 +515,7 @@ export default function Profile() {
                   </p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label htmlFor="confirmPassword">Confirm New Password *</Label>
                   <Input
                     id="confirmPassword"
@@ -538,7 +534,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4 border-t">
+              <div className="flex justify-end pt-5 border-t">
                 <Button
                   onClick={handleChangePassword}
                   disabled={changingPassword}
@@ -546,12 +542,12 @@ export default function Profile() {
                 >
                   {changingPassword ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                       Changing...
                     </>
                   ) : (
                     <>
-                      <Key className="w-4 h-4 mr-2" />
+                      <Key className="w-5 h-5 mr-2" />
                       Change Password
                     </>
                   )}
@@ -559,12 +555,11 @@ export default function Profile() {
               </div>
             </TabsContent>
 
-            {/* Account Tab */}
-            <TabsContent value="account" className="space-y-2 md:space-y-4">
-              <div className="space-y-3 md:space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <h3 className="font-semibold mb-3 text-sm sm:text-base">Account Information</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 text-xs sm:text-sm">
+            <TabsContent value="account" className="space-y-3 md:space-y-5">
+              <div className="space-y-4 md:space-y-6">
+                <div className="p-5 bg-muted rounded-lg">
+                  <h3 className="font-semibold mb-4 text-sm sm:text-base">Account Information</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6 text-xs sm:text-sm">
                     <div>
                       <p className="text-muted-foreground">Username</p>
                       <p className="font-medium">{user?.username}</p>
@@ -598,11 +593,11 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
-                  <h3 className="font-medium text-red-800 dark:text-red-200 mb-2">
+                <div className="p-5 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+                  <h3 className="font-medium text-red-800 dark:text-red-200 mb-3">
                     Danger Zone
                   </h3>
-                  <p className="text-sm text-red-700 dark:text-red-300 mb-3">
+                  <p className="text-sm text-red-700 dark:text-red-300 mb-4">
                     Contact your administrator to deactivate or delete your account.
                   </p>
                 </div>

@@ -363,14 +363,13 @@ export default function Organization() {
         subtitle="Manage your organization and business locations"
         actions={
           <Button onClick={loadOrganization} variant="outline" size="sm" className="w-full sm:w-auto">
-            <RefreshCw className="w-4 h-4 mr-2" />
+            <RefreshCw className="w-5 h-5 mr-2" />
             Refresh
           </Button>
         }
       />
 
-      {/* Statistics - Compact & Responsive */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="Total Locations"
           value={totalLocations}
@@ -392,22 +391,20 @@ export default function Organization() {
         />
       </div>
 
-      {/* Tabs - Compact */}
-      <Tabs defaultValue="overview" className="space-y-3 sm:space-y-4">
-        <TabsList className="h-auto p-1">
-          <TabsTrigger value="overview" className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2">
-            <Building2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+      <Tabs defaultValue="overview" className="space-y-4 sm:space-y-5">
+        <TabsList className="h-auto p-2">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-3">
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             <span className="hidden sm:inline">Organization</span>
             <span className="sm:hidden">Org</span>
           </TabsTrigger>
-          <TabsTrigger value="locations" className="text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2">
-            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          <TabsTrigger value="locations" className="text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-3">
+            <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             <span className="hidden sm:inline">Locations</span>
             <span className="sm:hidden">Sites</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* Organization Tab */}
         <TabsContent value="overview">
           {loading ? (
             <Card className="shadow-md">
@@ -417,24 +414,24 @@ export default function Organization() {
             </Card>
           ) : organization ? (
             <Card className="shadow-md">
-              <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 sm:p-4 flex flex-row items-start justify-between">
+              <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 p-4 sm:p-5 flex flex-row items-start justify-between">
                 <div>
                   <CardTitle className="text-base sm:text-xl">{organization.name}</CardTitle>
                   {organization.legal_name && (
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                       {organization.legal_name}
                     </p>
                   )}
                 </div>
-                <Button size="sm" onClick={() => setIsOrgDialogOpen(true)} className="h-8">
-                  <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <Button size="sm" onClick={() => setIsOrgDialogOpen(true)} className="h-9">
+                  <Edit className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   <span className="hidden sm:inline">Edit</span>
                 </Button>
               </CardHeader>
-              <CardContent className="p-3 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              <CardContent className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 {organization.address && (
-                  <div className="p-3 bg-muted/30 rounded-lg">
-                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
                       Address
                     </p>
                     <p className="text-xs sm:text-sm font-medium">{organization.address}</p>
@@ -444,10 +441,10 @@ export default function Organization() {
                   </div>
                 )}
                 {organization.phone && (
-                  <div className="p-3 bg-muted/30 rounded-lg flex items-start gap-2">
-                    <Phone className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="p-4 bg-muted/30 rounded-lg flex items-start gap-3">
+                    <Phone className="w-5 h-5 text-muted-foreground mt-1" />
                     <div>
-                      <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wide">
+                      <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
                         Phone
                       </p>
                       <p className="text-xs sm:text-sm font-medium">{organization.phone}</p>
@@ -455,10 +452,10 @@ export default function Organization() {
                   </div>
                 )}
                 {organization.email && (
-                  <div className="p-3 bg-muted/30 rounded-lg flex items-start gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="p-4 bg-muted/30 rounded-lg flex items-start gap-3">
+                    <Mail className="w-5 h-5 text-muted-foreground mt-1" />
                     <div>
-                      <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wide">
+                      <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
                         Email
                       </p>
                       <p className="text-xs sm:text-sm font-medium">{organization.email}</p>
@@ -466,10 +463,10 @@ export default function Organization() {
                   </div>
                 )}
                 {organization.website && (
-                  <div className="p-3 bg-muted/30 rounded-lg flex items-start gap-2">
-                    <Globe className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="p-4 bg-muted/30 rounded-lg flex items-start gap-3">
+                    <Globe className="w-5 h-5 text-muted-foreground mt-1" />
                     <div>
-                      <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wide">
+                      <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
                         Website
                       </p>
                       <p className="text-xs sm:text-sm font-medium">{organization.website}</p>
@@ -477,16 +474,16 @@ export default function Organization() {
                   </div>
                 )}
                 {organization.tax_id && (
-                  <div className="p-3 bg-muted/30 rounded-lg">
-                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
                       Tax ID
                     </p>
                     <p className="text-xs sm:text-sm font-medium">{organization.tax_id}</p>
                   </div>
                 )}
                 {organization.description && (
-                  <div className="p-3 bg-muted/30 rounded-lg md:col-span-2">
-                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
+                  <div className="p-4 bg-muted/30 rounded-lg md:col-span-2">
+                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
                       Description
                     </p>
                     <p className="text-xs sm:text-sm">{organization.description}</p>
@@ -496,14 +493,14 @@ export default function Organization() {
             </Card>
           ) : (
             <Card className="shadow-md">
-              <CardContent className="py-8 sm:py-12 text-center">
-                <Building2 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-base sm:text-lg font-medium mb-1 sm:mb-2">No Organization Created</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+              <CardContent className="py-10 sm:py-14 text-center">
+                <Building2 className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-4 sm:mb-5 text-muted-foreground opacity-50" />
+                <h3 className="text-base sm:text-lg font-medium mb-2 sm:mb-3">No Organization Created</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-5">
                   Create your organization to get started
                 </p>
                 <Button onClick={() => setIsOrgDialogOpen(true)} size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-5 h-5 mr-2" />
                   Create Organization
                 </Button>
               </CardContent>
@@ -511,9 +508,7 @@ export default function Organization() {
           )}
         </TabsContent>
 
-        {/* Locations Tab */}
         <TabsContent value="locations">
-          {/* Filters */}
           <FilterBar
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
@@ -533,11 +528,11 @@ export default function Organization() {
           />
 
           <Card className="shadow-md">
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 sm:p-4 flex flex-row items-center justify-between">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 p-4 sm:p-5 flex flex-row items-center justify-between">
               <div className="flex items-center">
-                <MapPin className="w-4 h-4 mr-2 text-primary" />
+                <MapPin className="w-5 h-5 mr-2 text-primary" />
                 <CardTitle className="text-sm sm:text-base">Business Locations</CardTitle>
-                <Badge className="ml-2 text-xs" variant="secondary">
+                <Badge className="ml-3 text-xs" variant="secondary">
                   {filteredLocations.length}
                 </Badge>
               </div>
@@ -547,40 +542,40 @@ export default function Organization() {
                   resetLocationForm();
                   setIsLocationDialogOpen(true);
                 }}
-                className="h-7 sm:h-8 text-xs"
+                className="h-8 sm:h-9 text-xs"
               >
-                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 <span className="hidden sm:inline">Add Location</span>
                 <span className="sm:hidden">Add</span>
               </Button>
             </CardHeader>
-            <CardContent className="p-0 sm:p-3">
+            <CardContent className="p-0 sm:p-4">
               {filteredLocations.length > 0 ? (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="border-b">
-                        <TableHead className="h-9 px-2 sm:px-4 text-xs">Location</TableHead>
-                        <TableHead className="h-9 px-2 sm:px-4 text-xs">Address</TableHead>
-                        <TableHead className="h-9 px-2 sm:px-4 text-xs hidden md:table-cell">Contact</TableHead>
-                        <TableHead className="h-9 px-2 sm:px-4 text-xs">Status</TableHead>
-                        <TableHead className="h-9 px-2 sm:px-4 text-xs text-right">Actions</TableHead>
+                        <TableHead className="h-9 px-3 sm:px-5 text-xs">Location</TableHead>
+                        <TableHead className="h-9 px-3 sm:px-5 text-xs">Address</TableHead>
+                        <TableHead className="h-9 px-3 sm:px-5 text-xs hidden md:table-cell">Contact</TableHead>
+                        <TableHead className="h-9 px-3 sm:px-5 text-xs">Status</TableHead>
+                        <TableHead className="h-9 px-3 sm:px-5 text-xs text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredLocations.map((location) => (
                         <TableRow key={location.id} className="hover:bg-muted/50 transition-colors border-b h-12">
-                          <TableCell className="py-2 px-2 sm:px-4">
+                          <TableCell className="py-3 px-3 sm:px-5">
                             <div>
                               <div className="text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-[200px]">
                                 {location.name}
                               </div>
-                              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 mt-0.5">
+                              <Badge variant="outline" className="text-[10px] px-2 py-1 h-5 mt-1">
                                 {location.currency}
                               </Badge>
                             </div>
                           </TableCell>
-                          <TableCell className="py-2 px-2 sm:px-4">
+                          <TableCell className="py-3 px-3 sm:px-5">
                             <div className="text-[10px] sm:text-xs">
                               <div className="font-medium">{location.address}</div>
                               <div className="text-muted-foreground">
@@ -588,31 +583,31 @@ export default function Organization() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="py-2 px-2 sm:px-4 hidden md:table-cell text-[10px] sm:text-xs">
-                            <div className="space-y-0.5">
+                          <TableCell className="py-3 px-3 sm:px-5 hidden md:table-cell text-[10px] sm:text-xs">
+                            <div className="space-y-1">
                               {location.phone && (
-                                <div className="flex items-center gap-1">
-                                  <Phone className="w-3 h-3 text-muted-foreground" />
+                                <div className="flex items-center gap-2">
+                                  <Phone className="w-4 h-4 text-muted-foreground" />
                                   {location.phone}
                                 </div>
                               )}
                               {location.email && (
-                                <div className="flex items-center gap-1">
-                                  <Mail className="w-3 h-3 text-muted-foreground" />
+                                <div className="flex items-center gap-2">
+                                  <Mail className="w-4 h-4 text-muted-foreground" />
                                   {location.email}
                                 </div>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="py-2 px-2 sm:px-4">
+                          <TableCell className="py-3 px-3 sm:px-5">
                             <Badge
                               variant={location.is_active ? "default" : "secondary"}
-                              className="text-[10px] px-1.5 h-5"
+                              className="text-[10px] px-2 h-6"
                             >
                               {location.is_active ? "Active" : "Inactive"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="py-2 px-2 sm:px-4 text-right">
+                          <TableCell className="py-3 px-3 sm:px-5 text-right">
                             <TableActions
                               actions={[
                                 {
@@ -635,10 +630,10 @@ export default function Organization() {
                   </Table>
                 </div>
               ) : (
-                <div className="text-center py-6 md:py-12">
-                  <MapPin className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="text-sm sm:text-lg font-medium mb-1 sm:mb-2">No Locations Found</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+                <div className="text-center py-7 md:py-14">
+                  <MapPin className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 sm:mb-5 text-muted-foreground opacity-50" />
+                  <h3 className="text-sm sm:text-lg font-medium mb-2 sm:mb-3">No Locations Found</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-5">
                     {debouncedSearchQuery || filterStatus !== "all"
                       ? "Try adjusting your filters"
                       : "Add your first business location"}
@@ -651,7 +646,7 @@ export default function Organization() {
                       }}
                       size="sm"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="w-5 h-5 mr-2" />
                       Add Location
                     </Button>
                   )}
@@ -662,7 +657,6 @@ export default function Organization() {
         </TabsContent>
       </Tabs>
 
-      {/* Organization Dialog */}
       <Dialog open={isOrgDialogOpen} onOpenChange={setIsOrgDialogOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -673,8 +667,8 @@ export default function Organization() {
               Enter your organization details
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-            <div className="space-y-1.5 md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="name" className="text-xs sm:text-sm">
                 Organization Name *
               </Label>
@@ -688,7 +682,7 @@ export default function Organization() {
                 <p className="text-xs text-red-500">{validationErrors.name}</p>
               )}
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="legal_name" className="text-xs sm:text-sm">
                 Legal Name
               </Label>
@@ -699,7 +693,7 @@ export default function Organization() {
                 className="h-9"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="tax_id" className="text-xs sm:text-sm">
                 Tax ID
               </Label>
@@ -710,7 +704,7 @@ export default function Organization() {
                 className="h-9"
               />
             </div>
-            <div className="space-y-1.5 md:col-span-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="address" className="text-xs sm:text-sm">
                 Address
               </Label>
@@ -721,7 +715,7 @@ export default function Organization() {
                 className="h-9"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="city" className="text-xs sm:text-sm">
                 City
               </Label>
@@ -732,7 +726,7 @@ export default function Organization() {
                 className="h-9"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="state" className="text-xs sm:text-sm">
                 State
               </Label>
@@ -743,7 +737,7 @@ export default function Organization() {
                 className="h-9"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="phone" className="text-xs sm:text-sm">
                 Phone
               </Label>
@@ -754,7 +748,7 @@ export default function Organization() {
                 className="h-9"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="email" className="text-xs sm:text-sm">
                 Email
               </Label>
@@ -769,7 +763,7 @@ export default function Organization() {
                 <p className="text-xs text-red-500">{validationErrors.email}</p>
               )}
             </div>
-            <div className="space-y-1.5 md:col-span-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="website" className="text-xs sm:text-sm">
                 Website
               </Label>
@@ -781,7 +775,7 @@ export default function Organization() {
                 placeholder="https://example.com"
               />
             </div>
-            <div className="space-y-1.5 md:col-span-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="description" className="text-xs sm:text-sm">
                 Description
               </Label>
@@ -794,7 +788,7 @@ export default function Organization() {
               />
             </div>
           </div>
-          <DialogFooter className="gap-2 mt-6">
+          <DialogFooter className="gap-3 mt-7">
             <Button
               variant="outline"
               onClick={() => setIsOrgDialogOpen(false)}
@@ -812,7 +806,7 @@ export default function Organization() {
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   Saving...
                 </>
               ) : (
@@ -823,7 +817,6 @@ export default function Organization() {
         </DialogContent>
       </Dialog>
 
-      {/* Location Dialog */}
       <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -834,13 +827,13 @@ export default function Organization() {
               Enter location details
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 mt-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="location_name" className="text-xs sm:text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="location-name" className="text-xs sm:text-sm">
                 Location Name *
               </Label>
               <Input
-                id="location_name"
+                id="location-name"
                 value={locationFormData.name}
                 onChange={(e) => setLocationFormData({ ...locationFormData, name: e.target.value })}
                 className={`h-9 ${validationErrors.name ? "border-red-500" : ""}`}
@@ -849,12 +842,12 @@ export default function Organization() {
                 <p className="text-xs text-red-500">{validationErrors.name}</p>
               )}
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="location_address" className="text-xs sm:text-sm">
+            <div className="space-y-2">
+              <Label htmlFor="location-address" className="text-xs sm:text-sm">
                 Address *
               </Label>
               <Input
-                id="location_address"
+                id="location-address"
                 value={locationFormData.address}
                 onChange={(e) => setLocationFormData({ ...locationFormData, address: e.target.value })}
                 className={`h-9 ${validationErrors.address ? "border-red-500" : ""}`}
@@ -863,74 +856,48 @@ export default function Organization() {
                 <p className="text-xs text-red-500">{validationErrors.address}</p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="location_city" className="text-xs sm:text-sm">
-                  City *
-                </Label>
-                <Input
-                  id="location_city"
-                  value={locationFormData.city}
-                  onChange={(e) => setLocationFormData({ ...locationFormData, city: e.target.value })}
-                  className={`h-9 ${validationErrors.city ? "border-red-500" : ""}`}
-                />
-                {validationErrors.city && (
-                  <p className="text-xs text-red-500">{validationErrors.city}</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="location_state" className="text-xs sm:text-sm">
-                  State
-                </Label>
-                <Input
-                  id="location_state"
-                  value={locationFormData.state}
-                  onChange={(e) => setLocationFormData({ ...locationFormData, state: e.target.value })}
-                  className="h-9"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="location-city" className="text-xs sm:text-sm">
+                City *
+              </Label>
+              <Input
+                id="location-city"
+                value={locationFormData.city}
+                onChange={(e) => setLocationFormData({ ...locationFormData, city: e.target.value })}
+                className={`h-9 ${validationErrors.city ? "border-red-500" : ""}`}
+              />
+              {validationErrors.city && (
+                <p className="text-xs text-red-500">{validationErrors.city}</p>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="location_zip" className="text-xs sm:text-sm">
-                  Zip Code
-                </Label>
-                <Input
-                  id="location_zip"
-                  value={locationFormData.zip_code}
-                  onChange={(e) => setLocationFormData({ ...locationFormData, zip_code: e.target.value })}
-                  className="h-9"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="location_country" className="text-xs sm:text-sm">
-                  Country
-                </Label>
-                <Input
-                  id="location_country"
-                  value={locationFormData.country}
-                  onChange={(e) => setLocationFormData({ ...locationFormData, country: e.target.value })}
-                  className="h-9"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="location-state" className="text-xs sm:text-sm">
+                State
+              </Label>
+              <Input
+                id="location-state"
+                value={locationFormData.state}
+                onChange={(e) => setLocationFormData({ ...locationFormData, state: e.target.value })}
+                className="h-9"
+              />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="location_phone" className="text-xs sm:text-sm">
+            <div className="space-y-2">
+              <Label htmlFor="location-phone" className="text-xs sm:text-sm">
                 Phone
               </Label>
               <Input
-                id="location_phone"
+                id="location-phone"
                 value={locationFormData.phone}
                 onChange={(e) => setLocationFormData({ ...locationFormData, phone: e.target.value })}
                 className="h-9"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="location_email" className="text-xs sm:text-sm">
+            <div className="space-y-2">
+              <Label htmlFor="location-email" className="text-xs sm:text-sm">
                 Email
               </Label>
               <Input
-                id="location_email"
+                id="location-email"
                 type="email"
                 value={locationFormData.email}
                 onChange={(e) => setLocationFormData({ ...locationFormData, email: e.target.value })}
@@ -940,37 +907,31 @@ export default function Organization() {
                 <p className="text-xs text-red-500">{validationErrors.email}</p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="location_tax" className="text-xs sm:text-sm">
-                  Tax Rate (%)
-                </Label>
-                <Input
-                  id="location_tax"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={locationFormData.tax_rate}
-                  onChange={(e) => setLocationFormData({ ...locationFormData, tax_rate: parseFloat(e.target.value) || 0 })}
-                  className="h-9"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="location_currency" className="text-xs sm:text-sm">
-                  Currency
-                </Label>
-                <Input
-                  id="location_currency"
-                  value={locationFormData.currency}
-                  onChange={(e) => setLocationFormData({ ...locationFormData, currency: e.target.value })}
-                  className="h-9"
-                  placeholder="USD"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="location-tax_rate" className="text-xs sm:text-sm">
+                Tax Rate (%)
+              </Label>
+              <Input
+                id="location-tax_rate"
+                type="number"
+                value={locationFormData.tax_rate}
+                onChange={(e) => setLocationFormData({ ...locationFormData, tax_rate: parseFloat(e.target.value) || 0 })}
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location-currency" className="text-xs sm:text-sm">
+                Currency
+              </Label>
+              <Input
+                id="location-currency"
+                value={locationFormData.currency}
+                onChange={(e) => setLocationFormData({ ...locationFormData, currency: e.target.value })}
+                className="h-9"
+              />
             </div>
           </div>
-          <DialogFooter className="gap-2 mt-6">
+          <DialogFooter className="gap-3 mt-7">
             <Button
               variant="outline"
               onClick={() => setIsLocationDialogOpen(false)}
@@ -988,7 +949,7 @@ export default function Organization() {
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   Saving...
                 </>
               ) : (
