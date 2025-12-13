@@ -956,3 +956,20 @@ fn generate_random_number(min: i32, max: i32) -> i32 {
     let mut rng = rand::thread_rng();
     rng.gen_range(min..=max)
 }
+
+#[command]
+pub async fn test_returns_tables(pool: State<'_, SqlitePool>) -> Result<String, String> {
+    let pool_ref = pool.inner();
+    
+    // Test if returns tables exist and are accessible
+    let result = sqlx::query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'return_%'")
+        .fetch_all(pool_ref)
+        .await
+        .map_err(|e| format!("Failed to query returns tables: {}", e))?;
+    
+    let table_names: Vec<String> = result.iter()
+        .map(|row| row.get::<String, _>("name"))
+        .collect();
+    
+    Ok(format!("Found returns tables: {:?}", table_names))
+}

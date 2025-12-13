@@ -130,8 +130,7 @@ const coreItems: NavigationItem[] = [
   { name: "New Sale", href: "/sales", icon: ShoppingCart },
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
   { name: "Inventory", href: "/inventory", icon: Database },
-  { name: "Returns", href: "/returns", icon: PackageX },
-  { name: "Returns Mgmt", href: "/returns-management", icon: PackageX, roles: ["Admin", "Manager"] },
+  { name: "Returns Management", href: "/returns-management", icon: PackageX, roles: ["Admin", "Manager"] },
 ];
 
 // Products group

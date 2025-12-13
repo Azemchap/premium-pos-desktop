@@ -186,7 +186,6 @@ useEffect(() => {
           <Route path="/sales" element={<Sales />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/sales-records" element={<SalesRecords />} />
-          <Route path="/returns" element={<Returns />} />
           <Route
             path="/returns-management"
             element={

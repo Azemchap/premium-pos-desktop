@@ -7,11 +7,21 @@ export interface SyncStatus {
   error: string | null;
   syncedTables?: string[];
   recordsCount?: number;
+  conflicts?: SyncConflict[];
 }
 
 export interface ConflictResolution {
   strategy: 'server_wins' | 'client_wins' | 'newer_wins' | 'merge';
   compareField?: string;
+}
+
+export interface SyncConflict {
+  table: string;
+  recordId: string | number;
+  localRecord: any;
+  remoteRecord: any;
+  conflictType: 'update' | 'delete' | 'create';
+  timestamp: string;
 }
 
 const SYNC_STORAGE_KEY = 'qorbooks_last_sync';
@@ -81,7 +91,7 @@ const resolveConflict = (
   }
 };
 
-// Fetch all data from Supabase and sync to local database
+// Enhanced sync with conflict detection and resolution
 export const syncFromSupabase = async (
   selective: boolean = true,
   conflictResolution: ConflictResolution = { strategy: 'newer_wins' }
@@ -94,6 +104,7 @@ export const syncFromSupabase = async (
     error: null,
     syncedTables: [],
     recordsCount: 0,
+    conflicts: [],
   };
 
   try {
