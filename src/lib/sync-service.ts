@@ -126,6 +126,8 @@ export const syncFromSupabase = async (
       'locations',
       'integrations',
       'store_config',
+      'returns',
+      'return_items',
     ];
 
     const syncData: Record<string, any[]> = {};
@@ -302,6 +304,8 @@ export const setupRealtimeSync = () => {
     'purchase_orders',
     'expenses',
     'integrations',
+    'returns',
+    'return_items',
   ];
 
   const subscriptions: any[] = [];

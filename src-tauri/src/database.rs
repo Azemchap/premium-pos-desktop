@@ -1241,5 +1241,140 @@ pub fn get_migrations() -> Vec<Migration> {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 25,
+            description: "cleanup_broken_locations_migration",
+            sql: r#"
+                -- Clean up any broken migration artifacts
+                DROP TABLE IF EXISTS locations_old;
+                
+                -- Ensure locations table exists with proper structure
+                CREATE TABLE IF NOT EXISTS locations (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    address TEXT,
+                    city TEXT,
+                    state TEXT,
+                    zip_code TEXT,
+                    country TEXT,
+                    phone TEXT,
+                    email TEXT,
+                    tax_rate REAL DEFAULT 0.0,
+                    currency TEXT DEFAULT 'USD',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                -- Insert default location if table is empty
+                INSERT OR IGNORE INTO locations (id, name, address, city, state, zip_code, country, phone, email, tax_rate, currency)
+                VALUES (1, 'Main Store', '123 Main Street', 'New York', 'NY', '10001', 'US', '+1-555-0123', 'store@example.com', 0.08, 'USD');
+            "#,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 26,
+            description: "aggressive_cleanup_locations_issue",
+            sql: r#"
+                -- Disable foreign key constraints temporarily
+                PRAGMA foreign_keys = OFF;
+                
+                -- Drop any problematic tables and recreate them
+                DROP TABLE IF EXISTS comprehensive_returns;
+                DROP TABLE IF EXISTS comprehensive_return_items;
+                DROP TABLE IF EXISTS locations_old;
+                
+                -- Recreate locations table with proper structure
+                CREATE TABLE IF NOT EXISTS locations (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    address TEXT,
+                    city TEXT,
+                    state TEXT,
+                    zip_code TEXT,
+                    country TEXT,
+                    phone TEXT,
+                    email TEXT,
+                    tax_rate REAL DEFAULT 0.0,
+                    currency TEXT DEFAULT 'USD',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                -- Insert default location if table is empty
+                INSERT OR IGNORE INTO locations (id, name, address, city, state, zip_code, country, phone, email, tax_rate, currency)
+                VALUES (1, 'Main Store', '123 Main Street', 'New York', 'NY', '10001', 'US', '+1-555-0123', 'store@example.com', 0.08, 'USD');
+                
+                -- Re-enable foreign key constraints
+                PRAGMA foreign_keys = ON;
+            "#,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 24,
+            description: "create_comprehensive_returns_system",
+            sql: r#"
+                -- Comprehensive Returns Table
+                CREATE TABLE IF NOT EXISTS comprehensive_returns (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    return_number TEXT UNIQUE NOT NULL,
+                    return_type TEXT NOT NULL CHECK (return_type IN ('SalesReturn', 'PurchaseReturn', 'InventoryReturn', 'TransferReturn')),
+                    reference_id INTEGER,
+                    reference_number TEXT,
+                    supplier_id INTEGER,
+                    from_location_id INTEGER,
+                    to_location_id INTEGER,
+                    subtotal REAL NOT NULL,
+                    tax_amount REAL DEFAULT 0.0,
+                    total_amount REAL NOT NULL,
+                    refund_method TEXT,
+                    credit_method TEXT,
+                    expected_credit_date DATE,
+                    status TEXT NOT NULL CHECK (status IN ('Pending', 'Approved', 'Processing', 'Completed', 'Rejected')) DEFAULT 'Pending',
+                    processed_by INTEGER NOT NULL,
+                    approved_by INTEGER,
+                    approved_at DATETIME,
+                    completed_at DATETIME,
+                    reason TEXT,
+                    notes TEXT,
+                    shift_id INTEGER,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+                    FOREIGN KEY (from_location_id) REFERENCES locations(id),
+                    FOREIGN KEY (to_location_id) REFERENCES locations(id),
+                    FOREIGN KEY (processed_by) REFERENCES users(id),
+                    FOREIGN KEY (approved_by) REFERENCES users(id),
+                    FOREIGN KEY (shift_id) REFERENCES shifts(id)
+                );
+
+                -- Comprehensive Return Items Table
+                CREATE TABLE IF NOT EXISTS comprehensive_return_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    return_id INTEGER NOT NULL,
+                    product_id INTEGER NOT NULL,
+                    quantity INTEGER NOT NULL,
+                    unit_price REAL NOT NULL,
+                    line_total REAL NOT NULL,
+                    reason TEXT NOT NULL CHECK (reason IN ('Defective', 'WrongItem', 'Damaged', 'Expired', 'Overstock', 'Recall', 'CustomerDissatisfaction', 'WrongShipment', 'QualityIssue', 'Other')),
+                    condition TEXT NOT NULL CHECK (condition IN ('New', 'Opened', 'Used', 'Damaged', 'Defective', 'Sealed')),
+                    disposition TEXT NOT NULL CHECK (disposition IN ('Restock', 'Dispose', 'ReturnToSupplier', 'Transfer', 'Repair', 'WriteOff')),
+                    batch_number TEXT,
+                    expiry_date DATE,
+                    notes TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (return_id) REFERENCES comprehensive_returns(id) ON DELETE CASCADE,
+                    FOREIGN KEY (product_id) REFERENCES products(id)
+                );
+
+                -- Create indexes for better performance
+                CREATE INDEX IF NOT EXISTS idx_comprehensive_returns_type ON comprehensive_returns(return_type);
+                CREATE INDEX IF NOT EXISTS idx_comprehensive_returns_status ON comprehensive_returns(status);
+                CREATE INDEX IF NOT EXISTS idx_comprehensive_returns_date ON comprehensive_returns(created_at);
+                CREATE INDEX IF NOT EXISTS idx_comprehensive_returns_supplier ON comprehensive_returns(supplier_id);
+                CREATE INDEX IF NOT EXISTS idx_comprehensive_return_items_return_id ON comprehensive_return_items(return_id);
+                CREATE INDEX IF NOT EXISTS idx_comprehensive_return_items_product_id ON comprehensive_return_items(product_id);
+            "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

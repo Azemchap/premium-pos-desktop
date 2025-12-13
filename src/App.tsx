@@ -1,6 +1,7 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SettingsApplier from "@/components/SettingsApplier";
 import DashboardLayout from "@/layouts/DashboardLayout";
+import { autoSync, setupPeriodicSync, setupRealtimeSync } from "@/lib/sync-service";
 import Appointments from "@/pages/Appointments";
 import Cart from "@/pages/Cart";
 import Customers from "@/pages/Customers";
@@ -32,7 +33,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
-import { autoSync, setupPeriodicSync, setupRealtimeSync } from "@/lib/sync-service";
 
 function App() {
   const { isAuthenticated, theme } = useAuthStore();
@@ -187,6 +187,14 @@ useEffect(() => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/sales-records" element={<SalesRecords />} />
           <Route path="/returns" element={<Returns />} />
+          <Route
+            path="/returns-management"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Manager"]}>
+                <Returns />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/products"
             element={

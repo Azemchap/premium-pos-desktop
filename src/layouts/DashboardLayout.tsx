@@ -131,6 +131,7 @@ const coreItems: NavigationItem[] = [
   { name: "Sales Records", href: "/sales-records", icon: Receipt },
   { name: "Inventory", href: "/inventory", icon: Database },
   { name: "Returns", href: "/returns", icon: PackageX },
+  { name: "Returns Mgmt", href: "/returns-management", icon: PackageX, roles: ["Admin", "Manager"] },
 ];
 
 // Products group
@@ -334,11 +335,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return location.pathname === href || location.pathname.startsWith(href + "/");
   };
 
-  // Toggle group - accordion behavior (only one open at a time, always keep one open)
+  // Toggle group - accordion behavior with toggle functionality
   const toggleGroup = (groupId: string) => {
-    // Don't allow closing the currently open group, only switch to another
-    if (openGroup !== groupId) {
-      setOpenGroup(groupId);
+    // Allow closing the currently open group by clicking it again
+    if (openGroup === groupId) {
+      setOpenGroup(""); // Close all groups
+    } else {
+      setOpenGroup(groupId); // Open the clicked group
     }
   };
 
@@ -385,7 +388,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <span className="flex-1 text-left">{group.name}</span>
           <ChevronRight
             className={cn(
-              "w-4 h-4 shrink-0 transition-transform duration-200 ease-out",
+              "w-4 h-4 shrink-0 transition-transform duration-300 ease-in-out",
               isOpen && "rotate-90"
             )}
           />
@@ -394,7 +397,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Animated content */}
         <div
           className={cn(
-            "overflow-hidden transition-all duration-200 ease-out",
+            "overflow-hidden transition-all duration-300 ease-in-out",
             isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
           )}
         >

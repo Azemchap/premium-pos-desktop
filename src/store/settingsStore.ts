@@ -22,6 +22,7 @@ export interface UserPreferences {
   // Notification Settings
   emailNotifications: boolean;
   pushNotifications: boolean;
+  smsAlerts: boolean;
   lowStockNotifications: boolean;
   salesNotifications: boolean;
   inventoryNotifications: boolean;
@@ -63,6 +64,7 @@ const defaultPreferences: UserPreferences = {
   // Notifications
   emailNotifications: true,
   pushNotifications: true,
+  smsAlerts: false,
   lowStockNotifications: true,
   salesNotifications: true,
   inventoryNotifications: true,

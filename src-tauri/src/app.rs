@@ -219,6 +219,16 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::integrations::update_integration,
             commands::integrations::delete_integration,
             commands::integrations::test_integration,
+            commands::returns::create_return,
+            commands::returns::get_returns,
+            commands::returns::get_return_items,
+            commands::returns::approve_return,
+            commands::returns::complete_return,
+            commands::returns::create_return_offline,
+            commands::returns::sync_return_from_supabase,
+            commands::returns::get_pending_returns,
+            commands::returns::mark_return_as_synced,
+            commands::returns::mark_return_as_error,
         ])
         .run(tauri::generate_context!())?;
     Ok(())

@@ -24,6 +24,8 @@ pub struct SyncData {
     pub appointments: Option<Vec<Value>>,
     pub time_tracking: Option<Vec<Value>>,
     pub store_config: Option<Vec<Value>>,
+    pub returns: Option<Vec<Value>>,
+    pub return_items: Option<Vec<Value>>,
 }
 
 /// Sync data from cloud (Supabase) to local SQLite database
@@ -174,6 +176,8 @@ pub async fn get_local_data_for_sync(
         "appointments",
         "time_tracking",
         "store_config",
+        "returns",
+        "return_items",
     ];
 
     let mut result = HashMap::new();

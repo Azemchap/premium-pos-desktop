@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import PageHeader from "@/components/PageHeader";
 import {
@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Edit,
   Loader2,
@@ -83,6 +85,8 @@ export default function TimeTracking() {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [employeesLoading, setEmployeesLoading] = useState(true);
+  const [activePage, setActivePage] = useState(1);
   const [selectedEmployee, setSelectedEmployee] = useState("all");
   const [startDate, setStartDate] = useState(
     new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
@@ -108,14 +112,26 @@ export default function TimeTracking() {
         startDate,
         endDate,
       });
-      setTimeEntries(result);
+
+      // Map employee names to time entries (handle empty employees array)
+      const entriesWithNames = result.map(entry => {
+        const employee = employees.find(emp => emp.id === entry.employee_id);
+        return {
+          ...entry,
+          employee_name: employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown Employee'
+        };
+      });
+
+      setTimeEntries(entriesWithNames);
 
       // Check for active entry
-      const active = result.find((e) => !e.clock_out);
+      const active = entriesWithNames.find((e) => !e.clock_out);
       setActiveEntry(active || null);
     } catch (error) {
       console.error("Failed to load time entries:", error);
       toast.error("Failed to load time entries");
+      setTimeEntries([]); // Ensure we have an empty array on error
+      setActiveEntry(null);
     } finally {
       setLoading(false);
     }
@@ -123,11 +139,15 @@ export default function TimeTracking() {
 
   const loadEmployees = async () => {
     try {
+      setEmployeesLoading(true);
       const result = await invoke<Employee[]>("get_employees");
       setEmployees(result);
     } catch (error) {
       console.error("Failed to load employees:", error);
       toast.error("Failed to load employees");
+      setEmployees([]); // Ensure we have an empty array on error
+    } finally {
+      setEmployeesLoading(false);
     }
   };
 
@@ -152,15 +172,35 @@ export default function TimeTracking() {
   };
 
   const handleClockOut = async () => {
-    if (!activeEntry) return;
+    const activeEntries = timeEntries.filter(entry => !entry.clock_out);
+    if (activeEntries.length === 0) return;
 
     try {
+      // Clock out everyone at once
+      const promises = activeEntries.map(entry =>
+        invoke("clock_out", {
+          entryId: entry.id,
+          clockOut: new Date().toISOString(),
+        })
+      );
+      
+      await Promise.all(promises);
+      toast.success(`Clocked out ${activeEntries.length} employees successfully`);
+      setActiveEntry(null);
+      loadTimeEntries();
+    } catch (error) {
+      console.error("Failed to clock out everyone:", error);
+      toast.error(`Failed to clock out everyone: ${error}`);
+    }
+  };
+
+  const handleClockOutSpecific = async (entryId: number) => {
+    try {
       await invoke("clock_out", {
-        entryId: activeEntry.id,
+        entryId: entryId,
         clockOut: new Date().toISOString(),
       });
-      toast.success("Clocked out successfully");
-      setActiveEntry(null);
+      toast.success("Employee clocked out successfully");
       loadTimeEntries();
     } catch (error) {
       console.error("Failed to clock out:", error);
@@ -171,6 +211,15 @@ export default function TimeTracking() {
   const handleCreateTimeEntry = async () => {
     if (!validateForm()) {
       return;
+    }
+
+    // Check for duplicate entries if creating new entry
+    if (!editingEntry) {
+      const selectedDate = formData.clock_in.split('T')[0];
+      if (hasEntryForDate(formData.employee_id, selectedDate)) {
+        toast.error("Employee already has a time entry for this date");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -190,6 +239,8 @@ export default function TimeTracking() {
 
       setIsDialogOpen(false);
       resetForm();
+      // Reload both employees and time entries to ensure fresh data
+      await loadEmployees();
       loadTimeEntries();
     } catch (error) {
       console.error("Failed to save time entry:", error);
@@ -242,9 +293,37 @@ export default function TimeTracking() {
   };
 
   const openCreateDialog = () => {
-    resetForm();
+    setEditingEntry(null);
+    setFormData({
+      employee_id: 0,
+      clock_in: new Date().toISOString().slice(0, 16),
+      clock_out: "",
+      notes: "",
+    });
+    setValidationErrors({});
     setIsDialogOpen(true);
   };
+
+  // Check if employee already has an entry for the selected date
+  const hasEntryForDate = (employeeId: number, date: string) => {
+    return timeEntries.some(entry => 
+      entry.employee_id === employeeId && 
+      entry.clock_in.split('T')[0] === date
+    );
+  };
+
+  // Get employees that are not currently active and don't have entries for today
+  const availableEmployeesForEntry = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const activeEmployeeIds = timeEntries
+      .filter(entry => !entry.clock_out)
+      .map(entry => entry.employee_id);
+    
+    return employees.filter(emp => 
+      !activeEmployeeIds.includes(emp.id) && 
+      !hasEntryForDate(emp.id, today)
+    );
+  }, [employees, timeEntries]);
 
   // Auto-filter time entries
   const filteredEntries = useMemo(() => {
@@ -260,8 +339,11 @@ export default function TimeTracking() {
   }, []);
 
   useEffect(() => {
-    loadTimeEntries();
-  }, [startDate, endDate]);
+    // Load time entries when date range changes or employees are loaded
+    if (employees.length > 0 || employeesLoading === false) {
+      loadTimeEntries();
+    }
+  }, [startDate, endDate, employees]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -302,17 +384,16 @@ export default function TimeTracking() {
           subtitle="Track employee work hours and attendance"
           actions={
             <div className="flex gap-2">
-              {activeEntry ? (
+              <Button onClick={openCreateDialog} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Add Entry</span>
+                <span className="sm:hidden">Add</span>
+              </Button>
+              {timeEntries.filter(entry => !entry.clock_out).length > 0 && (
                 <Button onClick={handleClockOut} size="sm" variant="destructive">
                   <Square className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Clock Out</span>
-                  <span className="sm:hidden">Out</span>
-                </Button>
-              ) : (
-                <Button onClick={openCreateDialog} size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Add Entry</span>
-                  <span className="sm:hidden">Add</span>
+                  <span className="hidden sm:inline">Clock Out All</span>
+                  <span className="sm:hidden">All</span>
                 </Button>
               )}
             </div>
@@ -323,33 +404,6 @@ export default function TimeTracking() {
       {/* Main Content */}
       <ScrollArea className="flex-1">
         <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
-          {/* Active Clock-In Banner */}
-          {activeEntry && (
-            <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-2 border-green-300 dark:border-green-700 shadow-md">
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center animate-pulse">
-                      <Play className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm sm:text-base text-green-900 dark:text-green-100 line-clamp-1">
-                        {activeEntry.employee_name} is clocked in
-                      </p>
-                      <p className="text-xs sm:text-sm text-green-700 dark:text-green-300">
-                        Started at {formatTime(activeEntry.clock_in)}
-                      </p>
-                    </div>
-                  </div>
-                  <Button onClick={handleClockOut} variant="destructive" size="sm" className="flex-shrink-0">
-                    <Square className="w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Clock Out</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <StatCard
@@ -372,6 +426,83 @@ export default function TimeTracking() {
             />
           </div>
 
+          {/* Active Employees Section */}
+          {timeEntries.filter(entry => !entry.clock_out).length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  Active Employees ({timeEntries.filter(entry => !entry.clock_out).length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {(() => {
+                  const activeEntries = timeEntries.filter(entry => !entry.clock_out);
+                  const itemsPerPage = 5;
+                  const totalPages = Math.ceil(activeEntries.length / itemsPerPage);
+                  const startIndex = (activePage - 1) * itemsPerPage;
+                  const endIndex = startIndex + itemsPerPage;
+                  const currentEntries = activeEntries.slice(startIndex, endIndex);
+
+                  return (
+                    <>
+                      {currentEntries.map((entry) => (
+                        <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+                              <Play className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate max-w-[200px]">
+                                {entry.employee_name || 'Unknown Employee'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatTime(entry.clock_in)}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => handleClockOutSpecific(entry.id)}
+                            variant="destructive"
+                            size="sm"
+                            className="flex-shrink-0"
+                          >
+                            <Square className="w-4 h-4 mr-1" />
+                            Out
+                          </Button>
+                        </div>
+                      ))}
+
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setActivePage(prev => Math.max(1, prev - 1))}
+                            disabled={activePage === 1}
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </Button>
+                          <span className="text-sm text-muted-foreground px-2">
+                            {activePage} / {totalPages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setActivePage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={activePage === totalPages}
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Filters */}
           <Card className="shadow-md">
             <CardContent className="p-3 sm:p-4">
@@ -386,11 +517,24 @@ export default function TimeTracking() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Employees</SelectItem>
-                      {employees.map((employee) => (
-                        <SelectItem key={employee.id} value={employee.id.toString()}>
-                          {employee.first_name} {employee.last_name}
-                        </SelectItem>
-                      ))}
+                      {employeesLoading ? (
+                        <div className="px-2 py-1">
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-sm">Loading...</span>
+                          </div>
+                        </div>
+                      ) : employees.length === 0 ? (
+                        <div className="px-2 py-1">
+                          <span className="text-sm text-muted-foreground">No employees</span>
+                        </div>
+                      ) : (
+                        employees.map((employee) => (
+                          <SelectItem key={employee.id} value={employee.id.toString()}>
+                            {employee.first_name} {employee.last_name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -476,7 +620,9 @@ export default function TimeTracking() {
                         <TableRow key={entry.id} className="hover:bg-muted/50">
                           <TableCell className="px-2 sm:px-4 py-2">
                             <p className="font-medium text-xs sm:text-sm line-clamp-1">
-                              {entry.employee_name}
+                              {entry.employee_name ?
+                                (entry.employee_name.length > 20 ? entry.employee_name.substring(0, 17) + '...' : entry.employee_name)
+                                : 'Unknown Employee'}
                             </p>
                           </TableCell>
                           <TableCell className="px-2 sm:px-4 py-2">
@@ -571,11 +717,28 @@ export default function TimeTracking() {
                     <SelectValue placeholder="Select employee" />
                   </SelectTrigger>
                   <SelectContent>
-                    {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id.toString()}>
-                        {employee.first_name} {employee.last_name}
-                      </SelectItem>
-                    ))}
+                    {employeesLoading ? (
+                      <div className="px-2 py-1">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm">Loading employees...</span>
+                        </div>
+                      </div>
+                    ) : availableEmployeesForEntry.length === 0 ? (
+                      <div className="px-2 py-1">
+                        <span className="text-sm text-muted-foreground">
+                          {employees.length === 0 
+                            ? "No employees found" 
+                            : "All employees already have entries for today"}
+                        </span>
+                      </div>
+                    ) : (
+                      availableEmployeesForEntry.map((employee) => (
+                        <SelectItem key={employee.id} value={employee.id.toString()}>
+                          {employee.first_name} {employee.last_name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 {validationErrors.employee_id && (
