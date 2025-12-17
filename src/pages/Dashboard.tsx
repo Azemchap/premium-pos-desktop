@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -81,24 +81,51 @@ export default function Dashboard() {
   const { preferences } = useSettings();
   const navigate = useNavigate();
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsData, activityData, configData] = await Promise.all([
+      // Use Promise.allSettled to allow partial success
+      const results = await Promise.allSettled([
         invoke<DashboardStats>("get_stats"),
         invoke<RecentActivity>("get_recent_activity", { limit: 5 }),
         invoke<StoreConfig>("get_store_config"),
       ]);
-      setStats(statsData);
-      setRecentActivity(activityData);
-      setStoreConfig(configData);
+
+      // Handle stats result
+      if (results[0].status === "fulfilled") {
+        setStats(results[0].value);
+      } else {
+        console.error("Failed to load stats:", results[0].reason);
+      }
+
+      // Handle recent activity result
+      if (results[1].status === "fulfilled") {
+        setRecentActivity(results[1].value);
+      } else {
+        console.error("Failed to load recent activity:", results[1].reason);
+      }
+
+      // Handle store config result
+      if (results[2].status === "fulfilled") {
+        setStoreConfig(results[2].value);
+      } else {
+        console.error("Failed to load store config:", results[2].reason);
+      }
+
+      // Only show error toast if all requests failed
+      const allFailed = results.every(result => result.status === "rejected");
+      if (allFailed) {
+        toast.error("Failed to load dashboard data");
+      } else if (results.some(result => result.status === "rejected")) {
+        toast.warning("Some dashboard data failed to load");
+      }
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
       toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const refreshData = async () => {
     try {
@@ -120,7 +147,7 @@ export default function Dashboard() {
       }, 5 * 60 * 1000);
       return () => clearInterval(interval);
     }
-  }, [preferences.autoSave]);
+  }, [preferences.autoSave, loadDashboardData]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();

@@ -66,7 +66,7 @@ import {
   TrendingDown,
   TrendingUp
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 
 interface InventoryItem {
@@ -184,6 +184,48 @@ export default function Inventory() {
     }
   };
 
+  // Coordinated loading function that handles both inventory and movements
+  const loadAllData = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Use Promise.allSettled to allow partial success
+      const results = await Promise.allSettled([
+        invoke<InventoryItem[]>("get_inventory"),
+        invoke<InventoryMovement[]>("get_inventory_movements", {
+          productId: null,
+          limit: 100,
+          offset: 0,
+        }),
+      ]);
+
+      // Handle inventory result
+      if (results[0].status === "fulfilled") {
+        setInventory(results[0].value);
+      } else {
+        console.error("Failed to load inventory:", results[0].reason);
+        toast.error("❌ Failed to load inventory");
+      }
+
+      // Handle movements result
+      if (results[1].status === "fulfilled") {
+        setMovements(results[1].value);
+      } else {
+        console.error("Failed to load movements:", results[1].reason);
+        toast.error("❌ Failed to load movement history");
+      }
+
+      // Show success if at least inventory loaded
+      if (results[0].status === "fulfilled") {
+        toast.success(`✅ Loaded ${results[0].value.length} inventory items`);
+      }
+    } catch (error) {
+      console.error("Failed to load data:", error);
+      toast.error("❌ Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const loadProductMovements = async (productId: number) => {
     try {
       const result = await invoke<InventoryMovement[]>("get_inventory_movements", {
@@ -220,8 +262,7 @@ export default function Inventory() {
       toast.success(`✅ Received ${receiveQuantity} units of ${selectedItem.product?.name}`);
       setIsReceiveDialogOpen(false);
       resetReceiveForm();
-      loadInventory();
-      loadMovements();
+      await loadAllData();
     } catch (error) {
       console.error("Failed to receive stock:", error);
       toast.error(`❌ Failed to receive stock: ${error}`);
@@ -258,8 +299,7 @@ export default function Inventory() {
       toast.success(`✅ ${adjustType === "add" ? "Added" : "Removed"} ${adjustQuantity} units of ${selectedItem.product?.name}`);
       setIsAdjustDialogOpen(false);
       resetAdjustForm();
-      loadInventory();
-      loadMovements();
+      await loadAllData();
     } catch (error) {
       console.error("Failed to adjust stock:", error);
       toast.error(`❌ Failed to adjust stock: ${error}`);
@@ -289,8 +329,7 @@ export default function Inventory() {
       toast.success(`✅ Stock take completed. Difference: ${difference > 0 ? "+" : ""}${difference} units`);
       setIsStockTakeDialogOpen(false);
       resetStockTakeForm();
-      loadInventory();
-      loadMovements();
+      await loadAllData();
     } catch (error) {
       console.error("Failed to perform stock take:", error);
       toast.error(`❌ Failed to perform stock take: ${error}`);
@@ -326,8 +365,7 @@ export default function Inventory() {
       toast.success(`✅ Reserved ${reserveQuantity} units of ${selectedItem.product?.name}`);
       setIsReserveDialogOpen(false);
       resetReserveForm();
-      loadInventory();
-      loadMovements();
+      await loadAllData();
     } catch (error) {
       console.error("Failed to reserve stock:", error);
       toast.error(`❌ Failed to reserve stock: ${error}`);
@@ -455,9 +493,8 @@ export default function Inventory() {
   };
 
   useEffect(() => {
-    loadInventory();
-    loadMovements();
-  }, []);
+    loadAllData();
+  }, [loadAllData]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -470,7 +507,7 @@ export default function Inventory() {
         title="Inventory"
         subtitle="Manage stock levels, receive inventory, and track movements"
         actions={
-          <Button onClick={loadInventory} variant="outline" size="sm" className="w-full sm:w-auto">
+          <Button onClick={loadAllData} variant="outline" size="sm" className="w-full sm:w-auto">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>

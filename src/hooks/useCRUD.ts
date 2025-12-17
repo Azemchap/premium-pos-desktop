@@ -2,7 +2,7 @@
  * useCRUD - Reusable hook for CRUD operations
  * Simplifies Create, Read, Update, Delete operations with Tauri backend
  */
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 
@@ -78,6 +78,10 @@ export function useCRUD<T extends Record<string, any>>(
   const [itemToDelete, setItemToDelete] = useState<{ id: number; name: string } | null>(null);
   const [itemToReactivate, setItemToReactivate] = useState<{ id: number; name: string } | null>(null);
 
+  // Debouncing refs for reload operations
+  const reloadTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isReloadScheduledRef = useRef(false);
+
   // Load items from backend
   const loadItems = useCallback(async () => {
     try {
@@ -95,6 +99,23 @@ export function useCRUD<T extends Record<string, any>>(
     }
   }, [listCommand, resourceName]);
 
+  // Debounced reload to prevent request storms from rapid operations
+  const debouncedReload = useCallback(() => {
+    // Clear any existing timer
+    if (reloadTimerRef.current) {
+      clearTimeout(reloadTimerRef.current);
+    }
+
+    // Mark that a reload is scheduled
+    isReloadScheduledRef.current = true;
+
+    // Schedule the reload after a short delay (300ms)
+    reloadTimerRef.current = setTimeout(() => {
+      isReloadScheduledRef.current = false;
+      loadItems();
+    }, 300);
+  }, [loadItems]);
+
   // Create new item
   const createItem = useCallback(
     async (data: Partial<T>): Promise<T | null> => {
@@ -104,7 +125,7 @@ export function useCRUD<T extends Record<string, any>>(
           request: data,
         });
         toast.success(`✅ ${resourceName} created successfully!`);
-        await loadItems();
+        debouncedReload();
         return result;
       } catch (err) {
         console.error(`Failed to create ${resourceName}:`, err);
@@ -114,7 +135,7 @@ export function useCRUD<T extends Record<string, any>>(
         setIsSubmitting(false);
       }
     },
-    [createCommand, resourceName, loadItems]
+    [createCommand, resourceName, debouncedReload]
   );
 
   // Update existing item
@@ -127,7 +148,7 @@ export function useCRUD<T extends Record<string, any>>(
           request: data,
         });
         toast.success(`✅ ${resourceName} updated successfully!`);
-        await loadItems();
+        debouncedReload();
       } catch (err) {
         console.error(`Failed to update ${resourceName}:`, err);
         toast.error(`❌ Failed to update ${resourceName}: ${err}`);
@@ -135,7 +156,7 @@ export function useCRUD<T extends Record<string, any>>(
         setIsSubmitting(false);
       }
     },
-    [updateCommand, resourceName, loadItems]
+    [updateCommand, resourceName, debouncedReload]
   );
 
   // Request Delete (sets state for dialog)
@@ -157,14 +178,14 @@ export function useCRUD<T extends Record<string, any>>(
         [`${resourceName}Id`]: itemToDelete.id,
       });
       toast.success(`${resourceName} "${itemToDelete.name}" deactivated successfully!`);
-      await loadItems();
+      debouncedReload();
     } catch (err) {
       console.error(`Failed to delete ${resourceName}:`, err);
       toast.error(`Failed to deactivate ${resourceName}: ${err}`);
     } finally {
       setItemToDelete(null);
     }
-  }, [itemToDelete, deleteCommand, resourceName, loadItems]);
+  }, [itemToDelete, deleteCommand, resourceName, debouncedReload]);
 
   // Request Reactivate (sets state for dialog)
   const reactivateItem = reactivateCommand
@@ -187,14 +208,14 @@ export function useCRUD<T extends Record<string, any>>(
         [`${resourceName}Id`]: itemToReactivate.id,
       });
       toast.success(`✅ ${resourceName} "${itemToReactivate.name}" reactivated successfully!`);
-      await loadItems();
+      debouncedReload();
     } catch (err) {
       console.error(`Failed to reactivate ${resourceName}:`, err);
       toast.error(`❌ Failed to reactivate ${resourceName}: ${err}`);
     } finally {
       setItemToReactivate(null);
     }
-  }, [itemToReactivate, reactivateCommand, resourceName, loadItems]);
+  }, [itemToReactivate, reactivateCommand, resourceName, debouncedReload]);
 
   // Dialog helpers
   const openCreateDialog = useCallback(() => {
@@ -218,6 +239,15 @@ export function useCRUD<T extends Record<string, any>>(
       loadItems();
     }
   }, [autoLoad, loadItems]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (reloadTimerRef.current) {
+        clearTimeout(reloadTimerRef.current);
+      }
+    };
+  }, []);
 
   return {
     // Data

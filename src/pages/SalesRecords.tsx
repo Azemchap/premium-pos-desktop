@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -163,6 +163,9 @@ export default function SalesRecords() {
   const [sortColumn, setSortColumn] = useState<SortColumn>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
+  // Track the latest sale details request to prevent race conditions
+  const latestSaleRequestRef = useRef(0);
+
   const getDateRangeDates = (range: DateRange): { start: string; end: string } => {
     const today = new Date();
     const formatDateString = (date: Date) => formatDate(date, "yyyy-MM-dd");
@@ -185,7 +188,7 @@ export default function SalesRecords() {
     }
   };
 
-  const loadSales = async () => {
+  const loadSales = useCallback(async () => {
     try {
       setLoading(true);
       const { start, end } = getDateRangeDates(dateRange);
@@ -212,11 +215,20 @@ export default function SalesRecords() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange, paymentMethod, startDate, endDate]);
 
   const loadSaleDetails = async (saleId: number) => {
+    // Increment request counter and capture current value
+    const requestId = ++latestSaleRequestRef.current;
+
     try {
       const [sale, items] = await invoke<[Sale, SaleItem[]]>("get_sale_details", { saleId });
+
+      // Only update state if this is still the latest request
+      if (requestId !== latestSaleRequestRef.current) {
+        return; // Discard stale response
+      }
+
       setSelectedSale(sale);
       setSaleItems(items);
 
@@ -226,8 +238,11 @@ export default function SalesRecords() {
       setIsDetailsOpen(true);
       toast.success("Sale details loaded");
     } catch (error) {
-      console.error("Failed to load sale details:", error);
-      toast.error("Failed to load sale details");
+      // Only show error if this is still the latest request
+      if (requestId === latestSaleRequestRef.current) {
+        console.error("Failed to load sale details:", error);
+        toast.error("Failed to load sale details");
+      }
     }
   };
 
@@ -341,7 +356,7 @@ export default function SalesRecords() {
 
   useEffect(() => {
     loadSales();
-  }, [dateRange, paymentMethod, startDate, endDate]);
+  }, [loadSales]);
 
   useEffect(() => {
     setCurrentPage(1);

@@ -57,7 +57,7 @@ import {
   Tag,
   Loader2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import ProductVariantManager from "@/components/ProductVariantManager";
@@ -201,8 +201,57 @@ export default function Products() {
       setUnits(unts);
     } catch (error) {
       console.error("Failed to load master data:", error);
+      toast.error("❌ Failed to load categories/brands/units");
     }
   };
+
+  // Coordinated loading function that handles both products and master data
+  const loadAllData = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Use Promise.allSettled to allow partial success
+      const results = await Promise.allSettled([
+        invoke<Product[]>("get_products"),
+        Promise.all([
+          invoke<Category[]>("get_all_categories"),
+          invoke<Brand[]>("get_all_brands"),
+          invoke<Unit[]>("get_all_units"),
+        ]),
+      ]);
+
+      // Handle products result
+      if (results[0].status === "fulfilled") {
+        setProducts(results[0].value);
+      } else {
+        console.error("Failed to load products:", results[0].reason);
+        toast.error("❌ Failed to load products");
+      }
+
+      // Handle master data result
+      if (results[1].status === "fulfilled") {
+        const [cats, brnds, unts] = results[1].value;
+        setCategories(cats);
+        setBrands(brnds);
+        setUnits(unts);
+      } else {
+        console.error("Failed to load master data:", results[1].reason);
+        toast.error("❌ Failed to load categories/brands/units");
+      }
+
+      // Show success if at least one succeeded
+      if (results.some(result => result.status === "fulfilled")) {
+        const productsCount = results[0].status === "fulfilled" ? results[0].value.length : 0;
+        if (results[0].status === "fulfilled") {
+          toast.success(`✅ Loaded ${productsCount} products`);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load data:", error);
+      toast.error("❌ Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const handleSave = async () => {
     setIsSubmitting(true);
@@ -230,7 +279,8 @@ export default function Products() {
 
       setIsDialogOpen(false);
       resetForm();
-      loadProducts();
+      // Reload both products and master data in case new categories/brands were added
+      await loadAllData();
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
@@ -391,9 +441,8 @@ export default function Products() {
   );
 
   useEffect(() => {
-    loadProducts();
-    loadMasterData();
-  }, []);
+    loadAllData();
+  }, [loadAllData]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -411,7 +460,7 @@ export default function Products() {
         subtitle="Manage your product catalog and inventory"
         actions={
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button onClick={loadProducts} variant="outline" size="sm" className="flex-1 sm:flex-none">
+            <Button onClick={loadAllData} variant="outline" size="sm" className="flex-1 sm:flex-none">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
