@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 
 export interface RealtimeDataConfig {
     refreshInterval?: number;
@@ -17,6 +17,9 @@ export function useRealtimeData<T>(
 
     const { refreshInterval = 30000, enableAutoRefresh = true } = config;
 
+    // Memoize the stringified args to prevent unnecessary re-renders
+    const argsKey = useMemo(() => JSON.stringify(args), [args]);
+
     const refresh = useCallback(async () => {
         try {
             const result = await invoke<T>(commandName, args);
@@ -27,7 +30,7 @@ export function useRealtimeData<T>(
             setError(err as Error);
             throw err;
         }
-    }, [commandName, JSON.stringify(args)]);
+    }, [commandName, argsKey, args]);
 
     const load = useCallback(async () => {
         try {
