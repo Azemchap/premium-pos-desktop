@@ -5,16 +5,16 @@ import tailwindcss from "tailwindcss";
 import { defineConfig } from "vite";
 
 // For Android emulator, use 10.0.2.2 to access host machine
-const host = process.env.TAURI_DEV_HOST || "0.0.0.0";
+const host = process.env.TAURI_DEV_HOST || "localhost";
 
 export default defineConfig(async () => ({
     plugins: [react()],
     clearScreen: false,
 
     server: {
-        port: 1420,
+        port: 5173,
         strictPort: true,
-        host: '0.0.0.0', // Always listen on all interfaces
+        host: host || "localhost",
         hmr: process.env.TAURI_DEV_HOST
             ? {
                 protocol: "ws",
@@ -27,7 +27,7 @@ export default defineConfig(async () => ({
         },
         cors: true,
     },
-    
+
 
     resolve: {
         alias: {
